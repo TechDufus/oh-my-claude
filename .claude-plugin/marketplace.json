@@ -1,0 +1,26 @@
+{
+  "name": "oh-my-claude",
+  "owner": {
+    "name": "TechDufus"
+  },
+  "metadata": {
+    "description": "Ultrawork mode for maximum parallel execution with intelligent subagent use",
+    "version": "2.0.0"
+  },
+  "plugins": [
+    {
+      "name": "oh-my-claude",
+      "source": "./",
+      "description": "Add 'ultrawork' to any prompt for maximum parallel execution.",
+      "version": "2.0.0",
+      "author": {
+        "name": "TechDufus"
+      },
+      "homepage": "https://github.com/TechDufus/oh-my-claude",
+      "repository": "https://github.com/TechDufus/oh-my-claude",
+      "license": "MIT",
+      "keywords": ["ultrawork", "parallel", "subagents", "workflow", "hooks", "automation"],
+      "category": "productivity"
+    }
+  ]
+}

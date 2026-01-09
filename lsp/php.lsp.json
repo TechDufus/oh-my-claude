@@ -1,0 +1,17 @@
+{
+  "command": "intelephense",
+  "args": ["--stdio"],
+  "transport": "stdio",
+  "extensionToLanguage": {
+    ".php": "php",
+    ".phtml": "php",
+    ".inc": "php"
+  },
+  "initializationOptions": {
+    "clearCache": false
+  },
+  "settings": {
+    "intelephense.diagnostics.enable": true,
+    "intelephense.completion.fullyQualifyGlobalConstantsAndFunctions": false
+  }
+}

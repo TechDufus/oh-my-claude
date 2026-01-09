@@ -1,0 +1,18 @@
+{
+  "command": "clangd",
+  "args": ["--background-index", "--clang-tidy"],
+  "transport": "stdio",
+  "extensionToLanguage": {
+    ".c": "c",
+    ".h": "c",
+    ".cpp": "cpp",
+    ".hpp": "cpp",
+    ".cc": "cpp",
+    ".cxx": "cpp",
+    ".hxx": "cpp",
+    ".m": "objective-c",
+    ".mm": "objective-cpp"
+  },
+  "initializationOptions": {},
+  "settings": {}
+}

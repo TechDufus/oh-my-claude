@@ -1,0 +1,24 @@
+{
+  "command": "gopls",
+  "args": ["serve"],
+  "transport": "stdio",
+  "extensionToLanguage": {
+    ".go": "go",
+    ".mod": "go.mod",
+    ".sum": "go.sum",
+    ".work": "go.work"
+  },
+  "initializationOptions": {
+    "usePlaceholders": true,
+    "completeUnimported": true
+  },
+  "settings": {
+    "gopls": {
+      "analyses": {
+        "unusedparams": true,
+        "shadow": true
+      },
+      "staticcheck": true
+    }
+  }
+}
