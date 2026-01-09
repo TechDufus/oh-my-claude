@@ -28,26 +28,6 @@ EXT="${FILE_PATH##*.}"
 DIAGNOSTICS=""
 SEVERITY="info"
 
-run_diagnostic() {
-    local cmd="$1"
-    local args="$2"
-
-    if command -v "$cmd" &>/dev/null; then
-        # Run diagnostic, capture output and exit code
-        local output
-        output=$($cmd $args "$FILE_PATH" 2>&1) || true
-        if [[ -n "$output" ]]; then
-            DIAGNOSTICS="$output"
-            # Determine severity based on output patterns
-            if echo "$output" | grep -qiE 'error|fatal|critical'; then
-                SEVERITY="error"
-            elif echo "$output" | grep -qiE 'warning|warn'; then
-                SEVERITY="warning"
-            fi
-        fi
-    fi
-}
-
 case "$EXT" in
     sh|bash)
         # Shellcheck for shell scripts
@@ -117,7 +97,6 @@ case "$EXT" in
         # Rust: cargo check (requires being in cargo project)
         # Note: This only works if we're in a cargo workspace
         if command -v cargo &>/dev/null; then
-            local cargo_dir
             cargo_dir=$(dirname "$FILE_PATH")
             while [[ "$cargo_dir" != "/" ]]; do
                 if [[ -f "$cargo_dir/Cargo.toml" ]]; then
