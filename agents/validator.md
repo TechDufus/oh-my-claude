@@ -110,3 +110,36 @@ npx eslint src/auth/
 # Jest - specific tests
 npx jest src/auth/
 ```
+
+## Language-Specific Validators
+
+For files without project-level tooling, use direct linters:
+
+| Extension | Command | What it checks |
+|-----------|---------|----------------|
+| `.sh`, `.bash` | `shellcheck -f gcc <file>` | Shell script issues, portability |
+| `.ts`, `.tsx` | `tsc --noEmit <file>` | Type errors |
+| `.js`, `.jsx` | `eslint --format compact <file>` | Lint errors |
+| `.py` | `ruff check <file>` or `pyright <file>` | Type and lint errors |
+| `.go` | `go vet <file>` | Go-specific issues |
+| `.rs` | `cargo check` (in project dir) | Rust compile errors |
+| `.json` | `jq empty <file>` | JSON syntax |
+| `.yaml`, `.yml` | `yamllint -f parsable <file>` | YAML syntax and style |
+
+### Shell Script Validation
+
+Always validate `.sh` files with shellcheck when available:
+```bash
+# Check if shellcheck is available
+command -v shellcheck && shellcheck -f gcc script.sh
+
+# Common issues shellcheck catches:
+# - Unquoted variables
+# - Missing shebang
+# - Deprecated syntax
+# - Portability issues
+```
+
+## LSP Integration Note
+
+The PostToolUse hook (`lsp-diagnostics.sh`) automatically runs diagnostics after Edit/Write operations when `ENABLE_LSP_TOOL=1` is set. This provides immediate feedback. The Validator agent provides comprehensive validation for final checks before completion.

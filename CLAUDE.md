@@ -115,30 +115,45 @@ Activates:
 |------|---------|
 | **SessionStart** | Context Guardian + LSP auto-detection |
 | **UserPromptSubmit** | Keyword detection + pattern-based context tips |
+| **PostToolUse** | LSP diagnostics after Edit/Write operations |
 | **Stop** | Prevent stopping with incomplete todos + auto-validation + completion summary |
 | **PreCompact** | Preserve context before compaction |
 
-## LSP Support (Auto-Detected)
+## LSP Diagnostics (Opt-in)
 
-On session start, oh-my-claude automatically:
-1. Detects project languages from file extensions
-2. Checks if corresponding LSP servers are installed
-3. Reports status (does NOT auto-install)
+Real-time code diagnostics after every file edit or write operation.
+
+### How It Works
+
+1. **PostToolUse hook** triggers after Edit/Write tools
+2. **Detects file type** from extension
+3. **Runs appropriate linter** (if installed)
+4. **Injects diagnostics** into context as feedback
 
 ### Supported Languages
-TypeScript, Python, Go, Rust, Java, C/C++, PHP, Ruby, Kotlin, Swift
 
-### LSP Tools Available (when enabled)
-- `goToDefinition` - Jump to symbol definition
-- `findReferences` - Find all usages
-- `hover` - Get type info and docs
-- `documentSymbol` - File outline
-- `getDiagnostics` - Errors and warnings
+| Extension | Linter | What it checks |
+|-----------|--------|----------------|
+| `.sh`, `.bash` | shellcheck | Shell script issues, portability |
+| `.ts`, `.tsx` | tsc | TypeScript type errors |
+| `.js`, `.jsx` | eslint | JavaScript lint errors |
+| `.py` | ruff/pyright | Python type and lint errors |
+| `.go` | go vet | Go-specific issues |
+| `.rs` | cargo check | Rust compile errors |
+| `.json` | jq | JSON syntax |
+| `.yaml`, `.yml` | yamllint | YAML syntax and style |
 
-### Enable LSP
+### Enable LSP Diagnostics
 ```bash
 export ENABLE_LSP_TOOL=1  # Add to shell profile
 ```
+
+### Language Detection (SessionStart)
+
+On session start, oh-my-claude also:
+1. Detects project languages from file extensions
+2. Checks if corresponding LSP servers are installed
+3. Reports status (does NOT auto-install)
 
 ## Execution Philosophy
 
