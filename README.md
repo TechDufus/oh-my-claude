@@ -1,3 +1,5 @@
+<img width="1328" height="611" alt="oh-my-claude_hero" src="https://github.com/user-attachments/assets/ca862678-da89-45c3-8385-fb45415c1b6e" />
+
 # oh-my-claude
 
 Add **ultrawork** to any prompt. That's it.
