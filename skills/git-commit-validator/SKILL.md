@@ -90,7 +90,6 @@ EOF
 ### Forbidden Content
 - NO AI attribution ("Generated with Claude", "Created by AI")
 - NO AI co-authors ("Co-authored-by: Claude")
-- NO emojis or decorative symbols
 - NO branding phrases
 
 ## Type Reference
