@@ -1,6 +1,15 @@
 ---
 name: git-commit-validator
 description: "MUST be used whenever creating git commits. Handles full commit workflow: staging, message generation, validation, and commit execution. Enforces conventional commit format."
+allowed-tools:
+  - Bash(git status:*)
+  - Bash(git diff:*)
+  - Bash(git add:*)
+  - Bash(git commit:*)
+  - Bash(git log:*)
+  - Bash(${CLAUDE_PLUGIN_ROOT}/skills/git-commit-validator/scripts/*:*)
+  - Read
+  - Grep
 ---
 
 # Git Commit Validator
