@@ -119,18 +119,29 @@ Activates:
 | **Stop** | Prevent stopping with incomplete todos + auto-validation + completion summary |
 | **PreCompact** | Preserve context before compaction |
 
-## LSP Diagnostics (Automatic)
+## LSP Support
 
-Real-time code diagnostics after every file edit or write operation. No configuration needed - just works if linters are installed.
+Real-time code diagnostics via Claude Code's native LSP integration, with CLI linter fallbacks.
 
-### How It Works
+### Native LSP Servers
 
-1. **PostToolUse hook** triggers after Edit/Write tools
-2. **Detects file type** from extension
-3. **Runs appropriate linter** (if installed)
-4. **Injects diagnostics** into context as feedback
+Claude Code manages LSP server lifecycle automatically. Install the server and it just works.
 
-### Supported Languages
+| Language | Server | Install |
+|----------|--------|---------|
+| TypeScript/JS | typescript-language-server | `npm i -g typescript-language-server typescript` |
+| Python | pyright-langserver | `npm i -g pyright` |
+| Bash | bash-language-server | `npm i -g bash-language-server` |
+| Go | gopls | `go install golang.org/x/tools/gopls@latest` |
+| Rust | rust-analyzer | `rustup component add rust-analyzer` |
+| C/C++ | clangd | `brew install llvm` or package manager |
+| Java | jdtls | Eclipse JDT Language Server |
+| PHP | intelephense | `npm i -g intelephense` |
+| Ruby | solargraph | `gem install solargraph` |
+
+### CLI Linter Fallbacks
+
+If an LSP server isn't installed, the PostToolUse hook falls back to CLI linters:
 
 | Extension | Linter | What it checks |
 |-----------|--------|----------------|
@@ -143,7 +154,7 @@ Real-time code diagnostics after every file edit or write operation. No configur
 | `.json` | jq | JSON syntax |
 | `.yaml`, `.yml` | yamllint | YAML syntax and style |
 
-If a linter isn't installed, it's silently skipped - no errors, no noise.
+If neither LSP nor linter is installed, diagnostics are silently skipped.
 
 ## Execution Philosophy
 

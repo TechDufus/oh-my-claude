@@ -1,0 +1,155 @@
+{
+  "typescript": {
+    "command": "typescript-language-server",
+    "args": ["--stdio"],
+    "extensionToLanguage": {
+      ".ts": "typescript",
+      ".tsx": "typescriptreact",
+      ".js": "javascript",
+      ".jsx": "javascriptreact",
+      ".mts": "typescript",
+      ".cts": "typescript",
+      ".mjs": "javascript",
+      ".cjs": "javascript"
+    },
+    "initializationOptions": {
+      "preferences": {
+        "includeInlayParameterNameHints": "all",
+        "includeInlayPropertyDeclarationTypeHints": true,
+        "includeInlayFunctionLikeReturnTypeHints": true
+      }
+    }
+  },
+  "python": {
+    "command": "pyright-langserver",
+    "args": ["--stdio"],
+    "extensionToLanguage": {
+      ".py": "python",
+      ".pyi": "python",
+      ".pyw": "python"
+    },
+    "settings": {
+      "python": {
+        "analysis": {
+          "autoSearchPaths": true,
+          "useLibraryCodeForTypes": true,
+          "diagnosticMode": "workspace"
+        }
+      }
+    }
+  },
+  "bash": {
+    "command": "bash-language-server",
+    "args": ["start"],
+    "extensionToLanguage": {
+      ".sh": "shellscript",
+      ".bash": "shellscript",
+      ".zsh": "shellscript"
+    }
+  },
+  "go": {
+    "command": "gopls",
+    "args": ["serve"],
+    "extensionToLanguage": {
+      ".go": "go",
+      ".mod": "go.mod",
+      ".sum": "go.sum",
+      ".work": "go.work"
+    },
+    "initializationOptions": {
+      "usePlaceholders": true,
+      "completeUnimported": true
+    },
+    "settings": {
+      "gopls": {
+        "analyses": {
+          "unusedparams": true,
+          "shadow": true
+        },
+        "staticcheck": true
+      }
+    }
+  },
+  "rust": {
+    "command": "rust-analyzer",
+    "args": [],
+    "extensionToLanguage": {
+      ".rs": "rust"
+    },
+    "initializationOptions": {
+      "cargo": {
+        "allFeatures": true
+      },
+      "checkOnSave": {
+        "command": "clippy"
+      }
+    },
+    "settings": {
+      "rust-analyzer": {
+        "diagnostics": {
+          "enable": true
+        }
+      }
+    }
+  },
+  "c": {
+    "command": "clangd",
+    "args": ["--background-index", "--clang-tidy"],
+    "extensionToLanguage": {
+      ".c": "c",
+      ".h": "c",
+      ".cpp": "cpp",
+      ".hpp": "cpp",
+      ".cc": "cpp",
+      ".cxx": "cpp",
+      ".hxx": "cpp",
+      ".m": "objective-c",
+      ".mm": "objective-cpp"
+    }
+  },
+  "java": {
+    "command": "jdtls",
+    "args": [],
+    "extensionToLanguage": {
+      ".java": "java"
+    },
+    "initializationOptions": {
+      "bundles": []
+    },
+    "settings": {
+      "java": {
+        "configuration": {
+          "updateBuildConfiguration": "automatic"
+        }
+      }
+    }
+  },
+  "php": {
+    "command": "intelephense",
+    "args": ["--stdio"],
+    "extensionToLanguage": {
+      ".php": "php",
+      ".phtml": "php",
+      ".inc": "php"
+    },
+    "initializationOptions": {
+      "clearCache": false
+    }
+  },
+  "ruby": {
+    "command": "solargraph",
+    "args": ["stdio"],
+    "extensionToLanguage": {
+      ".rb": "ruby",
+      ".rake": "ruby",
+      ".gemspec": "ruby"
+    },
+    "initializationOptions": {
+      "diagnostics": true,
+      "completion": true,
+      "hover": true,
+      "definitions": true,
+      "references": true
+    }
+  }
+}
