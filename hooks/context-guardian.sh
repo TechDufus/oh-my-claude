@@ -17,30 +17,27 @@ These rules help preserve your context window for reasoning. Follow them by DEFA
 
 ### File Reading Rules
 - **<100 lines**: Read directly with Read tool
-- **>100 lines**: Delegate to Task(subagent_type="oh-my-claude:deep-explorer") or Task(subagent_type="oh-my-claude:context-summarizer")
-- **Unknown size**: Check with `wc -l <file>` first, or delegate to be safe
-- **Multiple files**: ALWAYS delegate to subagent - your context is for reasoning, not storing raw code
+- **>100 lines**: Delegate to Task(subagent_type="oh-my-claude:librarian")
+- **Unknown size**: Delegate to be safe - subagent context is free
+- **Multiple files**: ALWAYS delegate to subagent
 
 ### Search & Exploration Rules
-- **Codebase exploration**: Use Task(subagent_type="Explore") or Task(subagent_type="oh-my-claude:deep-explorer")
-- **Finding files**: Use Glob tool (fast, minimal context)
-- **Searching content**: Use Grep tool with files_with_matches mode first, then targeted reads
-- **Understanding architecture**: ALWAYS delegate to deep-explorer agent
+- **Finding files**: Use Task(subagent_type="oh-my-claude:scout")
+- **Reading files**: Use Task(subagent_type="oh-my-claude:librarian")
+- **Understanding architecture**: Scout to find, Librarian to read
 
-### Subagent Strategy
-- Subagents have their own context windows - use them liberally
-- Raw content stays in subagent context, you receive only distilled summaries
-- Launch multiple independent Tasks in ONE message for parallelism
-- Available agents:
-  - `oh-my-claude:deep-explorer` - Thorough exploration, returns <800 token summaries
-  - `oh-my-claude:context-summarizer` - Compress large files/results
-  - `oh-my-claude:parallel-implementer` - Focused single-task implementation
-  - `oh-my-claude:validator` - Run linters, tests, checks
+### Your Agent Team
+- `oh-my-claude:scout` - Find files, locate definitions, quick recon
+- `oh-my-claude:librarian` - Smart file reading, summarizes large files
+- `oh-my-claude:architect` - Plan complex tasks, decompose work
+- `oh-my-claude:worker` - Focused single-task implementation
+- `oh-my-claude:scribe` - Write documentation
+- `oh-my-claude:validator` - Run tests, linters, checks
 
 ### When in Doubt
-- Delegate to a subagent (costs nothing, preserves your context)
-- Use Glob/Grep before Read (find first, read targeted)
-- Summarize results before storing in memory
+- Delegate to an agent (their context is isolated from yours)
+- Scout finds → Librarian reads → You reason
+- Use Glob/Grep for quick searches before delegating
 
 TIP: Use /context command to check context-saving advice anytime.'
 

@@ -1,26 +1,63 @@
 # oh-my-claude
 
-Maximum execution through intelligent automation. Batteries-included context protection with optional maximum effort modes.
+Maximum execution through intelligent automation. Batteries-included context protection with a specialized agent team.
 
-## Two-Tier Behavior System
+## Architecture
 
-### Tier 1: Always-On (Every Session)
+Main Claude acts as the **orchestrator** - reasoning, planning, delegating to specialized agents, and synthesizing results. The hooks inject orchestrator behavior automatically.
 
-The **Context Guardian** activates automatically on every session start, providing baseline context protection:
+```
+┌─────────────────────────────────────────────────────────────┐
+│                    MAIN CLAUDE                              │
+│                  (Orchestrator)                             │
+│                                                             │
+│  Hooks inject behavior:                                     │
+│  • Context Guardian → "delegate to your team"               │
+│  • ultrawork mode → "parallelize, never stop"               │
+│  • Pattern detection → "use the right agent"                │
+│                                                             │
+│  Job: REASON, PLAN, DELEGATE, SYNTHESIZE                    │
+└─────────────────────────────────────────────────────────────┘
+                           │
+                           ▼
+┌─────────────────────────────────────────────────────────────┐
+│                     THE TEAM                                │
+│  scout, librarian, architect, worker, scribe, validator     │
+└─────────────────────────────────────────────────────────────┘
+```
 
-- **File Reading Rules**: Guidance on when to delegate large files to subagents
-- **Search Strategy**: Best practices for using Glob/Grep efficiently
-- **Subagent Awareness**: Available agents and when to use them
-- **Pattern Detection**: Automatic tips when prompts suggest context-heavy operations
+## The Agent Team
 
-**Detected Patterns** (triggers gentle reminders):
-- Large file requests: "read the entire file", "show me all of", "full implementation"
-- Multi-file operations: "all files", "across the codebase", "throughout the project"
-- Exploration requests: "how does X work", "explain the codebase", "architecture"
+Use via `Task(subagent_type="oh-my-claude:agent-name")`:
 
-### Tier 2: Maximum Effort (Magic Keywords)
+| Agent | Model | Role | When to Use |
+|-------|-------|------|-------------|
+| **scout** | haiku | FIND | "Where is X?", "Find files matching Y" |
+| **librarian** | sonnet | READ | "Read file X", "Get the auth logic from Y" |
+| **architect** | opus | PLAN | Complex tasks needing decomposition |
+| **worker** | opus | IMPLEMENT | Focused single-task implementation |
+| **scribe** | opus | DOCUMENT | Write docs, READMEs, comments |
+| **validator** | haiku | CHECK | Run tests, linters, verify work |
 
-Add a keyword to activate intensive execution modes:
+### Agent Workflow
+
+```
+Scout finds → Librarian reads → Architect plans (if complex)
+    → Workers implement in parallel → Scribe documents → Validator checks
+```
+
+### Agent Boundaries
+
+| Agent | DOES | DOES NOT |
+|-------|------|----------|
+| **scout** | Find files, locate definitions | Read full content |
+| **librarian** | Read smartly, summarize large files | Search for files |
+| **architect** | Decompose tasks, plan parallelization | Implement code |
+| **worker** | Implement ONE specific task completely | Decide what to build |
+| **scribe** | Write documentation | Implement features |
+| **validator** | Run checks, report results | Fix issues |
+
+## Magic Keywords
 
 | Keyword | Effect |
 |---------|--------|
@@ -42,7 +79,6 @@ Activates:
 - Context-preserving file reads (delegate >100 lines to subagents)
 - TodoWrite tracking (minimum 3 todos for non-trivial work)
 - Relentless completion (cannot stop with incomplete todos)
-- Project-aware validation
 
 ## Context Protection Rules
 
@@ -50,27 +86,16 @@ Activates:
 | Size | Action |
 |------|--------|
 | <100 lines | Read directly |
-| >100 lines | Delegate to `oh-my-claude:deep-explorer` or `oh-my-claude:context-summarizer` |
-| Unknown | Delegate to be safe (subagent context is free) |
+| >100 lines | Delegate to `oh-my-claude:librarian` |
+| Unknown | Delegate to be safe |
 
 ### Search Strategy
-| Operation | Tool/Agent |
-|-----------|------------|
-| Find files by pattern | Glob |
-| Search file contents | Grep (files_with_matches mode first) |
-| Explore codebase | Task(subagent_type="Explore") |
-| Deep architecture analysis | Task(subagent_type="oh-my-claude:deep-explorer") |
-
-## Available Agents
-
-Use via `Task(subagent_type="oh-my-claude:agent-name")`:
-
-| Agent | Model | Use For |
-|-------|-------|---------|
-| `deep-explorer` | haiku | Thorough codebase exploration, returns <800 token summaries |
-| `context-summarizer` | haiku | Compress large files without consuming main context |
-| `parallel-implementer` | sonnet | Focused single-task implementation |
-| `validator` | haiku | Run linters, tests, validation checks |
+| Operation | Agent |
+|-----------|-------|
+| Find files by pattern | `oh-my-claude:scout` |
+| Read file contents | `oh-my-claude:librarian` |
+| Explore codebase | `oh-my-claude:scout` + `oh-my-claude:librarian` |
+| Plan complex task | `oh-my-claude:architect` |
 
 ## Commands
 
@@ -85,8 +110,6 @@ Use via `Task(subagent_type="oh-my-claude:agent-name")`:
 | Skill | Trigger | Purpose |
 |-------|---------|---------|
 | `git-commit-validator` | Any commit request | Full commit workflow with validation |
-
-The `git-commit-validator` skill auto-activates when you ask to commit. No `/commit` command needed - just say "commit this" or "make a commit".
 
 ## Hooks (Automatic)
 
@@ -119,17 +142,10 @@ TypeScript, Python, Go, Rust, Java, C/C++, PHP, Ruby, Kotlin, Swift
 export ENABLE_LSP_TOOL=1  # Add to shell profile
 ```
 
-### Install Missing Servers
-```bash
-./scripts/install-lsp.sh typescript  # bun > npm
-./scripts/install-lsp.sh python      # uv > pipx > pip
-./scripts/install-lsp.sh all --check # Check status
-```
-
 ## Execution Philosophy
 
 1. **PROTECT CONTEXT** - Your context window is for reasoning, not storing raw code
-2. **DELEGATE LIBERALLY** - Subagents have isolated context; use them freely
+2. **DELEGATE LIBERALLY** - Agents have isolated context; use them freely
 3. **PARALLELIZE** - Launch ALL independent Tasks in ONE message
 4. **TRACK** - TodoWrite is mandatory for non-trivial work
 5. **COMPLETE** - Cannot stop until all todos are done and validation passes
