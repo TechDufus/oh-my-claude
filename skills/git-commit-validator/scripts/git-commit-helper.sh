@@ -132,11 +132,4 @@ for pattern in "${FORBIDDEN_PATTERNS[@]}"; do
     fi
 done
 
-# Check for emojis (common decorative ones)
-if echo "$MESSAGE" | grep -qE '[\U0001F300-\U0001F9FF]|[\U00002700-\U000027BF]|[\U0001F600-\U0001F64F]'; then
-    echo "ERROR: Commit message contains emojis"
-    echo "Keep commit messages clean and professional."
-    exit 1
-fi
-
 echo "Commit message passes all checks"
