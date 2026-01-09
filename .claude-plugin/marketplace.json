@@ -5,14 +5,14 @@
   },
   "metadata": {
     "description": "Ultrawork mode for maximum parallel execution with intelligent subagent use",
-    "version": "0.0.2"
+    "version": "0.0.3"
   },
   "plugins": [
     {
       "name": "oh-my-claude",
       "source": "./",
       "description": "Add 'ultrawork' to any prompt for maximum parallel execution.",
-      "version": "0.0.2",
+      "version": "0.0.3",
       "author": {
         "name": "TechDufus"
       },
