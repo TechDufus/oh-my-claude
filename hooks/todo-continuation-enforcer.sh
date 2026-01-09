@@ -103,5 +103,75 @@ Do NOT ask - just finish the work."
     fi
 done
 
+# Check if todos existed (work was done) - count completed todos
+COMPLETED_TODOS=$(echo "$INPUT" | jq -r '
+  .todos // [] |
+  map(select(.status == "completed")) |
+  length
+' 2>/dev/null || echo "0")
+
+# Also check transcript for completed todos if .todos not directly available
+if [[ "$COMPLETED_TODOS" == "0" ]]; then
+    COMPLETED_TODOS=$(echo "$INPUT" | jq -r '
+      .transcript // [] |
+      [.[] | select(.type == "tool_result" and .tool == "TodoWrite")] |
+      if length > 0 then
+        last.todos // [] |
+        map(select(.status == "completed")) |
+        length
+      else
+        0
+      end
+    ' 2>/dev/null || echo "0")
+fi
+
+# If work was done (completed todos exist), check validation status
+if [[ "$COMPLETED_TODOS" -gt 0 ]] && [[ "$COMPLETED_TODOS" != "null" ]]; then
+    # Check if validation was already triggered in recent transcript
+    VALIDATION_RAN=$(echo "$INPUT" | jq -r '
+      .transcript // [] |
+      [.[] | select(
+        (.type == "tool_use" and .tool == "Task" and (.input // {} | tostring | test("validator"; "i"))) or
+        (.type == "assistant" and (.content // "" | test("validator|validation|oh-my-claude:validator"; "i")))
+      )] |
+      length > 0
+    ' 2>/dev/null || echo "false")
+
+    if [[ "$VALIDATION_RAN" != "true" ]]; then
+        # Validation hasn't run yet - inject prompt to run validator
+        CONTEXT="[AUTO-VALIDATION REQUIRED]
+
+All $COMPLETED_TODOS todo(s) are marked completed. Before stopping, you MUST run validation.
+
+## Required Action
+Use Task with subagent_type=\"oh-my-claude:validator\" to verify the work:
+- Run relevant tests
+- Check for linting errors
+- Verify the implementation matches requirements
+
+Do NOT stop until validation passes. Run the validator now."
+
+        CONTEXT_ESCAPED=$(printf '%s' "$CONTEXT" | jq -Rs .)
+        printf '{"hookSpecificOutput":{"hookEventName":"Stop","decision":"block","reason":"Validation required before completion","additionalContext":%s}}' "$CONTEXT_ESCAPED"
+        exit 0
+    else
+        # Validation already ran - inject completion summary prompt
+        CONTEXT="[COMPLETION SUMMARY REQUIRED]
+
+Work is complete and validated. Before stopping, provide a brief completion summary:
+
+## Summary Format
+1. **What was accomplished** - List the main changes/features implemented
+2. **Files modified** - Key files that were changed
+3. **Validation results** - Brief note on test/lint status
+
+Provide this summary now, then you may stop."
+
+        CONTEXT_ESCAPED=$(printf '%s' "$CONTEXT" | jq -Rs .)
+        printf '{"hookSpecificOutput":{"hookEventName":"Stop","decision":"block","reason":"Completion summary required","additionalContext":%s}}' "$CONTEXT_ESCAPED"
+        exit 0
+    fi
+fi
+
 # No intervention needed - allow stop
 exit 0

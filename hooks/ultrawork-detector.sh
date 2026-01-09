@@ -29,7 +29,7 @@ detect_validation() {
 # =============================================================================
 # ULTRAWORK MODE - Maximum execution with parallel agents
 # =============================================================================
-if [[ "$PROMPT_LOWER" =~ (ultrawork|ulw|just[[:space:]]work|dont[[:space:]]stop|until[[:space:]]done|keep[[:space:]]going|finish[[:space:]]everything|relentless|get[[:space:]]it[[:space:]]done) ]]; then
+if [[ "$PROMPT_LOWER" =~ (ultrawork|ulw|just[[:space:]]work|dont[[:space:]]stop|until[[:space:]]done|keep[[:space:]]going|finish[[:space:]]everything|relentless|get[[:space:]]it[[:space:]]done|make[[:space:]]it[[:space:]]happen|no[[:space:]]excuses|full[[:space:]]send|go[[:space:]]all[[:space:]]in|complete[[:space:]]everything|finish[[:space:]]it|see[[:space:]]it[[:space:]]through|dont[[:space:]]give[[:space:]]up|ship[[:space:]]it|crush[[:space:]]it|nail[[:space:]]it|lets[[:space:]]go|do[[:space:]]it[[:space:]]all|handle[[:space:]]everything) ]]; then
 
     VALIDATION=$(detect_validation)
 
@@ -83,7 +83,7 @@ fi
 # =============================================================================
 # SEARCH MODE - Parallel search agents
 # =============================================================================
-if [[ "$PROMPT_LOWER" =~ (search[[:space:]]for|find[[:space:]]all|locate|where[[:space:]]is|look[[:space:]]for|grep[[:space:]]for|hunt[[:space:]]down|track[[:space:]]down) ]]; then
+if [[ "$PROMPT_LOWER" =~ (search[[:space:]]for|find[[:space:]]all|locate|where[[:space:]]is|look[[:space:]]for|grep[[:space:]]for|hunt[[:space:]]down|track[[:space:]]down|show[[:space:]]me[[:space:]]where|find[[:space:]]me|get[[:space:]]me[[:space:]]all|list[[:space:]]all) ]]; then
 
     CONTEXT='[SEARCH MODE ACTIVE]
 
@@ -113,7 +113,7 @@ fi
 # =============================================================================
 # ANALYZE MODE - Deep analysis before action
 # =============================================================================
-if [[ "$PROMPT_LOWER" =~ (analyze|analyse|understand|explain[[:space:]]how|how[[:space:]]does|investigate|deep[[:space:]]dive|examine|inspect|audit) ]]; then
+if [[ "$PROMPT_LOWER" =~ (analyze|analyse|understand|explain[[:space:]]how|how[[:space:]]does|investigate|deep[[:space:]]dive|examine|inspect|audit|break[[:space:]]down|walk[[:space:]]through|tell[[:space:]]me[[:space:]]about|help[[:space:]]me[[:space:]]understand|whats[[:space:]]going[[:space:]]on) ]]; then
 
     CONTEXT='[ANALYZE MODE ACTIVE]
 
@@ -172,7 +172,7 @@ fi
 # =============================================================================
 # ULTRADEBUG MODE - Systematic debugging
 # =============================================================================
-if [[ "$PROMPT_LOWER" =~ (ultradebug|debug[[:space:]]this|fix[[:space:]]this[[:space:]]bug|troubleshoot|diagnose|why[[:space:]]is[[:space:]]this[[:space:]]failing|root[[:space:]]cause) ]]; then
+if [[ "$PROMPT_LOWER" =~ (ultradebug|debug[[:space:]]this|fix[[:space:]]this[[:space:]]bug|troubleshoot|diagnose|why[[:space:]]is[[:space:]]this[[:space:]]failing|root[[:space:]]cause|whats[[:space:]]wrong|whats[[:space:]]broken|figure[[:space:]]out[[:space:]]why|fix[[:space:]]the[[:space:]]issue|whats[[:space:]]causing) ]]; then
 
     CONTEXT='[ULTRADEBUG MODE ACTIVE]
 

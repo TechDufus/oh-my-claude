@@ -29,6 +29,18 @@ git clone https://github.com/TechDufus/oh-my-claude /tmp/oh-my-claude
 
 Restart Claude Code. Done.
 
+## Update
+
+```bash
+# Refresh marketplace
+claude plugin marketplace update oh-my-claude
+
+# Update to latest version
+claude plugin update oh-my-claude@oh-my-claude
+```
+
+Restart Claude Code to apply changes.
+
 ## Magic Keywords
 
 | Keyword | What Happens |

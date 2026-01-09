@@ -39,7 +39,7 @@ These rules help preserve your context window for reasoning. Follow them by DEFA
 - Scout finds → Librarian reads → You reason
 - Use Glob/Grep for quick searches before delegating
 
-TIP: Use /context command to check context-saving advice anytime.'
+TIP: When in doubt, delegate to an agent - their context is isolated from yours.'
 
 CONTEXT_ESCAPED=$(printf '%s' "$CONTEXT" | jq -Rs .)
 printf '{"hookSpecificOutput":{"hookEventName":"SessionStart","additionalContext":%s}}' "$CONTEXT_ESCAPED"

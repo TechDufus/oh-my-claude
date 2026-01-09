@@ -61,7 +61,7 @@ Scout finds → Librarian reads → Architect plans (if complex)
 
 | Keyword | Effect |
 |---------|--------|
-| **ultrawork** / **ulw** | Maximum parallel execution, zero tolerance for incomplete work |
+| **ultrawork** (+ natural variants like "ship it", "crush it", "finish it", etc.) | Maximum parallel execution, zero tolerance for incomplete work |
 | **ultrathink** | Extended reasoning before action |
 | **ultradebug** | Systematic debugging with evidence-based diagnosis |
 | **analyze** / **investigate** | Deep analysis with parallel context gathering |
@@ -101,9 +101,7 @@ Activates:
 
 | Command | Description |
 |---------|-------------|
-| `/do <task>` | Smart task execution with automatic mode detection |
 | `/prime` | Context recovery after /clear |
-| `/context` | Show context-saving advice and best practices |
 
 ## Auto-Invoked Skills
 
@@ -117,7 +115,7 @@ Activates:
 |------|---------|
 | **SessionStart** | Context Guardian + LSP auto-detection |
 | **UserPromptSubmit** | Keyword detection + pattern-based context tips |
-| **Stop** | Prevent stopping with incomplete todos |
+| **Stop** | Prevent stopping with incomplete todos + auto-validation + completion summary |
 | **PreCompact** | Preserve context before compaction |
 
 ## LSP Support (Auto-Detected)
