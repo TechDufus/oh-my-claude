@@ -149,3 +149,20 @@ export ENABLE_LSP_TOOL=1  # Add to shell profile
 3. **PARALLELIZE** - Launch ALL independent Tasks in ONE message
 4. **TRACK** - TodoWrite is mandatory for non-trivial work
 5. **COMPLETE** - Cannot stop until all todos are done and validation passes
+
+## Development Guidelines
+
+### Version Bumping
+
+Claude Code caches plugins by version. **Any change to cached content requires a version bump** in `.claude-plugin/plugin.json`:
+
+| Change Type | Requires Version Bump |
+|-------------|----------------------|
+| Agents (add/modify/remove) | YES |
+| Hooks | YES |
+| Commands | YES |
+| Skills | YES |
+| CLAUDE.md | NO (not cached) |
+| README.md | NO |
+
+Forgetting to bump the version means users won't see your changes until they manually clear their cache.
