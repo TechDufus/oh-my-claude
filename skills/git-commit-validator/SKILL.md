@@ -7,7 +7,6 @@ allowed-tools:
   - Bash(git add:*)
   - Bash(git commit:*)
   - Bash(git log:*)
-  - Bash(${CLAUDE_PLUGIN_ROOT}/skills/git-commit-validator/scripts/*:*)
   - Read
   - Grep
 ---
@@ -65,13 +64,18 @@ Based on the diff, determine:
 
 ### Step 4: Validate Message
 
-Run the validation script:
-```bash
-${CLAUDE_PLUGIN_ROOT}/skills/git-commit-validator/scripts/git-commit-helper.sh "<commit-message>"
-```
+**Inline validation (no external script needed):**
 
-- Exit 0 = valid, proceed
-- Exit 1 = invalid, fix and retry
+1. **Subject line <= 50 chars** - Count characters, reject if over
+2. **Body lines <= 72 chars** - If body present
+3. **Format check** - Must match: `^[a-z]+(\([a-z0-9\-]+\))?!?: .+$`
+   - Starts with lowercase type (feat, fix, etc.)
+   - Optional scope in parentheses
+   - Colon and space
+   - Description text
+4. **No AI attribution** - Reject if contains: "generated with", "co-authored-by.*claude", "ai-generated"
+
+If validation fails, fix and retry. Do NOT proceed with invalid messages.
 
 ### Step 5: Commit
 
