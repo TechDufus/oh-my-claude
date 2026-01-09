@@ -22,9 +22,10 @@ allowed-tools:
 | Task Type | What To Do |
 |-----------|------------|
 | Typo, single file, <3 steps | Just do it directly |
-| Research, "where is", "how does" | `Task(subagent_type=Explore)` |
+| "Where is X?", find files | `Task(subagent_type="oh-my-claude:scout")` |
+| Read large files | `Task(subagent_type="oh-my-claude:librarian")` |
 | Multiple independent pieces | Launch parallel Tasks in ONE message |
-| Complex, multi-step | Use TodoWrite, delegate to subagents |
+| Complex, multi-step | `Task(subagent_type="oh-my-claude:architect")` to plan |
 
 ## Default Behavior
 
@@ -51,7 +52,7 @@ This activates:
 
 Files >100 lines? Don't read directly. Use:
 ```
-Task(subagent_type=Explore, prompt="Summarize [file] focusing on [what you need]")
+Task(subagent_type="oh-my-claude:librarian", prompt="Read [file] and summarize [what you need]")
 ```
 
 Your context is for reasoning, not storage.

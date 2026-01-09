@@ -19,31 +19,32 @@ Provide a concise reminder of context-saving practices:
 
 ### File Reading
 - <100 lines: Read directly
-- >100 lines: Delegate to oh-my-claude:deep-explorer or oh-my-claude:context-summarizer
+- >100 lines: Delegate to oh-my-claude:librarian
 - Unknown size: Delegate to be safe
 
 ### Search Strategy
+- Use oh-my-claude:scout to find files and locate definitions
 - Use Glob for file patterns (minimal context cost)
 - Use Grep with files_with_matches first
-- Delegate exploration to Task(subagent_type="Explore")
 
 ### Subagent Delegation
-Your context is for REASONING. Subagents handle:
-- Large file reads → deep-explorer returns <800 token summaries
-- Codebase exploration → Explore agent
-- Multi-file operations → parallel-implementer (one task each)
-- Validation → validator agent
+Your context is for REASONING. Agents handle:
+- Finding files → scout (haiku, fast)
+- Large file reads → librarian returns smart summaries
+- Complex planning → architect decomposes tasks
+- Implementation → worker (one task each)
+- Documentation → scribe writes docs
+- Validation → validator runs checks
 
 ### Quick Reference
-| Operation | Tool/Agent |
-|-----------|------------|
-| Find files | Glob |
-| Search content | Grep (files_with_matches) |
-| Read small file | Read |
-| Read large file | Task(deep-explorer) |
-| Explore codebase | Task(Explore) |
-| Implement feature | Task(parallel-implementer) |
-| Run tests/lint | Task(validator) |
+| Operation | Agent |
+|-----------|-------|
+| Find files | oh-my-claude:scout |
+| Read large file | oh-my-claude:librarian |
+| Plan complex task | oh-my-claude:architect |
+| Implement feature | oh-my-claude:worker |
+| Write documentation | oh-my-claude:scribe |
+| Run tests/lint | oh-my-claude:validator |
 
 ### Pro Tips
 - Launch multiple Tasks in ONE message = parallelism

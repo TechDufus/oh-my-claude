@@ -72,9 +72,10 @@ If `--quick` flag provided, STOP HERE.
 
 ## Phase 1: Parallel Subagent Exploration
 
-Launch THREE subagents simultaneously:
+Launch THREE subagents simultaneously using `oh-my-claude:librarian`:
 
 ### Subagent 1: Git Changes Analyst
+`Task(subagent_type="oh-my-claude:librarian", prompt="...")`
 
 Analyze current git state:
 - Branch commits since diverging from main
@@ -84,6 +85,7 @@ Analyze current git state:
 - Work narrative: 2-3 sentences on what developer is working on
 
 ### Subagent 2: GitHub Context Analyst
+`Task(subagent_type="oh-my-claude:librarian", prompt="...")`
 
 Gather GitHub context:
 - Current branch PR status (draft, reviews, CI)
@@ -92,6 +94,7 @@ Gather GitHub context:
 - Recent CI runs
 
 ### Subagent 3: Project Context Analyst
+`Task(subagent_type="oh-my-claude:librarian", prompt="...")`
 
 Gather project-level context:
 - CLAUDE.md "Active Work" section if present

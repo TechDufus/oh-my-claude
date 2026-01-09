@@ -110,15 +110,17 @@ When enabled, Claude Code gets IDE-level code intelligence:
 | **todo-continuation-enforcer** | Prevent stopping with incomplete todos |
 | **context-preserver** | Preserve state before compaction |
 
-### Agents
+### Agent Team
 Use via `Task(subagent_type="oh-my-claude:agent-name")`:
 
-| Agent | Purpose |
-|-------|---------|
-| `deep-explorer` | Thorough codebase exploration |
-| `parallel-implementer` | Focused single-task implementation |
-| `validator` | Run all validation checks |
-| `context-summarizer` | Summarize large files |
+| Agent | Model | Purpose |
+|-------|-------|---------|
+| `scout` | haiku | Find files, locate definitions |
+| `librarian` | sonnet | Smart file reading, summarize large files |
+| `architect` | opus | Task decomposition and planning |
+| `worker` | opus | Focused single-task implementation |
+| `scribe` | opus | Documentation writing |
+| `validator` | haiku | Run tests, linters, type checks |
 
 ### Commands
 | Command | Description |
