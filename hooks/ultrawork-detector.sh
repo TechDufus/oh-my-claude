@@ -199,5 +199,62 @@ Systematic debugging with evidence-based diagnosis.
     exit 0
 fi
 
+# =============================================================================
+# BASELINE MODE - Gentle reminders for potentially large operations
+# These fire when NO ultra* keyword is present but patterns suggest context risk
+# =============================================================================
+
+# Detect patterns suggesting large file operations
+LARGE_FILE_PATTERNS='(read[[:space:]](the[[:space:]])?entire|show[[:space:]]me[[:space:]](all|the[[:space:]]whole)|full[[:space:]]implementation|entire[[:space:]]file|whole[[:space:]]file|all[[:space:]]of[[:space:]]the[[:space:]]code|complete[[:space:]]source|dump[[:space:]]the|cat[[:space:]]the|print[[:space:]]the[[:space:]]file)'
+
+# Detect patterns suggesting multi-file operations
+MULTI_FILE_PATTERNS='(all[[:space:]]files|every[[:space:]]file|each[[:space:]]file|across[[:space:]]the[[:space:]]codebase|throughout[[:space:]]the[[:space:]]project|everywhere|all[[:space:]]the[[:space:]].*[[:space:]]files)'
+
+# Detect exploration patterns that should use subagents
+EXPLORE_PATTERNS='(how[[:space:]]does[[:space:]].*[[:space:]]work|what[[:space:]]does[[:space:]].*[[:space:]]do|walk[[:space:]]me[[:space:]]through|explain[[:space:]]the[[:space:]]codebase|overview[[:space:]]of|architecture|structure[[:space:]]of[[:space:]]the[[:space:]]project)'
+
+if [[ "$PROMPT_LOWER" =~ $LARGE_FILE_PATTERNS ]]; then
+    CONTEXT='[Context Tip: Large File Detected]
+
+Your request suggests reading a potentially large file. Consider:
+- If >100 lines: Use Task(subagent_type="oh-my-claude:deep-explorer") for a summary
+- If unknown size: Delegate to be safe - subagent context is free
+
+This preserves your main context for reasoning.'
+
+    CONTEXT_ESCAPED=$(printf '%s' "$CONTEXT" | jq -Rs .)
+    printf '{"hookSpecificOutput":{"hookEventName":"UserPromptSubmit","additionalContext":%s}}' "$CONTEXT_ESCAPED"
+    exit 0
+fi
+
+if [[ "$PROMPT_LOWER" =~ $MULTI_FILE_PATTERNS ]]; then
+    CONTEXT='[Context Tip: Multi-File Operation Detected]
+
+Your request involves multiple files. Best practice:
+- Use Task(subagent_type="oh-my-claude:deep-explorer") to gather context
+- Launch parallel Tasks for independent files
+- Receive summaries instead of raw content
+
+Your context window is for reasoning, not storing code.'
+
+    CONTEXT_ESCAPED=$(printf '%s' "$CONTEXT" | jq -Rs .)
+    printf '{"hookSpecificOutput":{"hookEventName":"UserPromptSubmit","additionalContext":%s}}' "$CONTEXT_ESCAPED"
+    exit 0
+fi
+
+if [[ "$PROMPT_LOWER" =~ $EXPLORE_PATTERNS ]]; then
+    CONTEXT='[Context Tip: Exploration Request Detected]
+
+For codebase exploration, use:
+- Task(subagent_type="Explore") for quick searches
+- Task(subagent_type="oh-my-claude:deep-explorer") for thorough analysis
+
+These agents return distilled summaries, preserving your context for synthesis.'
+
+    CONTEXT_ESCAPED=$(printf '%s' "$CONTEXT" | jq -Rs .)
+    printf '{"hookSpecificOutput":{"hookEventName":"UserPromptSubmit","additionalContext":%s}}' "$CONTEXT_ESCAPED"
+    exit 0
+fi
+
 # No trigger - pass through
 exit 0

@@ -1,8 +1,26 @@
 # oh-my-claude
 
-Maximum execution through intelligent automation. Just add a keyword to any prompt.
+Maximum execution through intelligent automation. Batteries-included context protection with optional maximum effort modes.
 
-## Magic Keywords
+## Two-Tier Behavior System
+
+### Tier 1: Always-On (Every Session)
+
+The **Context Guardian** activates automatically on every session start, providing baseline context protection:
+
+- **File Reading Rules**: Guidance on when to delegate large files to subagents
+- **Search Strategy**: Best practices for using Glob/Grep efficiently
+- **Subagent Awareness**: Available agents and when to use them
+- **Pattern Detection**: Automatic tips when prompts suggest context-heavy operations
+
+**Detected Patterns** (triggers gentle reminders):
+- Large file requests: "read the entire file", "show me all of", "full implementation"
+- Multi-file operations: "all files", "across the codebase", "throughout the project"
+- Exploration requests: "how does X work", "explain the codebase", "architecture"
+
+### Tier 2: Maximum Effort (Magic Keywords)
+
+Add a keyword to activate intensive execution modes:
 
 | Keyword | Effect |
 |---------|--------|
@@ -25,6 +43,52 @@ Activates:
 - TodoWrite tracking (minimum 3 todos for non-trivial work)
 - Relentless completion (cannot stop with incomplete todos)
 - Project-aware validation
+
+## Context Protection Rules
+
+### File Size Thresholds
+| Size | Action |
+|------|--------|
+| <100 lines | Read directly |
+| >100 lines | Delegate to `oh-my-claude:deep-explorer` or `oh-my-claude:context-summarizer` |
+| Unknown | Delegate to be safe (subagent context is free) |
+
+### Search Strategy
+| Operation | Tool/Agent |
+|-----------|------------|
+| Find files by pattern | Glob |
+| Search file contents | Grep (files_with_matches mode first) |
+| Explore codebase | Task(subagent_type="Explore") |
+| Deep architecture analysis | Task(subagent_type="oh-my-claude:deep-explorer") |
+
+## Available Agents
+
+Use via `Task(subagent_type="oh-my-claude:agent-name")`:
+
+| Agent | Model | Use For |
+|-------|-------|---------|
+| `deep-explorer` | haiku | Thorough codebase exploration, returns <800 token summaries |
+| `context-summarizer` | haiku | Compress large files without consuming main context |
+| `parallel-implementer` | sonnet | Focused single-task implementation |
+| `validator` | haiku | Run linters, tests, validation checks |
+
+## Commands
+
+| Command | Description |
+|---------|-------------|
+| `/do <task>` | Smart task execution with automatic mode detection |
+| `/commit` | Validated git commits (conventional format) |
+| `/prime` | Context recovery after /clear |
+| `/context` | Show context-saving advice and best practices |
+
+## Hooks (Automatic)
+
+| Hook | Purpose |
+|------|---------|
+| **SessionStart** | Context Guardian + LSP auto-detection |
+| **UserPromptSubmit** | Keyword detection + pattern-based context tips |
+| **Stop** | Prevent stopping with incomplete todos |
+| **PreCompact** | Preserve context before compaction |
 
 ## LSP Support (Auto-Detected)
 
@@ -49,45 +113,16 @@ export ENABLE_LSP_TOOL=1  # Add to shell profile
 ```
 
 ### Install Missing Servers
-You install LSP servers yourself. Ensure they're in your PATH.
 ```bash
 ./scripts/install-lsp.sh typescript  # bun > npm
 ./scripts/install-lsp.sh python      # uv > pipx > pip
 ./scripts/install-lsp.sh all --check # Check status
 ```
 
-## Available Agents
-
-Use via `Task(subagent_type="oh-my-claude:agent-name")`:
-
-| Agent | Use For |
-|-------|---------|
-| `deep-explorer` | Thorough codebase exploration, architecture understanding |
-| `parallel-implementer` | Focused single-task implementation |
-| `validator` | Run all validation checks before completion |
-| `context-summarizer` | Summarize large files without consuming main context |
-
-## Commands
-
-| Command | Description |
-|---------|-------------|
-| `/do <task>` | Smart task execution with automatic mode detection |
-| `/commit` | Validated git commits (conventional format) |
-| `/prime` | Context recovery after /clear |
-
-## Hooks (Automatic)
-
-| Hook | Purpose |
-|------|---------|
-| **SessionStart** | Auto-detect languages, check LSP servers |
-| **UserPromptSubmit** | Detect keywords, inject execution directives |
-| **Stop** | Prevent stopping with incomplete todos |
-| **PreCompact** | Preserve context before compaction |
-
 ## Execution Philosophy
 
-1. **PARALLELIZE** - Launch ALL independent Tasks in ONE message
-2. **DELEGATE** - Files >100 lines go to subagents, not main context
-3. **TRACK** - TodoWrite is mandatory for non-trivial work
-4. **COMPLETE** - Cannot stop until all todos are done and validation passes
-5. **NO QUESTIONS** - Make reasonable decisions and document them
+1. **PROTECT CONTEXT** - Your context window is for reasoning, not storing raw code
+2. **DELEGATE LIBERALLY** - Subagents have isolated context; use them freely
+3. **PARALLELIZE** - Launch ALL independent Tasks in ONE message
+4. **TRACK** - TodoWrite is mandatory for non-trivial work
+5. **COMPLETE** - Cannot stop until all todos are done and validation passes
