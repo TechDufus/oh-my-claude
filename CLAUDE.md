@@ -77,9 +77,16 @@ Use via `Task(subagent_type="oh-my-claude:agent-name")`:
 | Command | Description |
 |---------|-------------|
 | `/do <task>` | Smart task execution with automatic mode detection |
-| `/commit` | Validated git commits (conventional format) |
 | `/prime` | Context recovery after /clear |
 | `/context` | Show context-saving advice and best practices |
+
+## Auto-Invoked Skills
+
+| Skill | Trigger | Purpose |
+|-------|---------|---------|
+| `git-commit-validator` | Any commit request | Full commit workflow with validation |
+
+The `git-commit-validator` skill auto-activates when you ask to commit. No `/commit` command needed - just say "commit this" or "make a commit".
 
 ## Hooks (Automatic)
 
