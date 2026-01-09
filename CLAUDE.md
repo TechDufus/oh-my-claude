@@ -119,9 +119,9 @@ Activates:
 | **Stop** | Prevent stopping with incomplete todos + auto-validation + completion summary |
 | **PreCompact** | Preserve context before compaction |
 
-## LSP Diagnostics (Opt-in)
+## LSP Diagnostics (Automatic)
 
-Real-time code diagnostics after every file edit or write operation.
+Real-time code diagnostics after every file edit or write operation. No configuration needed - just works if linters are installed.
 
 ### How It Works
 
@@ -143,17 +143,7 @@ Real-time code diagnostics after every file edit or write operation.
 | `.json` | jq | JSON syntax |
 | `.yaml`, `.yml` | yamllint | YAML syntax and style |
 
-### Enable LSP Diagnostics
-```bash
-export ENABLE_LSP_TOOL=1  # Add to shell profile
-```
-
-### Language Detection (SessionStart)
-
-On session start, oh-my-claude also:
-1. Detects project languages from file extensions
-2. Checks if corresponding LSP servers are installed
-3. Reports status (does NOT auto-install)
+If a linter isn't installed, it's silently skipped - no errors, no noise.
 
 ## Execution Philosophy
 

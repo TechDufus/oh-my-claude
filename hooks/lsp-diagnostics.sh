@@ -5,11 +5,6 @@
 
 set -euo pipefail
 
-# Only run if LSP tools are enabled
-if [[ "${ENABLE_LSP_TOOL:-}" != "1" ]]; then
-    exit 0
-fi
-
 INPUT=$(cat)
 
 # Extract tool name and file path from hook input
