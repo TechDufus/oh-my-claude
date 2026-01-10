@@ -1,45 +1,56 @@
 #!/usr/bin/env bash
 # context-guardian.sh
-# SessionStart hook: Injects always-on context protection rules for every session
-# This is the "batteries included" baseline that makes Claude feel better automatically
+# SessionStart hook: Establishes context protection as STANDARD OPERATING PROCEDURE
+# This runs every session - context protection is not optional
 
 set -euo pipefail
 
-INPUT=$(cat)
-CWD=$(echo "$INPUT" | jq -r '.cwd // "."')
+# Consume stdin (hook input) - not needed for this hook
+cat > /dev/null
 
-# Always inject context protection guidance
-CONTEXT='[oh-my-claude: Context Guardian Active]
+# shellcheck disable=SC2016  # Single quotes intentional - we want literal backticks
+# Inject context protection as standard operating procedure
+CONTEXT='[oh-my-claude: Context Protection ACTIVE]
 
-## Always-On Context Protection
+## Standard Operating Procedure
 
-These rules help preserve your context window for reasoning. Follow them by DEFAULT.
+Your context window is for REASONING, not storage. This is how you operate.
 
-### File Reading Rules
-- **<100 lines**: Read directly with Read tool
-- **>100 lines**: Delegate to Task(subagent_type="oh-my-claude:librarian")
-- **Unknown size**: Delegate to be safe - subagent context is free
-- **Multiple files**: ALWAYS delegate to subagent
+### File Reading Protocol
 
-### Search & Exploration Rules
-- **Finding files**: Use Task(subagent_type="oh-my-claude:scout")
-- **Reading files**: Use Task(subagent_type="oh-my-claude:librarian")
-- **Understanding architecture**: Scout to find, Librarian to read
+| Size | Action |
+|------|--------|
+| **<100 lines** | Read directly |
+| **>100 lines** | `Task(subagent_type="oh-my-claude:librarian")` |
+| **Unknown** | Delegate to librarian |
+| **Multiple files** | ALWAYS delegate |
+
+### Search Protocol
+
+| Task | Use |
+|------|-----|
+| Find files | `oh-my-claude:scout` |
+| Read files | `oh-my-claude:librarian` |
+| Explore | Scout finds → Librarian reads |
 
 ### Your Agent Team
-- `oh-my-claude:scout` - Find files, locate definitions, quick recon
-- `oh-my-claude:librarian` - Smart file reading, summarizes large files
-- `oh-my-claude:architect` - Plan complex tasks, decompose work
-- `oh-my-claude:worker` - Focused single-task implementation
-- `oh-my-claude:scribe` - Write documentation
-- `oh-my-claude:validator` - Run tests, linters, checks
 
-### When in Doubt
-- Delegate to an agent (their context is isolated from yours)
-- Scout finds → Librarian reads → You reason
-- Use Glob/Grep for quick searches before delegating
+| Agent | Job |
+|-------|-----|
+| `oh-my-claude:scout` | Find files, locate definitions |
+| `oh-my-claude:librarian` | Read files, summarize large ones |
+| `oh-my-claude:architect` | Plan complex tasks |
+| `oh-my-claude:worker` | Implement ONE specific task |
+| `oh-my-claude:scribe` | Write documentation |
+| `oh-my-claude:validator` | Run tests and checks |
 
-TIP: When in doubt, delegate to an agent - their context is isolated from yours.'
+### The Pattern
+
+```
+Scout finds → Librarian reads → You reason → Workers implement
+```
+
+Subagent context is ISOLATED from yours. Use them freely - it costs you nothing.'
 
 CONTEXT_ESCAPED=$(printf '%s' "$CONTEXT" | jq -Rs .)
 printf '{"hookSpecificOutput":{"hookEventName":"SessionStart","additionalContext":%s}}' "$CONTEXT_ESCAPED"

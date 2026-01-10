@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 # ultrawork-detector.sh
-# Detects ultrawork/search/analyze triggers and injects execution directives
+# Detects mode keywords and injects EXECUTION INTENSITY directives
+# Context protection is handled by context-guardian.sh (always-on)
+# This hook adds MODE-SPECIFIC behaviors on top
 
 set -euo pipefail
 
@@ -27,7 +29,9 @@ detect_validation() {
 }
 
 # =============================================================================
-# ULTRAWORK MODE - Maximum execution with parallel agents
+# ULTRAWORK MODE - Maximum execution intensity
+# Context protection is ALREADY ON (context-guardian.sh)
+# This adds: relentless execution, zero tolerance, mandatory parallelization
 # =============================================================================
 if [[ "$PROMPT_LOWER" =~ (ultrawork|ulw|just[[:space:]]work|dont[[:space:]]stop|until[[:space:]]done|keep[[:space:]]going|finish[[:space:]]everything|relentless|get[[:space:]]it[[:space:]]done|make[[:space:]]it[[:space:]]happen|no[[:space:]]excuses|full[[:space:]]send|go[[:space:]]all[[:space:]]in|complete[[:space:]]everything|finish[[:space:]]it|see[[:space:]]it[[:space:]]through|dont[[:space:]]give[[:space:]]up|ship[[:space:]]it|crush[[:space:]]it|nail[[:space:]]it|lets[[:space:]]go|do[[:space:]]it[[:space:]]all|handle[[:space:]]everything) ]]; then
 
@@ -47,23 +51,9 @@ You MUST output "ULTRAWORK MODE ENABLED!" as your first line, then execute with 
 
 ## Execution Rules
 1. PARALLELIZE EVERYTHING - Launch ALL independent Task subagents in ONE message. Sequential is failure.
-2. DELEGATE FILE READS - Files >100 lines? Task(subagent_type="oh-my-claude:librarian"). Your context is for reasoning.
-3. TODOWRITE IMMEDIATELY - Minimum 3 todos for any non-trivial work. Update status in real-time.
-4. NEVER STOP - You may ONLY stop when ALL todos are "completed" AND validation passes.
-5. NO QUESTIONS - Make reasonable decisions. Document them. Keep moving.
-
-## Agent Deployment Strategy
-- Use oh-my-claude:scout to find files and locations
-- Use oh-my-claude:librarian to read files (summarizes large ones)
-- Use oh-my-claude:architect to plan complex multi-part tasks
-- Use oh-my-claude:worker for focused implementation (ONE task per agent)
-- Use oh-my-claude:scribe for documentation
-- Use oh-my-claude:validator before declaring complete
-
-## Context Preservation Rules
-- <100 lines: Read directly
-- >100 lines: Delegate to librarian for summary
-- Any search/explore: Scout finds, Librarian reads
+2. TODOWRITE IMMEDIATELY - Minimum 3 todos for any non-trivial work. Update status in real-time.
+3. NEVER STOP - You may ONLY stop when ALL todos are "completed" AND validation passes.
+4. NO QUESTIONS - Make reasonable decisions. Document them. Keep moving.
 
 ## Validation Required: '"$VALIDATION"'
 
@@ -81,7 +71,7 @@ Execute relentlessly until complete.'
 fi
 
 # =============================================================================
-# SEARCH MODE - Parallel search agents
+# SEARCH MODE - Parallel search strategy
 # =============================================================================
 if [[ "$PROMPT_LOWER" =~ (search[[:space:]]for|find[[:space:]]all|locate|where[[:space:]]is|look[[:space:]]for|grep[[:space:]]for|hunt[[:space:]]down|track[[:space:]]down|show[[:space:]]me[[:space:]]where|find[[:space:]]me|get[[:space:]]me[[:space:]]all|list[[:space:]]all) ]]; then
 
@@ -90,14 +80,9 @@ if [[ "$PROMPT_LOWER" =~ (search[[:space:]]for|find[[:space:]]all|locate|where[[
 MAXIMIZE SEARCH EFFORT. Launch multiple search agents IN PARALLEL.
 
 ## Search Strategy
-1. Launch Task(subagent_type="oh-my-claude:scout") for finding files and locations
-2. Use Grep tool for content matching
-3. Use Glob tool for file pattern matching
-4. Consider multiple search terms and variations
-
-## Parallel Execution
-- Launch 2-3 scout Tasks in ONE message with different strategies
+- Launch 2-3 oh-my-claude:scout Tasks in ONE message with different strategies
 - One for exact matches, one for fuzzy/related terms
+- Use Grep for content, Glob for file patterns
 - Combine results and deduplicate
 
 ## Report Format
@@ -111,7 +96,7 @@ MAXIMIZE SEARCH EFFORT. Launch multiple search agents IN PARALLEL.
 fi
 
 # =============================================================================
-# ANALYZE MODE - Deep analysis before action
+# ANALYZE MODE - Deep parallel analysis
 # =============================================================================
 if [[ "$PROMPT_LOWER" =~ (analyze|analyse|understand|explain[[:space:]]how|how[[:space:]]does|investigate|deep[[:space:]]dive|examine|inspect|audit|break[[:space:]]down|walk[[:space:]]through|tell[[:space:]]me[[:space:]]about|help[[:space:]]me[[:space:]]understand|whats[[:space:]]going[[:space:]]on) ]]; then
 
@@ -120,18 +105,11 @@ if [[ "$PROMPT_LOWER" =~ (analyze|analyse|understand|explain[[:space:]]how|how[[
 Gather comprehensive context before providing analysis.
 
 ## Analysis Protocol
-1. Launch Task(subagent_type="oh-my-claude:scout") to find relevant files
-2. Launch Task(subagent_type="oh-my-claude:librarian") to read and summarize
-3. Trace data/control flow through the system
-4. Document assumptions and verify them
-
-## Parallel Context Gathering
-- Scout finds files, Librarian reads them
-- Launch multiple agents for different aspects
-- One for the main component, one for dependencies, one for tests/usage
+- Launch parallel agents: one for main component, one for dependencies, one for tests
+- Trace data/control flow through the system
+- Provide evidence for every claim (file:line references)
 
 ## Output Requirements
-- Provide evidence for every claim (file:line references)
 - No speculation without verification
 - Explain the "why" not just the "what"
 - Identify potential issues or edge cases'
@@ -142,7 +120,7 @@ Gather comprehensive context before providing analysis.
 fi
 
 # =============================================================================
-# ULTRATHINK MODE - Extended reasoning
+# ULTRATHINK MODE - Extended reasoning before action
 # =============================================================================
 if [[ "$PROMPT_LOWER" =~ (ultrathink|think[[:space:]]deeply|deep[[:space:]]analysis|think[[:space:]]hard|careful[[:space:]]analysis|thoroughly[[:space:]]analyze) ]]; then
 
@@ -151,12 +129,11 @@ if [[ "$PROMPT_LOWER" =~ (ultrathink|think[[:space:]]deeply|deep[[:space:]]analy
 Extended reasoning before any action.
 
 ## Thinking Protocol
-1. Use Task(subagent_type="oh-my-claude:scout") to find relevant code
-2. Use Task(subagent_type="oh-my-claude:librarian") to read and understand
-3. Consider 3+ approaches before committing to one
-4. List pros/cons of each approach
-5. Identify edge cases and potential failure modes
-6. Validate ALL assumptions by reading code
+1. Gather context via scout + librarian
+2. Consider 3+ approaches before committing to one
+3. List pros/cons of each approach
+4. Identify edge cases and potential failure modes
+5. Validate ALL assumptions by reading code
 
 ## Requirements
 - No implementation until analysis is complete
@@ -170,7 +147,7 @@ Extended reasoning before any action.
 fi
 
 # =============================================================================
-# ULTRADEBUG MODE - Systematic debugging
+# ULTRADEBUG MODE - Systematic debugging protocol
 # =============================================================================
 if [[ "$PROMPT_LOWER" =~ (ultradebug|debug[[:space:]]this|fix[[:space:]]this[[:space:]]bug|troubleshoot|diagnose|why[[:space:]]is[[:space:]]this[[:space:]]failing|root[[:space:]]cause|whats[[:space:]]wrong|whats[[:space:]]broken|figure[[:space:]]out[[:space:]]why|fix[[:space:]]the[[:space:]]issue|whats[[:space:]]causing) ]]; then
 
@@ -181,87 +158,24 @@ Systematic debugging with evidence-based diagnosis.
 ## Debug Protocol
 1. REPRODUCE - Understand the exact failure condition
 2. ISOLATE - Narrow down to the smallest failing case
-3. TRACE - Use scout + librarian to follow execution path
+3. TRACE - Follow execution path via scout + librarian
 4. HYPOTHESIZE - Form 2-3 theories about root cause
 5. VERIFY - Test each hypothesis with evidence
 6. FIX - Apply minimal fix to address root cause
 7. VALIDATE - Confirm fix works and no regression
 
 ## Evidence Requirements
-- Every hypothesis must have supporting evidence
-- Use actual code references (file:line)
+- Every hypothesis must have supporting evidence (file:line)
 - Check recent changes (git log, git diff)
 - Verify fix with tests
 
 ## Parallel Investigation
-- Launch scout to find relevant code paths
-- Launch librarian to read suspicious files
-- One for the failing code path
-- One for related/similar code that works'
+- Launch multiple agents: one for failing code path, one for similar code that works'
 
     CONTEXT_ESCAPED=$(printf '%s' "$CONTEXT" | jq -Rs .)
     printf '{"hookSpecificOutput":{"hookEventName":"UserPromptSubmit","additionalContext":%s}}' "$CONTEXT_ESCAPED"
     exit 0
 fi
 
-# =============================================================================
-# BASELINE MODE - Gentle reminders for potentially large operations
-# These fire when NO ultra* keyword is present but patterns suggest context risk
-# =============================================================================
-
-# Detect patterns suggesting large file operations
-LARGE_FILE_PATTERNS='(read[[:space:]](the[[:space:]])?entire|show[[:space:]]me[[:space:]](all|the[[:space:]]whole)|full[[:space:]]implementation|entire[[:space:]]file|whole[[:space:]]file|all[[:space:]]of[[:space:]]the[[:space:]]code|complete[[:space:]]source|dump[[:space:]]the|cat[[:space:]]the|print[[:space:]]the[[:space:]]file)'
-
-# Detect patterns suggesting multi-file operations
-MULTI_FILE_PATTERNS='(all[[:space:]]files|every[[:space:]]file|each[[:space:]]file|across[[:space:]]the[[:space:]]codebase|throughout[[:space:]]the[[:space:]]project|everywhere|all[[:space:]]the[[:space:]].*[[:space:]]files)'
-
-# Detect exploration patterns that should use subagents
-EXPLORE_PATTERNS='(how[[:space:]]does[[:space:]].*[[:space:]]work|what[[:space:]]does[[:space:]].*[[:space:]]do|walk[[:space:]]me[[:space:]]through|explain[[:space:]]the[[:space:]]codebase|overview[[:space:]]of|architecture|structure[[:space:]]of[[:space:]]the[[:space:]]project)'
-
-if [[ "$PROMPT_LOWER" =~ $LARGE_FILE_PATTERNS ]]; then
-    CONTEXT='[Context Tip: Large File Detected]
-
-Your request suggests reading a potentially large file. Consider:
-- Use Task(subagent_type="oh-my-claude:librarian") for smart reading
-- Librarian summarizes large files, extracts relevant sections
-- Your context stays clean for reasoning
-
-This preserves your main context for reasoning.'
-
-    CONTEXT_ESCAPED=$(printf '%s' "$CONTEXT" | jq -Rs .)
-    printf '{"hookSpecificOutput":{"hookEventName":"UserPromptSubmit","additionalContext":%s}}' "$CONTEXT_ESCAPED"
-    exit 0
-fi
-
-if [[ "$PROMPT_LOWER" =~ $MULTI_FILE_PATTERNS ]]; then
-    CONTEXT='[Context Tip: Multi-File Operation Detected]
-
-Your request involves multiple files. Best practice:
-- Use Task(subagent_type="oh-my-claude:scout") to find files
-- Use Task(subagent_type="oh-my-claude:librarian") to read them
-- Launch parallel Tasks for independent files
-- Receive summaries instead of raw content
-
-Your context window is for reasoning, not storing code.'
-
-    CONTEXT_ESCAPED=$(printf '%s' "$CONTEXT" | jq -Rs .)
-    printf '{"hookSpecificOutput":{"hookEventName":"UserPromptSubmit","additionalContext":%s}}' "$CONTEXT_ESCAPED"
-    exit 0
-fi
-
-if [[ "$PROMPT_LOWER" =~ $EXPLORE_PATTERNS ]]; then
-    CONTEXT='[Context Tip: Exploration Request Detected]
-
-For codebase exploration, use your agent team:
-- Task(subagent_type="oh-my-claude:scout") to find relevant files
-- Task(subagent_type="oh-my-claude:librarian") to read and summarize
-
-These agents return distilled summaries, preserving your context for synthesis.'
-
-    CONTEXT_ESCAPED=$(printf '%s' "$CONTEXT" | jq -Rs .)
-    printf '{"hookSpecificOutput":{"hookEventName":"UserPromptSubmit","additionalContext":%s}}' "$CONTEXT_ESCAPED"
-    exit 0
-fi
-
-# No trigger - pass through
+# No trigger - pass through (context-guardian already provided baseline rules at SessionStart)
 exit 0

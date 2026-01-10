@@ -2,100 +2,122 @@
 
 Maximum execution through intelligent automation. Batteries-included context protection with a specialized agent team.
 
-## Architecture
+---
 
-Main Claude acts as the **orchestrator** - reasoning, planning, delegating to specialized agents, and synthesizing results. The hooks inject orchestrator behavior automatically.
+## Context Protection (ALWAYS ON)
+
+> **Your context window is for REASONING, not storage.**
+
+This is not a suggestion. This is how you operate with oh-my-claude installed.
+
+### The Golden Rule
+
+**Protect your context. Delegate aggressively. Subagent context is free.**
+
+When you dump a 500-line file into your context, that's 500 lines less reasoning capacity. When a librarian reads it, you get a summary and lose nothing.
+
+### File Reading Protocol
+
+| File Size | Action | Reason |
+|-----------|--------|--------|
+| **<100 lines** | Read directly | Small enough, won't hurt |
+| **>100 lines** | `Task(subagent_type="oh-my-claude:librarian")` | Protect your context |
+| **Unknown size** | Delegate | Better safe than context-bloated |
+| **Multiple files** | ALWAYS delegate | Even small files add up |
+
+### Search Protocol
+
+| Task | Agent | Why |
+|------|-------|-----|
+| Find files | `oh-my-claude:scout` | Fast, returns locations not content |
+| Read files | `oh-my-claude:librarian` | Summarizes, extracts relevant parts |
+| Explore codebase | Scout → Librarian | Find then read, never dump |
+
+### The Pattern
 
 ```
-┌─────────────────────────────────────────────────────────────┐
-│                    MAIN CLAUDE                              │
-│                  (Orchestrator)                             │
-│                                                             │
-│  Hooks inject behavior:                                     │
-│  • Context Guardian → "delegate to your team"               │
-│  • ultrawork mode → "parallelize, never stop"               │
-│  • Pattern detection → "use the right agent"                │
-│                                                             │
-│  Job: REASON, PLAN, DELEGATE, SYNTHESIZE                    │
-└─────────────────────────────────────────────────────────────┘
-                           │
-                           ▼
-┌─────────────────────────────────────────────────────────────┐
-│                     THE TEAM                                │
-│  scout, librarian, architect, worker, scribe, validator     │
-└─────────────────────────────────────────────────────────────┘
+Scout finds → Librarian reads → You reason → Workers implement
 ```
+
+You orchestrate. They do the heavy lifting. Your context stays sharp.
+
+---
 
 ## The Agent Team
 
-Use via `Task(subagent_type="oh-my-claude:agent-name")`:
+Six specialized subagents. Each optimized for one job.
 
-| Agent | Model | Role | When to Use |
-|-------|-------|------|-------------|
+| Agent | Model | Job | When to Use |
+|-------|-------|-----|-------------|
 | **scout** | haiku | FIND | "Where is X?", "Find files matching Y" |
-| **librarian** | sonnet | READ | "Read file X", "Get the auth logic from Y" |
+| **librarian** | sonnet | READ | Any file >100 lines, multiple files |
 | **architect** | opus | PLAN | Complex tasks needing decomposition |
-| **worker** | opus | IMPLEMENT | Focused single-task implementation |
-| **scribe** | opus | DOCUMENT | Write docs, READMEs, comments |
-| **validator** | haiku | CHECK | Run tests, linters, verify work |
-
-### Agent Workflow
-
-```
-Scout finds → Librarian reads → Architect plans (if complex)
-    → Workers implement in parallel → Scribe documents → Validator checks
-```
+| **worker** | opus | BUILD | Focused single-task implementation |
+| **scribe** | opus | WRITE | Documentation, READMEs, comments |
+| **validator** | haiku | CHECK | Tests, linters, verification |
 
 ### Agent Boundaries
 
 | Agent | DOES | DOES NOT |
 |-------|------|----------|
-| **scout** | Find files, locate definitions | Read full content |
-| **librarian** | Read smartly, summarize large files | Search for files |
-| **architect** | Decompose tasks, plan parallelization | Implement code |
-| **worker** | Implement ONE specific task completely | Decide what to build |
+| **scout** | Find files, locate definitions | Read file contents |
+| **librarian** | Read smartly, summarize | Search for files |
+| **architect** | Decompose, plan, parallelize | Write code |
+| **worker** | Implement ONE task completely | Decide what to build |
 | **scribe** | Write documentation | Implement features |
 | **validator** | Run checks, report results | Fix issues |
 
-## Magic Keywords
+### Usage
+
+```
+Task(subagent_type="oh-my-claude:scout", prompt="Find all auth-related files")
+Task(subagent_type="oh-my-claude:librarian", prompt="Summarize src/auth/service.ts")
+Task(subagent_type="oh-my-claude:worker", prompt="Add password reset endpoint to auth service")
+```
+
+---
+
+## Ultrawork Mode (ON DEMAND)
+
+Context protection is ALWAYS on. Ultrawork adds **execution intensity**.
+
+### Trigger Words
+
+| Keyword | What It Adds |
+|---------|--------------|
+| **ultrawork** / **ulw** | Full intensity mode |
+| **ship it**, **crush it**, **finish it** | Same as ultrawork |
+| **just work**, **don't stop**, **until done** | Same as ultrawork |
+
+### What Ultrawork Adds (Beyond Default)
+
+| Behavior | Default | Ultrawork |
+|----------|---------|-----------|
+| Context protection | ON | ON (same) |
+| Parallelization | When sensible | **AGGRESSIVE** - everything in ONE message |
+| TodoWrite | When helpful | **MANDATORY** - minimum 3 todos |
+| Stopping | After milestones | **NEVER** - until ALL todos complete |
+| Questions | When unclear | **NEVER** - decide and document |
+| Partial solutions | Sometimes OK | **ZERO TOLERANCE** |
+| Validation | When appropriate | **REQUIRED** - cannot stop without it |
+
+### The Difference
+
+**Default mode**: "Let me help you with this. Should I read that large file?"
+**Ultrawork mode**: "Deploying 3 parallel workers. TodoWrite initialized. Stopping when tests pass."
+
+---
+
+## Other Magic Keywords
 
 | Keyword | Effect |
 |---------|--------|
-| **ultrawork** (+ natural variants like "ship it", "crush it", "finish it", etc.) | Maximum parallel execution, zero tolerance for incomplete work |
-| **ultrathink** | Extended reasoning before action |
-| **ultradebug** | Systematic debugging with evidence-based diagnosis |
-| **analyze** / **investigate** | Deep analysis with parallel context gathering |
-| **search for** / **find all** | Parallel search agents |
+| **ultrathink** | Extended reasoning with sequential-thinking before action |
+| **ultradebug** | Systematic 7-step debugging protocol |
+| **analyze** | Deep analysis with parallel context gathering |
+| **search for** | Multiple parallel scout agents |
 
-### ultrawork Example
-```
-ultrawork fix all the type errors
-ultrawork implement user authentication with tests
-```
-
-Activates:
-- ZERO TOLERANCE: No partial implementations, no "leaving as exercise"
-- Parallel subagent execution (multiple Tasks in ONE message)
-- Context-preserving file reads (delegate >100 lines to subagents)
-- TodoWrite tracking (minimum 3 todos for non-trivial work)
-- Relentless completion (cannot stop with incomplete todos)
-
-## Context Protection Rules
-
-### File Size Thresholds
-| Size | Action |
-|------|--------|
-| <100 lines | Read directly |
-| >100 lines | Delegate to `oh-my-claude:librarian` |
-| Unknown | Delegate to be safe |
-
-### Search Strategy
-| Operation | Agent |
-|-----------|-------|
-| Find files by pattern | `oh-my-claude:scout` |
-| Read file contents | `oh-my-claude:librarian` |
-| Explore codebase | `oh-my-claude:scout` + `oh-my-claude:librarian` |
-| Plan complex task | `oh-my-claude:architect` |
+---
 
 ## Commands
 
@@ -104,7 +126,7 @@ Activates:
 | `/prime` | Context recovery after /clear |
 | `/lsp` | Show LSP server and linter installation status |
 
-## Auto-Invoked Skills
+## Skills
 
 | Skill | Trigger | Purpose |
 |-------|---------|---------|
@@ -112,35 +134,34 @@ Activates:
 
 ## Hooks (Automatic)
 
-| Hook | Purpose |
-|------|---------|
-| **SessionStart** | Context Guardian + LSP auto-detection |
-| **UserPromptSubmit** | Keyword detection + pattern-based context tips |
-| **PostToolUse** | LSP diagnostics after Edit/Write operations |
-| **Stop** | Prevent stopping with incomplete todos + auto-validation + completion summary |
-| **PreCompact** | Preserve context before compaction |
+| Hook | When | What |
+|------|------|------|
+| **Context Guardian** | Session start | Injects context protection rules |
+| **Ultrawork Detector** | Every prompt | Detects keywords, adjusts intensity |
+| **LSP Diagnostics** | After Edit/Write | Reports errors from LSP or linters |
+| **Todo Enforcer** | On stop | Prevents stopping with incomplete todos |
+| **Context Preserver** | Before compact | Saves state before context compaction |
+
+---
 
 ## LSP Support
 
-Real-time code diagnostics via Claude Code's native LSP integration, with CLI linter fallbacks.
+Real-time diagnostics via Claude Code's native LSP integration, with CLI linter fallbacks.
 
 ### Native LSP Servers
-
-Claude Code manages LSP server lifecycle automatically. Install the server and it just works.
 
 | Language | Server | Install |
 |----------|--------|---------|
 | TypeScript/JS | typescript-language-server | `npm i -g typescript-language-server typescript` |
-| Python | pyright-langserver | `npm i -g pyright` |
-| Bash | bash-language-server | `npm i -g bash-language-server` |
+| Python | pyright | `npm i -g pyright` |
 | Go | gopls | `go install golang.org/x/tools/gopls@latest` |
 | Rust | rust-analyzer | `rustup component add rust-analyzer` |
-| C/C++ | clangd | `brew install llvm` or package manager |
+| C/C++ | clangd | `brew install llvm` |
 | Java | jdtls | Eclipse JDT Language Server |
 | PHP | intelephense | `npm i -g intelephense` |
 | Ruby | solargraph | `gem install solargraph` |
 | Lua | lua-language-server | `brew install lua-language-server` |
-| Zig | zls | `brew install zls` or from source |
+| Zig | zls | `brew install zls` |
 | Swift | sourcekit-lsp | Included with Xcode |
 | Kotlin | kotlin-language-server | `brew install kotlin-language-server` |
 | C# | OmniSharp | `brew install omnisharp` |
@@ -150,70 +171,23 @@ Claude Code manages LSP server lifecycle automatically. Install the server and i
 
 ### CLI Linter Fallbacks
 
-If an LSP server isn't installed, the PostToolUse hook falls back to CLI linters:
+If LSP isn't available, PostToolUse falls back to CLI linters for: shellcheck (sh), tsc (ts), eslint (js), ruff/pyright (py), go vet (go), cargo check (rs), jq (json), yamllint (yaml), tflint (tf), markdownlint (md), hadolint (Dockerfile).
 
-| Extension | Linter | What it checks |
-|-----------|--------|----------------|
-| `.sh`, `.bash` | shellcheck | Shell script issues, portability |
-| `.ts`, `.tsx` | tsc | TypeScript type errors |
-| `.js`, `.jsx` | eslint | JavaScript lint errors |
-| `.py` | ruff/pyright | Python type and lint errors |
-| `.go` | go vet | Go-specific issues |
-| `.rs` | cargo check | Rust compile errors |
-| `.json` | jq | JSON syntax |
-| `.yaml`, `.yml` | yamllint | YAML syntax and style |
-| `.tf`, `.tfvars` | tflint | Terraform issues |
-| `.lua` | luacheck | Lua lint errors |
-| `.md` | markdownlint | Markdown style |
-| `.swift` | swiftlint | Swift style and errors |
-| `.kt`, `.kts` | ktlint | Kotlin style |
-| `.cs` | dotnet build | C# compile errors |
-| `.zig` | zig ast-check | Zig syntax errors |
-| `Dockerfile` | hadolint | Dockerfile best practices |
-
-If neither LSP nor linter is installed, diagnostics are silently skipped.
-
-## Execution Philosophy
-
-1. **PROTECT CONTEXT** - Your context window is for reasoning, not storing raw code
-2. **DELEGATE LIBERALLY** - Agents have isolated context; use them freely
-3. **PARALLELIZE** - Launch ALL independent Tasks in ONE message
-4. **TRACK** - TodoWrite is mandatory for non-trivial work
-5. **COMPLETE** - Cannot stop until all todos are done and validation passes
+---
 
 ## Development Guidelines
 
 ### Version Bumping
 
-Claude Code caches plugins by version. **Any change to cached content requires a version bump** in both `.claude-plugin/plugin.json` AND `.claude-plugin/marketplace.json`:
+Claude Code caches plugins. Any change to hooks, agents, commands, or skills requires bumping version in BOTH:
+- `plugins/oh-my-claude/.claude-plugin/plugin.json`
+- `.claude-plugin/marketplace.json`
 
-| Change Type | Requires Version Bump |
-|-------------|----------------------|
-| Agents (add/modify/remove) | YES |
-| Hooks | YES |
-| Commands | YES |
-| Skills | YES |
-| CLAUDE.md | NO (not cached) |
-| README.md | NO |
+### Plugin Structure
 
-Forgetting to bump the version means users won't see your changes until they manually clear their cache.
+1. Plugins MUST be in subdirectory (`plugins/your-plugin/`)
+2. NEVER use `../` paths in plugin.json
+3. `hooks/hooks.json` is auto-discovered (don't reference in plugin.json)
+4. Use `${CLAUDE_PLUGIN_ROOT}` for hook script paths
 
-### Plugin Structure Gotchas
-
-These will save you hours of debugging:
-
-1. **Plugins MUST live in a subdirectory** - `marketplace.json` at repo root, plugin files in `plugins/your-plugin/`
-
-2. **NEVER use `../` paths in plugin.json** - When installed, files are copied to cache. Paths escaping the plugin directory don't exist.
-   ```json
-   // WRONG: "hooks": "../hooks/hooks.json"
-   // RIGHT: "hooks": "./hooks/hooks.json" (or omit - see #3)
-   ```
-
-3. **hooks/hooks.json is AUTO-DISCOVERED** - Don't reference it in plugin.json or you get "Duplicate hooks file detected"
-
-4. **Use ${CLAUDE_PLUGIN_ROOT} in hooks.json** - For script paths inside hook definitions
-
-5. **marketplace.json source** must point to the plugin subdirectory: `"source": "./plugins/oh-my-claude"`
-
-See `/PLUGIN-STRUCTURE.md` in this repo for the full guide.
+See `/PLUGIN-STRUCTURE.md` for the full guide.
