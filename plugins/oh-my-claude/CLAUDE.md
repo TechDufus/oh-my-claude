@@ -140,7 +140,6 @@ Context protection is ALWAYS on. Ultrawork adds **execution intensity**.
 | **Ultrawork Detector** | Every prompt | Detects keywords, adjusts intensity |
 | **LSP Diagnostics** | After Edit/Write | Reports errors from LSP or linters |
 | **Todo Enforcer** | On stop | Prevents stopping with incomplete todos |
-| **Context Preserver** | Before compact | Saves state before context compaction |
 
 ---
 

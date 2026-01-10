@@ -52,18 +52,6 @@
           }
         ]
       }
-    ],
-    "PreCompact": [
-      {
-        "matcher": ".*",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/context-preserver.sh",
-            "timeout": 5
-          }
-        ]
-      }
     ]
   }
 }
