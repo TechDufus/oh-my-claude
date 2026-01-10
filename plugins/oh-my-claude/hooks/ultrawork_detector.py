@@ -121,13 +121,11 @@ def main() -> None:
     # This adds: relentless execution, zero tolerance, mandatory parallelization
     # ==========================================================================
     if PATTERNS.match("ultrawork", prompt):
-        context = f"""[ULTRAWORK MODE ENABLED!]
+        context = f"""[ULTRAWORK MODE ACTIVE]
 
 This is RELENTLESS MODE. You will work until COMPLETE, not until tired.
 You will find problems before the user does. You will not cut corners.
 Every task spawns consideration of the next task. Momentum is everything.
-
-You MUST output "ULTRAWORK MODE ENABLED!" as your first line, then execute with maximum intensity.
 
 ## ORCHESTRATOR PROTOCOL (MANDATORY)
 
