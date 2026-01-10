@@ -142,6 +142,7 @@ Use via `Task(subagent_type="oh-my-claude:agent-name")`:
 | `/do <task>` | Smart task router with mode detection |
 | `/commit` | Validated conventional commits |
 | `/prime` | Context recovery after /clear |
+| `/lsp` | Show LSP/linter installation status |
 
 ## Philosophy
 

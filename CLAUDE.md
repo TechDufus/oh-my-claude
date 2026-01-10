@@ -102,6 +102,7 @@ Activates:
 | Command | Description |
 |---------|-------------|
 | `/prime` | Context recovery after /clear |
+| `/lsp` | Show LSP server and linter installation status |
 
 ## Auto-Invoked Skills
 
