@@ -20,6 +20,11 @@ ulw refactor the entire auth system
 implement user analytics with tests, just get it done
 ```
 
+<p align="center">
+  <a href="https://github.com/user-attachments/assets/a9f7f8ff-b0e7-4ea3-a7df-74969beb19fb"><img src="https://github.com/user-attachments/assets/a9f7f8ff-b0e7-4ea3-a7df-74969beb19fb" alt="Demo GIF"></a>
+</p>
+
+
 Claude will parallelize everything, delegate file reads to subagents, track progress with todos, and refuse to stop until the job is done. No partial implementations. No asking for permission. Just execution.
 
 [Install it](#install) and start using it. Come back here when you want the details.
