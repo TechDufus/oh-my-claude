@@ -1,8 +1,19 @@
 <img width="1328" height="611" alt="oh-my-claude_hero" src="https://github.com/user-attachments/assets/ca862678-da89-45c3-8385-fb45415c1b6e" />
 
-# oh-my-claude
+<p align="center">
+  <a href="https://github.com/TechDufus/oh-my-claude/releases"><img src="https://img.shields.io/github/v/release/TechDufus/oh-my-claude?style=flat-square&label=version" alt="Version"></a>
+  <a href="https://github.com/TechDufus/oh-my-claude/blob/main/LICENSE"><img src="https://img.shields.io/github/license/TechDufus/oh-my-claude?style=flat-square" alt="License"></a>
+  <a href="https://github.com/TechDufus/oh-my-claude/stargazers"><img src="https://img.shields.io/github/stars/TechDufus/oh-my-claude?style=flat-square" alt="Stars"></a>
+  <a href="https://github.com/TechDufus/oh-my-claude/issues"><img src="https://img.shields.io/github/issues/TechDufus/oh-my-claude?style=flat-square" alt="Issues"></a>
+</p>
 
-Add **ultrawork** to any prompt. That's it.
+<h3 align="center">Turn Claude Code into a relentless parallel execution engine.</h3>
+
+---
+
+## TL;DR — Skip This README
+
+Just add **ultrawork** to any prompt:
 
 ```
 ultrawork fix all the type errors
@@ -10,9 +21,48 @@ ultrawork refactor the entire auth system
 ultrawork implement user analytics with tests
 ```
 
+Claude will parallelize everything, delegate file reads to subagents, track progress with todos, and refuse to stop until the job is done. No partial implementations. No asking for permission. Just execution.
+
+[Install it](#install) and start using it. Come back here when you want the details.
+
+---
+
+## Table of Contents
+
+- [Why This Exists](#why-this-exists)
+- [Install](#install)
+- [Magic Keywords](#magic-keywords)
+- [What Ultrawork Actually Does](#what-ultrawork-actually-does)
+- [The Agent Team](#the-agent-team)
+- [LSP Support](#lsp-support)
+- [All Components](#all-components)
+- [For LLM Agents](#for-llm-agents)
+- [Philosophy](#philosophy)
+- [Contributing](#contributing)
+- [Uninstall](#uninstall)
+
+---
+
+## Why This Exists
+
+Claude Code is powerful, but it's polite. Too polite. It asks permission. It implements things one at a time. It stops to check if you're happy.
+
+Sometimes you don't want a conversation. You want a task force.
+
+**oh-my-claude** transforms Claude from a helpful assistant into an autonomous execution engine:
+- **Parallel by default** — Launch multiple subagents in a single message
+- **Context-aware** — Delegates bulk reads to subagents so your main context stays sharp
+- **Relentless** — Won't stop until all todos are complete and tests pass
+- **Zero tolerance** — No "simplified versions," no "leaving as exercise," no scope reduction
+
+One keyword. Total transformation.
+
+---
+
 ## Install
 
 ### From GitHub (recommended)
+
 ```bash
 # In Claude Code:
 /plugin marketplace add TechDufus/oh-my-claude
@@ -20,6 +70,7 @@ ultrawork implement user analytics with tests
 ```
 
 ### From Local Directory
+
 ```bash
 git clone https://github.com/TechDufus/oh-my-claude /tmp/oh-my-claude
 # In Claude Code:
@@ -29,203 +80,207 @@ git clone https://github.com/TechDufus/oh-my-claude /tmp/oh-my-claude
 
 Restart Claude Code. Done.
 
-## Update
+### Update
 
 ```bash
 # Refresh marketplace
-claude plugin marketplace update oh-my-claude
+/plugin marketplace update oh-my-claude
 
 # Update to latest version
-claude plugin update oh-my-claude@oh-my-claude
+/plugin update oh-my-claude@oh-my-claude
 ```
 
-Restart Claude Code to apply changes.
+---
 
 ## Magic Keywords
 
-| Keyword | What Happens |
-|---------|--------------|
-| **ultrawork** / **ulw** | Maximum parallel execution, won't stop until done |
-| **ultrathink** | Extended reasoning before any action |
+| Keyword | Effect |
+|---------|--------|
+| **ultrawork** / **ulw** | Maximum parallel execution — won't stop until done |
+| **ultrathink** | Extended reasoning with sequential-thinking MCP before action |
 | **ultradebug** | Systematic debugging with evidence-based diagnosis |
 | **analyze** | Deep analysis with parallel context gathering |
 | **search for** | Multiple parallel search agents |
 
-### Alternate Triggers
-These also activate ultrawork mode:
+### Natural Language Triggers
+
+These phrases also activate ultrawork mode:
 - `just work`, `don't stop`, `until done`
 - `keep going`, `finish everything`, `relentless`, `get it done`
 
-## What Happens in Ultrawork Mode
+---
 
-1. **PARALLELIZE** - Launches independent tasks simultaneously (multiple in ONE message)
-2. **DELEGATE** - Large files (>100 lines) go to subagents, not your context
-3. **TRACK** - Creates todos immediately, updates them in real-time
-4. **WON'T STOP** - Cannot stop until ALL todos complete AND validation passes
-5. **VALIDATE** - Auto-detects project type and runs appropriate tests/lints
-6. **ZERO TOLERANCE** - No partial implementations, no "simplified versions"
+## What Ultrawork Actually Does
 
-## LSP Support (Auto-Detected)
+When you prefix a prompt with **ultrawork**, Claude's behavior changes fundamentally:
 
-On session start, oh-my-claude **detects** your project languages and **checks** for LSP servers. It does NOT auto-install anything - you install the servers you need.
+| Behavior | Normal Mode | Ultrawork Mode |
+|----------|-------------|----------------|
+| Task execution | Sequential, one at a time | **Parallel** — multiple subagents in ONE message |
+| File reading | Loads into main context | **Delegated** — librarian subagent reads, you get summaries |
+| Progress tracking | Optional | **Mandatory** — TodoWrite immediately, update in real-time |
+| Stopping condition | After each step | **Only when ALL todos complete AND validation passes** |
+| Partial solutions | Accepted | **Zero tolerance** — full implementation or nothing |
+| Asking permission | Frequent | **Never** — makes reasonable decisions, documents them |
 
-### What You Get
-- **Auto-detection** of TypeScript, Python, Go, Rust, Java, C/C++, PHP, Ruby, Kotlin, Swift, Lua, Zig, Terraform, YAML, Dockerfile, Markdown
-- **Status report** showing which LSP servers are available vs missing
-- **Installation guidance** with commands for missing servers
+The hook intercepts your prompt, detects the keyword, and injects execution directives that override Claude's default politeness.
+
+---
+
+## The Agent Team
+
+Six specialized subagents, each optimized for a specific role:
+
+| Agent | Model | What It Does |
+|-------|-------|--------------|
+| **scout** | haiku | Fast recon — finds files, locates definitions, checks existence |
+| **librarian** | sonnet | Smart reading — summarizes large files, extracts relevant sections |
+| **architect** | opus | Planning — decomposes complex tasks, identifies parallelization |
+| **worker** | opus | Implementation — executes ONE specific task completely |
+| **scribe** | opus | Documentation — writes clear docs for code, APIs, systems |
+| **validator** | haiku | QA — runs tests, linters, type checks, reports pass/fail |
+
+### Usage
+
+```
+Task(subagent_type="oh-my-claude:scout", prompt="Find all auth-related files")
+Task(subagent_type="oh-my-claude:librarian", prompt="Summarize src/auth/service.ts")
+Task(subagent_type="oh-my-claude:worker", prompt="Add password reset endpoint")
+```
+
+### Why Subagents Matter
+
+Subagent context is **isolated** from your main context. When a librarian reads a 2000-line file, those lines don't consume your context window — you get a summary. This keeps your main Claude sharp for reasoning instead of drowning in file contents.
+
+---
+
+## LSP Support
+
+oh-my-claude auto-detects your project languages and checks for LSP servers on session start. It reports what's available and what's missing.
+
+### Supported Languages
+
+TypeScript, Python, Go, Rust, Java, C/C++, PHP, Ruby, Kotlin, Swift, Lua, Zig, Terraform, YAML, Dockerfile, Markdown
 
 ### Enable LSP Tools
+
 ```bash
 # Add to your shell profile (.zshrc, .bashrc, etc.)
 export ENABLE_LSP_TOOL=1
 ```
 
-### Install LSP Servers (Your Responsibility)
+### Check Status
 
-LSP servers must be installed and **in your PATH**. Use the helper script or install manually:
+```bash
+/lsp  # Shows what's installed vs missing
+```
+
+### Install Servers
+
+LSP servers must be in your PATH. Use the helper or install manually:
 
 ```bash
 # Helper script (auto-detects best package manager)
-./scripts/install-lsp.sh typescript  # bun > npm > yarn > pnpm
-./scripts/install-lsp.sh python      # uv > pipx > pip
-./scripts/install-lsp.sh go          # go install
-./scripts/install-lsp.sh rust        # rustup > brew
-./scripts/install-lsp.sh all --check # Check what's installed
+./plugins/oh-my-claude/scripts/install-lsp.sh typescript
+./plugins/oh-my-claude/scripts/install-lsp.sh python
+./plugins/oh-my-claude/scripts/install-lsp.sh all --check
 
-# Or install manually - just ensure it's in PATH:
+# Or manually:
 bun install -g typescript-language-server typescript
 uv tool install pyright
 go install golang.org/x/tools/gopls@latest
 rustup component add rust-analyzer
-gem install solargraph
 ```
 
-**Important:** After installing, verify the server is in your PATH:
-```bash
-which typescript-language-server  # Should return a path
-which gopls                       # Should return a path
-```
+### Available LSP Tools
 
-### LSP Tools Available
-When enabled, Claude Code gets IDE-level code intelligence:
-- `goToDefinition` - Jump to where a symbol is defined
-- `findReferences` - Find all usages of a symbol
-- `hover` - Get type info and documentation
-- `documentSymbol` - Get file outline
-- `getDiagnostics` - Get errors and warnings
+When enabled, Claude gets IDE-level intelligence:
+- `goToDefinition` — Jump to symbol definition
+- `findReferences` — Find all usages
+- `hover` — Type info and documentation
+- `documentSymbol` — File outline
+- `getDiagnostics` — Errors and warnings
 
-## Included Components
+---
+
+## All Components
 
 ### Hooks (Automatic)
-| Hook | Purpose |
-|------|---------|
-| **lsp-auto-config** | Detect languages, check/report LSP status |
-| **ultrawork-detector** | Detect keywords, inject execution directives |
-| **todo-continuation-enforcer** | Prevent stopping with incomplete todos |
-| **context-preserver** | Preserve state before compaction |
 
-### Agent Team
-Use via `Task(subagent_type="oh-my-claude:agent-name")`:
-
-| Agent | Model | Purpose |
-|-------|-------|---------|
-| `scout` | haiku | Find files, locate definitions |
-| `librarian` | sonnet | Smart file reading, summarize large files |
-| `architect` | opus | Task decomposition and planning |
-| `worker` | opus | Focused single-task implementation |
-| `scribe` | opus | Documentation writing |
-| `validator` | haiku | Run tests, linters, type checks |
+| Hook | When | What |
+|------|------|------|
+| **lsp-auto-config** | Session start | Detects languages, checks LSP status |
+| **ultrawork-detector** | Prompt submit | Detects keywords, injects execution directives |
+| **todo-continuation-enforcer** | Stop | Prevents stopping with incomplete todos |
+| **context-preserver** | Pre-compact | Preserves state before context compaction |
+| **lsp-diagnostics** | Post tool use | Reports errors after file edits |
 
 ### Commands
+
 | Command | Description |
 |---------|-------------|
-| `/do <task>` | Smart task router with mode detection |
-| `/commit` | Validated conventional commits |
 | `/prime` | Context recovery after /clear |
 | `/lsp` | Show LSP/linter installation status |
 
+### Skills
+
+| Skill | Trigger |
+|-------|---------|
+| **git-commit-validator** | Auto-invoked on commit requests |
+
+---
+
+## For LLM Agents
+
+If you're an AI agent installing this plugin, here are the exact steps:
+
+```bash
+# Step 1: Add marketplace
+/plugin marketplace add TechDufus/oh-my-claude
+
+# Step 2: Install plugin
+/plugin install oh-my-claude@oh-my-claude
+
+# Step 3: Verify installation
+/plugin
+# Should show: oh-my-claude @ oh-my-claude, Status: Enabled
+
+# Step 4: User must restart Claude Code (you cannot do this)
+# Inform user: "Please restart Claude Code to activate the plugin"
+```
+
+After restart, use **ultrawork** in any prompt to activate parallel execution mode.
+
+---
+
 ## Philosophy
 
-> Your context is for reasoning, not storage.
+> **Your context is for reasoning, not storage.**
 
-- Delegate bulk reads to subagents
-- Launch parallel tasks in single messages
-- Track everything with TodoWrite
-- Never stop until done
-- No partial solutions, no asking for permission
+- Delegate bulk reads to subagents — their context is free
+- Launch parallel tasks in single messages — sequential is failure
+- Track everything with TodoWrite — no task forgotten
+- Never stop until done — incomplete todos mean keep working
+- No partial solutions — deliver exactly what was asked
+
+---
 
 ## Contributing
 
-### Adding LSP Support for a New Language
+### Adding LSP Support
 
-Two extension points:
+1. Create `plugins/oh-my-claude/lsp/<language>.lsp.json`
+2. Add fallback to `plugins/oh-my-claude/hooks/lsp-diagnostics.sh`
 
-#### 1. Native LSP Config
-
-Create `lsp/<language>.lsp.json`:
-
-```json
-{
-  "command": "language-server-binary",
-  "args": ["--stdio"],
-  "transport": "stdio",
-  "extensionToLanguage": {
-    ".ext": "language-id"
-  },
-  "initializationOptions": {},
-  "settings": {}
-}
-```
-
-**Required fields:**
-- `command` - LSP server binary name
-- `args` - Usually `["--stdio"]`
-- `transport` - Always `"stdio"`
-- `extensionToLanguage` - Map extensions to [LSP language IDs](https://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification/#textDocumentItem)
-
-#### 2. CLI Linter Fallback
-
-Add a case block to `hooks/lsp-diagnostics.sh`:
-
-```bash
-ext)
-    if command -v linter &>/dev/null; then
-        DIAGNOSTICS=$(linter --flags "$FILE_PATH" 2>&1) || true
-        if [[ -n "$DIAGNOSTICS" ]]; then
-            if echo "$DIAGNOSTICS" | grep -q 'error'; then
-                SEVERITY="error"
-            else
-                SEVERITY="warning"
-            fi
-        fi
-    fi
-    ;;
-```
-
-**Guidelines:**
-- Use `command -v` to check linter exists
-- Append `|| true` to prevent script failure
-- Parse output to set `SEVERITY` (error/warning/info)
-- Prefer machine-readable output formats
+See [PLUGIN-STRUCTURE.md](./PLUGIN-STRUCTURE.md) for the full guide.
 
 ### Version Bumping
 
-Claude Code caches plugins. **Any change requires a version bump** in `.claude-plugin/plugin.json`:
+Any change to cached content requires version bumps in BOTH:
+- `plugins/oh-my-claude/.claude-plugin/plugin.json`
+- `.claude-plugin/marketplace.json`
 
-| Change Type | Bump Version? |
-|-------------|---------------|
-| Agents, Hooks, Skills, LSP configs | YES |
-| CLAUDE.md, README.md | NO |
-
-### Testing
-
-```bash
-# Validate LSP config syntax
-jq . lsp/your-language.lsp.json
-
-# Test linter hook
-echo '{"tool_name":"Write","tool_input":{"file_path":"test.ext"}}' | ./hooks/lsp-diagnostics.sh
-```
+---
 
 ## Uninstall
 
@@ -233,14 +288,10 @@ echo '{"tool_name":"Write","tool_input":{"file_path":"test.ext"}}' | ./hooks/lsp
 /plugin uninstall oh-my-claude@oh-my-claude
 ```
 
+---
+
 ## Credits
 
 Inspired by [oh-my-opencode](https://github.com/code-yeongyu/oh-my-opencode).
 
-## Sources
-
-LSP implementation informed by:
-- [Claude Code native LSP support](https://news.ycombinator.com/item?id=46355165)
-- [boostvolt/claude-code-lsps](https://github.com/boostvolt/claude-code-lsps)
-- [Piebald-AI/claude-code-lsps](https://github.com/Piebald-AI/claude-code-lsps)
-- [ktnyt/cclsp](https://github.com/ktnyt/cclsp)
+LSP implementation informed by [boostvolt/claude-code-lsps](https://github.com/boostvolt/claude-code-lsps), [Piebald-AI/claude-code-lsps](https://github.com/Piebald-AI/claude-code-lsps), and [ktnyt/cclsp](https://github.com/ktnyt/cclsp).
