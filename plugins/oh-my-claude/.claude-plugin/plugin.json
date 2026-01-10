@@ -1,6 +1,6 @@
 {
   "name": "oh-my-claude",
-  "version": "0.0.14",
+  "version": "0.0.15",
   "description": "Add 'ultrawork' to any prompt for maximum parallel execution.",
   "author": {
     "name": "TechDufus",
@@ -9,7 +9,6 @@
   "repository": "https://github.com/TechDufus/oh-my-claude",
   "license": "MIT",
   "keywords": ["ultrawork", "parallel", "subagents", "workflow"],
-  "hooks": "./hooks/hooks.json",
   "skills": [
     "./skills/git-commit-validator/SKILL.md"
   ]
