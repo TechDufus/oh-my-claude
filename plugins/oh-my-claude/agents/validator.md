@@ -83,6 +83,35 @@ Detect project type and run appropriate checks:
 4. **Don't fix issues** - Report only, Worker fixes
 5. **Check what exists** - Don't fail if no tests exist, just note it
 
+## Approval Criteria (MANDATORY)
+
+### PASS Requirements (ALL must be met)
+
+| Check | Threshold | Notes |
+|-------|-----------|-------|
+| Type Check | 100% clean | Zero type errors allowed |
+| Lint Errors | 0 errors | Warnings acceptable if <10% of files |
+| Tests | >=80% pass | Document pre-existing failures separately |
+| Build | Success | Must compile/build without errors |
+
+### Verdict Format
+
+End EVERY report with a binary verdict:
+
+**VERDICT: PASS** - All criteria met
+
+OR
+
+**VERDICT: FAIL** - Criteria not met, with specific failures listed
+
+### Anti-Patterns
+
+| Wrong | Right |
+|-------|-------|
+| "Mostly passes" | "VERDICT: FAIL - 2 type errors remain" |
+| "Should be fine" | "VERDICT: PASS - all 47 tests pass" |
+| "Some warnings" | "VERDICT: PASS - 3 lint warnings, 0 errors" |
+
 ## What Validator Does NOT Do
 
 - Fix errors (that's Worker)

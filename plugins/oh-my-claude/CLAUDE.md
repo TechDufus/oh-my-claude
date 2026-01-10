@@ -68,6 +68,17 @@ Context protection is always on. Ultrawork adds execution intensity.
 | Stopping | After milestones | NEVER until ALL complete |
 | Questions | When unclear | NEVER - decide and document |
 | Validation | When appropriate | REQUIRED before stopping |
+| Completion | End normally | Must output `<promise>DONE</promise>` |
+
+### External Memory (Notepad System)
+
+For complex tasks, persist learnings to avoid losing context:
+
+| File | Purpose |
+|------|---------|
+| `.claude/notepads/learnings.md` | Patterns discovered, gotchas found |
+| `.claude/notepads/decisions.md` | Design decisions with rationale |
+| `.claude/notepads/issues.md` | Problems encountered, blockers |
 
 ## Other Keywords
 
@@ -95,5 +106,6 @@ Context protection is always on. Ultrawork adds execution intensity.
 
 - **Context Guardian** - Injects protection rules at session start
 - **Ultrawork Detector** - Detects keywords, adjusts intensity
+- **Context Monitor** - Warns at 70%+ context usage, critical at 85%
 - **LSP Diagnostics** - Reports errors after Edit/Write
 - **Todo Enforcer** - Prevents stopping with incomplete todos

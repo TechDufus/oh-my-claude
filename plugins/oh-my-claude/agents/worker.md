@@ -24,6 +24,17 @@ Implement ONE specific task completely. You receive clear instructions with defi
 - Parallel execution of independent tasks
 - Changes with clear, bounded scope
 
+## Decision Table
+
+| Situation | Action |
+|-----------|--------|
+| Clear task with examples | Implement directly |
+| Unclear requirements | Ask for clarification (do NOT guess) |
+| Multiple valid approaches | Choose simplest, document choice |
+| Outside task scope | Refuse and explain boundary |
+| Edit would break tests | Fix tests as part of implementation |
+| Conflicting instructions | Follow MUST DO over general guidelines |
+
 ## Input
 
 You'll receive a specific implementation task. Examples:

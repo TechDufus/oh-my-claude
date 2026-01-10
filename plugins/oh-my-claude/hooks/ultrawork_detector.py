@@ -236,6 +236,33 @@ When you think you're done, STOP and verify:
 
 If you skipped any of these steps, GO BACK and complete them.
 
+## COMPLETION PROMISE (MANDATORY)
+
+When you are TRULY DONE with ALL work, you MUST end your final message with:
+
+<promise>DONE</promise>
+
+This signals task completion. Without this tag, work is assumed to continue.
+Do NOT output this tag until:
+- ALL todos are marked completed
+- ALL validation has passed
+- You have verified your work
+
+## EXTERNAL MEMORY (RECOMMENDED)
+
+For complex tasks, persist learnings to avoid losing context:
+
+| File | Purpose |
+|------|---------|
+| `.claude/notepads/learnings.md` | Patterns discovered, gotchas found |
+| `.claude/notepads/decisions.md` | Design decisions with rationale |
+| `.claude/notepads/issues.md` | Problems encountered, blockers |
+
+**Protocol:**
+- Write to notepads BEFORE context fills up
+- Read notepads when resuming work
+- Include notepad wisdom in agent delegations
+
 Execute relentlessly until complete."""
 
         output_context("UserPromptSubmit", context)

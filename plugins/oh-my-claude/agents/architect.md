@@ -79,6 +79,28 @@ After core auth is working:
 - Critical path: Phase 1 → Phase 2 → Phase 4
 ```
 
+## Critical Warnings
+
+### Subagent Verification Required
+
+Subagents may hallucinate file paths, function names, or claim success without verification.
+After receiving agent results, the orchestrator MUST verify critical claims with direct tool calls.
+
+**Verification Checklist:**
+- Files claimed to exist → Verify with Glob/Read
+- Tests claimed to pass → Run tests again
+- Code claimed complete → Read and inspect
+
+### Anti-Patterns
+
+| Wrong | Right |
+|-------|-------|
+| Trust agent file paths blindly | Verify with Glob/Read |
+| Accept "done" claims | Check actual files |
+| Plan without exploring first | Scout the codebase first |
+| Single vague task | Atomic, specific tasks |
+| No verification step | Verification as final step |
+
 ## Rules
 
 1. **Explore first** - Understand codebase structure before planning
@@ -86,6 +108,9 @@ After core auth is working:
 3. **Maximize parallelism** - Group independent tasks together
 4. **Assign to right agent** - Scout for finding, Worker for implementing, etc.
 5. **Define clear boundaries** - Each task should have specific files/scope
+6. **Always include a verification phase** - Plans must end with validation
+7. **Break complex tasks into atomic steps** - Each step should be independently testable
+8. **Identify file dependencies before parallel execution** - Prevent race conditions
 
 ## What Architect Does NOT Do
 

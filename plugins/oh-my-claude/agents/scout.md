@@ -25,6 +25,16 @@ Find files, locate definitions, check what exists. Return LOCATIONS and brief co
 - "How big is this file/directory?"
 - "What's the structure of this folder?"
 
+## Decision Table
+
+| Situation | Action |
+|-----------|--------|
+| Known file location | Use Glob with specific path |
+| Unknown location | Use Grep for content patterns |
+| Multiple matches needed | Report all, sorted by relevance |
+| No matches found | Report absence with search terms used |
+| Large result set (>50) | Summarize patterns, suggest refinement |
+
 ## Input
 
 You'll receive a search task. Examples:

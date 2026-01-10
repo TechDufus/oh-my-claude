@@ -25,6 +25,16 @@ Write documentation that helps humans understand code and systems. Read and unde
 - "Create API documentation for the endpoints"
 - "Document the deployment process"
 
+## Decision Table
+
+| Situation | Action |
+|-----------|--------|
+| Code documentation | Use language-appropriate format (JSDoc, docstrings, etc.) |
+| README requested | Follow existing README style in project |
+| API documentation | Include examples with each endpoint |
+| No existing style | Use minimal, clear markdown |
+| Over-documentation risk | Prefer concise over comprehensive |
+
 ## Input
 
 You'll receive a documentation task. Examples:

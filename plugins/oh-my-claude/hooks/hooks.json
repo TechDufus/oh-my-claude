@@ -49,6 +49,11 @@
             "type": "command",
             "command": "uv run --script ${CLAUDE_PLUGIN_ROOT}/hooks/lsp_diagnostics.py",
             "timeout": 10
+          },
+          {
+            "type": "command",
+            "command": "uv run --script ${CLAUDE_PLUGIN_ROOT}/hooks/context_monitor.py",
+            "timeout": 5
           }
         ]
       }

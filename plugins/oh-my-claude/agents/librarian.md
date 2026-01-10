@@ -22,6 +22,16 @@ Read files intelligently. For large files, summarize or extract relevant section
 - "What does this config file contain?"
 - "Extract the error handling from Z"
 
+## Decision Table
+
+| Situation | Action |
+|-----------|--------|
+| Small file (<100 lines) | Read and summarize inline |
+| Large file (>100 lines) | Extract relevant sections only |
+| Multiple files requested | Summarize each with section headers |
+| Binary/unreadable file | Report as unreadable, skip |
+| File not found | Report missing, suggest alternatives |
+
 ## Input
 
 You'll receive a file path and optionally a focus query. Examples:
