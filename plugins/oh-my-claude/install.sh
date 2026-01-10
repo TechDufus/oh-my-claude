@@ -16,6 +16,46 @@ if ! command -v jq &> /dev/null; then
     exit 1
 fi
 
+# Check/install uv (required for Python hooks)
+# shellcheck disable=SC2034  # UV_INSTALLED is used at end of script
+UV_INSTALLED=false
+if ! command -v uv &> /dev/null; then
+    echo "uv not found, attempting to install..."
+
+    # Detect Windows (MINGW/MSYS/CYGWIN)
+    case "$(uname -s)" in
+        MINGW*|MSYS*|CYGWIN*)
+            echo "WARNING: Windows detected. Please install uv manually:"
+            echo "  powershell -c \"irm https://astral.sh/uv/install.ps1 | iex\""
+            echo "  or: pip install uv"
+            echo "Python hooks may not work without uv."
+            ;;
+        *)
+            # macOS/Linux: auto-install via curl
+            if curl -LsSf https://astral.sh/uv/install.sh | sh; then
+                # Add ~/.local/bin to PATH for current session
+                export PATH="${HOME}/.local/bin:${PATH}"
+
+                # Verify installation succeeded
+                if command -v uv &> /dev/null; then
+                    echo "uv installed successfully."
+                    UV_INSTALLED=true
+                else
+                    echo "WARNING: uv install script ran but uv not found in PATH."
+                    echo "You may need to restart your shell or add ~/.local/bin to PATH."
+                    echo "Python hooks may not work without uv."
+                fi
+            else
+                echo "WARNING: Failed to install uv automatically."
+                echo "Install manually: curl -LsSf https://astral.sh/uv/install.sh | sh"
+                echo "Python hooks may not work without uv."
+            fi
+            ;;
+    esac
+else
+    echo "uv found: $(command -v uv)"
+fi
+
 # Check settings file exists
 if [[ ! -f "$SETTINGS_FILE" ]]; then
     echo "Creating ${SETTINGS_FILE}..."
@@ -34,7 +74,7 @@ cp "$SETTINGS_FILE" "${SETTINGS_FILE}.bak"
 echo "Backed up settings to ${SETTINGS_FILE}.bak"
 
 # Make hooks executable
-chmod +x "${PLUGIN_DIR}/hooks/"*.sh 2>/dev/null || true
+chmod +x "${PLUGIN_DIR}/hooks/"*.py 2>/dev/null || true
 
 # Read hooks config and substitute CLAUDE_PLUGIN_ROOT with actual path
 HOOKS_JSON=$(cat "$HOOKS_CONFIG" | sed "s|\${CLAUDE_PLUGIN_ROOT}|${PLUGIN_DIR}|g")
@@ -89,3 +129,7 @@ echo "  - Context Guardian (auto-delegation guidance)"
 echo "  - LSP diagnostics (auto after Edit/Write if linters installed)"
 echo "  - Todo continuation (prevents stopping with incomplete todos)"
 echo "  - Context preservation (saves state before /compact)"
+if [[ "$UV_INSTALLED" == "true" ]]; then
+    echo ""
+    echo "Note: uv was installed during setup (~/.local/bin/uv)"
+fi

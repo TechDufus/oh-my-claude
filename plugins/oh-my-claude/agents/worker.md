@@ -1,5 +1,5 @@
 ---
-model: opus
+model: inherit
 description: "Focused implementation agent. Executes ONE specific task completely. Does not decide what to build - implements what it's told."
 tools:
   - Read

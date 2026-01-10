@@ -1,5 +1,5 @@
 ---
-model: opus
+model: inherit
 description: "Documentation agent. Writes clear documentation for code, APIs, systems. Understands before documenting."
 tools:
   - Read

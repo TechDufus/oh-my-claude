@@ -1,5 +1,5 @@
 ---
-model: sonnet
+model: inherit
 description: "Smart file reading agent. Reads files intelligently, summarizes large content, extracts relevant sections. Protects main context from raw file dumps."
 tools:
   - Read

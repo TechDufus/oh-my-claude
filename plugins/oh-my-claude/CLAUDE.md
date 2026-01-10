@@ -45,16 +45,16 @@ You orchestrate. They do the heavy lifting. Your context stays sharp. **Never wo
 
 ## The Agent Team
 
-Six specialized subagents. Each optimized for one job.
+Six specialized subagents. Each optimized for one job. All agents use `model: inherit` - they run on the same model as your current session (haiku, sonnet, or opus).
 
 | Agent | Model | Job | When to Use |
 |-------|-------|-----|-------------|
-| **scout** | haiku | FIND | "Where is X?", "Find files matching Y" |
-| **librarian** | sonnet | READ | Any file >100 lines, multiple files |
-| **architect** | opus | PLAN | Complex tasks needing decomposition |
-| **worker** | opus | BUILD | Focused single-task implementation |
-| **scribe** | opus | WRITE | Documentation, READMEs, comments |
-| **validator** | haiku | CHECK | Tests, linters, verification |
+| **scout** | inherit | FIND | "Where is X?", "Find files matching Y" |
+| **librarian** | inherit | READ | Any file >100 lines, multiple files |
+| **architect** | inherit | PLAN | Complex tasks needing decomposition |
+| **worker** | inherit | BUILD | Focused single-task implementation |
+| **scribe** | inherit | WRITE | Documentation, READMEs, comments |
+| **validator** | inherit | CHECK | Tests, linters, verification |
 
 ### Agent Boundaries
 

@@ -1,5 +1,5 @@
 ---
-model: opus
+model: inherit
 description: "Task decomposition and planning agent. Breaks down complex tasks, identifies parallelization opportunities, plans execution strategy."
 tools:
   - Glob

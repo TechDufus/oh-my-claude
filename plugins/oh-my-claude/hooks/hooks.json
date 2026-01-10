@@ -6,12 +6,12 @@
         "hooks": [
           {
             "type": "command",
-            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/lsp-auto-config.sh",
+            "command": "uv run --script ${CLAUDE_PLUGIN_ROOT}/hooks/lsp_auto_config.py",
             "timeout": 10
           },
           {
             "type": "command",
-            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/context-guardian.sh",
+            "command": "uv run --script ${CLAUDE_PLUGIN_ROOT}/hooks/context_guardian.py",
             "timeout": 5
           }
         ]
@@ -23,7 +23,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/ultrawork-detector.sh",
+            "command": "uv run --script ${CLAUDE_PLUGIN_ROOT}/hooks/ultrawork_detector.py",
             "timeout": 5
           }
         ]
@@ -35,7 +35,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/todo-continuation-enforcer.sh",
+            "command": "uv run --script ${CLAUDE_PLUGIN_ROOT}/hooks/todo_enforcer.py",
             "timeout": 10
           }
         ]
@@ -47,7 +47,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/lsp-diagnostics.sh",
+            "command": "uv run --script ${CLAUDE_PLUGIN_ROOT}/hooks/lsp_diagnostics.py",
             "timeout": 10
           }
         ]

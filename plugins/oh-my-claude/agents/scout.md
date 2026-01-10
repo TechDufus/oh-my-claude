@@ -1,5 +1,5 @@
 ---
-model: haiku
+model: inherit
 description: "Quick reconnaissance agent. Finds files, locates definitions, checks existence and sizes. Returns locations, not content."
 tools:
   - Glob
