@@ -6,6 +6,8 @@
 #   Node.js: bun > npm > yarn > pnpm
 #   Python:  uv > pipx > pip3 > pip
 #   System:  brew (macOS) > apt/dnf/pacman (Linux)
+#
+# shellcheck disable=SC2317,SC2329  # Functions invoked dynamically via install_$lang/check_$lang
 
 set -euo pipefail
 
