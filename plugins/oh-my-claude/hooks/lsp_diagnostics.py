@@ -233,7 +233,7 @@ def check_csharp(file_path: str) -> tuple[str, str] | None:
     if not raw:
         return None
     # Filter to CS errors/warnings only
-    lines = [l for l in raw.split("\n") if re.search(r"(error|warning) CS", l)][:20]
+    lines = [line for line in raw.split("\n") if re.search(r"(error|warning) CS", line)][:20]
     output = "\n".join(lines)
     if not output:
         return None

@@ -59,7 +59,14 @@ jobs:
           echo "Checking hook scripts..."
           HOOKS_DIR="plugins/oh-my-claude/hooks"
 
-          for script in $(jq -r '.. | .command? // empty' "$HOOKS_DIR/hooks.json" | sed 's|${CLAUDE_PLUGIN_ROOT}|plugins/oh-my-claude|g'); do
+          # Extract Python script paths from uv commands (format: uv run --script /path/to/script.py)
+          jq -r '.. | .command? // empty' "$HOOKS_DIR/hooks.json" | while read -r cmd; do
+            # Extract the script path (last argument after --script)
+            script=$(echo "$cmd" | grep -oE '\$\{CLAUDE_PLUGIN_ROOT\}/[^ ]+\.py' | sed 's|${CLAUDE_PLUGIN_ROOT}|plugins/oh-my-claude|g')
+            if [ -z "$script" ]; then
+              echo "SKIP: No Python script found in: $cmd"
+              continue
+            fi
             if [ ! -f "$script" ]; then
               echo "ERROR: Hook script not found: $script"
               exit 1
@@ -72,14 +79,24 @@ jobs:
           done
           echo "All hook scripts exist and are executable!"
 
-      - name: Shellcheck hook scripts
+      - name: Lint Python hooks
         run: |
-          echo "Running shellcheck on hook scripts..."
-          find plugins/oh-my-claude/hooks -name "*.sh" -type f | while read -r script; do
+          echo "Checking Python hook scripts..."
+          pip install ruff
+          find plugins/oh-my-claude/hooks -name "*.py" -type f | while read -r script; do
+            echo "Checking $script..."
+            ruff check "$script" || exit 1
+          done
+          echo "All Python scripts passed ruff!"
+
+      - name: Shellcheck shell scripts
+        run: |
+          echo "Running shellcheck on shell scripts..."
+          find plugins/oh-my-claude -name "*.sh" -type f | while read -r script; do
             echo "Checking $script..."
             shellcheck "$script" || exit 1
           done
-          echo "All scripts passed shellcheck!"
+          echo "All shell scripts passed shellcheck!"
 
       - name: Validate skill files exist
         run: |

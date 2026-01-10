@@ -111,7 +111,8 @@ get_python_pm() {
 
 # Get system package manager
 get_system_pm() {
-    local os=$(detect_os)
+    local os
+    os=$(detect_os)
     if [[ "$os" == "macos" ]]; then
         if has_cmd brew; then echo "brew"; else echo ""; fi
     elif [[ "$os" == "linux" ]]; then
@@ -132,7 +133,8 @@ get_system_pm() {
 # =============================================================================
 
 install_typescript() {
-    local pm=$(get_node_pm)
+    local pm
+    pm=$(get_node_pm)
     if [[ -z "$pm" ]]; then
         log_error "No Node.js package manager found (bun, npm, yarn, pnpm)"
         log_info "Install bun: curl -fsSL https://bun.sh/install | bash"
@@ -149,7 +151,8 @@ install_typescript() {
 }
 
 install_python() {
-    local pm=$(get_python_pm)
+    local pm
+    pm=$(get_python_pm)
     if [[ -z "$pm" ]]; then
         log_error "No Python package manager found (uv, pipx, pip)"
         log_info "Install uv: curl -LsSf https://astral.sh/uv/install.sh | sh"
@@ -197,8 +200,9 @@ install_rust() {
 }
 
 install_java() {
-    local pm=$(get_system_pm)
-    local os=$(detect_os)
+    local pm os
+    pm=$(get_system_pm)
+    os=$(detect_os)
 
     if [[ "$os" == "macos" && "$pm" == "brew" ]]; then
         log_info "Installing jdtls via brew..."
@@ -224,8 +228,9 @@ install_java() {
 }
 
 install_c() {
-    local pm=$(get_system_pm)
-    local os=$(detect_os)
+    local pm os
+    pm=$(get_system_pm)
+    os=$(detect_os)
 
     if [[ "$os" == "macos" ]]; then
         if [[ "$pm" == "brew" ]]; then
@@ -251,7 +256,8 @@ install_c() {
 }
 
 install_php() {
-    local node_pm=$(get_node_pm)
+    local node_pm
+    node_pm=$(get_node_pm)
 
     # Prefer intelephense (Node-based, better features)
     if [[ -n "$node_pm" ]]; then
@@ -283,8 +289,9 @@ install_ruby() {
 }
 
 install_kotlin() {
-    local pm=$(get_system_pm)
-    local os=$(detect_os)
+    local pm os
+    pm=$(get_system_pm)
+    os=$(detect_os)
 
     if [[ "$os" == "macos" && "$pm" == "brew" ]]; then
         log_info "Installing kotlin-language-server via brew..."
@@ -302,7 +309,8 @@ install_swift() {
         return 0
     fi
 
-    local os=$(detect_os)
+    local os
+    os=$(detect_os)
     if [[ "$os" == "macos" ]]; then
         log_info "sourcekit-lsp is included with Xcode"
         log_info "Install Xcode from App Store or: xcode-select --install"
