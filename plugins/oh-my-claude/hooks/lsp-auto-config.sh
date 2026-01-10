@@ -7,9 +7,6 @@ set -euo pipefail
 INPUT=$(cat)
 CWD=$(echo "$INPUT" | jq -r '.cwd // "."')
 
-# Get plugin root for install script reference
-PLUGIN_ROOT="${CLAUDE_PLUGIN_ROOT:-$(dirname "$(dirname "$0")")}"
-
 # Language detection based on file presence
 declare -A DETECTED_LANGS
 declare -A LSP_SERVERS

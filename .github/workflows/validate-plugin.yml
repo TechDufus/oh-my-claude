@@ -1,0 +1,97 @@
+name: Validate Plugin
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Validate JSON files
+        run: |
+          echo "Validating marketplace.json..."
+          jq empty .claude-plugin/marketplace.json
+
+          echo "Validating plugin.json..."
+          jq empty plugins/oh-my-claude/.claude-plugin/plugin.json
+
+          echo "Validating hooks.json..."
+          jq empty plugins/oh-my-claude/hooks/hooks.json
+
+      - name: Check version sync
+        run: |
+          MARKETPLACE_VERSION=$(jq -r '.plugins[0].version' .claude-plugin/marketplace.json)
+          PLUGIN_VERSION=$(jq -r '.version' plugins/oh-my-claude/.claude-plugin/plugin.json)
+          METADATA_VERSION=$(jq -r '.metadata.version' .claude-plugin/marketplace.json)
+
+          echo "Marketplace plugin version: $MARKETPLACE_VERSION"
+          echo "Plugin.json version: $PLUGIN_VERSION"
+          echo "Marketplace metadata version: $METADATA_VERSION"
+
+          if [ "$MARKETPLACE_VERSION" != "$PLUGIN_VERSION" ]; then
+            echo "ERROR: Version mismatch between marketplace.json and plugin.json"
+            exit 1
+          fi
+
+          if [ "$METADATA_VERSION" != "$PLUGIN_VERSION" ]; then
+            echo "ERROR: Version mismatch between metadata.version and plugin.json"
+            exit 1
+          fi
+
+          echo "Versions are in sync!"
+
+      - name: Check for forbidden paths
+        run: |
+          echo "Checking for ../ paths in plugin.json..."
+          if grep -r '\.\.\/' plugins/oh-my-claude/.claude-plugin/plugin.json; then
+            echo "ERROR: Found forbidden ../ paths in plugin.json"
+            exit 1
+          fi
+          echo "No forbidden paths found!"
+
+      - name: Validate hook scripts exist
+        run: |
+          echo "Checking hook scripts..."
+          HOOKS_DIR="plugins/oh-my-claude/hooks"
+
+          for script in $(jq -r '.. | .command? // empty' "$HOOKS_DIR/hooks.json" | sed 's|${CLAUDE_PLUGIN_ROOT}|plugins/oh-my-claude|g'); do
+            if [ ! -f "$script" ]; then
+              echo "ERROR: Hook script not found: $script"
+              exit 1
+            fi
+            if [ ! -x "$script" ]; then
+              echo "ERROR: Hook script not executable: $script"
+              exit 1
+            fi
+            echo "OK: $script"
+          done
+          echo "All hook scripts exist and are executable!"
+
+      - name: Shellcheck hook scripts
+        run: |
+          echo "Running shellcheck on hook scripts..."
+          find plugins/oh-my-claude/hooks -name "*.sh" -type f | while read -r script; do
+            echo "Checking $script..."
+            shellcheck "$script" || exit 1
+          done
+          echo "All scripts passed shellcheck!"
+
+      - name: Validate skill files exist
+        run: |
+          echo "Checking skill files..."
+          PLUGIN_DIR="plugins/oh-my-claude"
+
+          for skill in $(jq -r '.skills[]' "$PLUGIN_DIR/.claude-plugin/plugin.json"); do
+            SKILL_PATH="$PLUGIN_DIR/$skill"
+            if [ ! -f "$SKILL_PATH" ]; then
+              echo "ERROR: Skill file not found: $SKILL_PATH"
+              exit 1
+            fi
+            echo "OK: $SKILL_PATH"
+          done
+          echo "All skill files exist!"
