@@ -10,61 +10,117 @@ Stop hook: Prevents stopping when todos are incomplete
 Called when Claude tries to stop. Returns continuation prompt if work remains.
 """
 
-import json
 import re
 import subprocess
-import sys
 from pathlib import Path
+from typing import Any
+
+from hook_utils import (
+    RegexCache,
+    hook_main,
+    log_debug,
+    output_block,
+    output_empty,
+    parse_hook_input,
+    read_stdin_safe,
+)
+
+# =============================================================================
+# Pre-compiled patterns
+# =============================================================================
+
+PATTERNS = RegexCache()
+PATTERNS.add("validator", r"validator|validation|oh-my-claude:validator", re.IGNORECASE)
+
+# =============================================================================
+# Transcript analysis
+# =============================================================================
 
 
-def get_incomplete_todos_from_todos(data: dict) -> int:
+def analyze_transcript(transcript: list[dict[str, Any]], max_entries: int = 1000) -> dict[str, Any]:
+    """
+    Single-pass transcript analysis with safety limit.
+
+    Collects:
+    - last_assistant_message: Content of last assistant message
+    - validation_ran: Whether validation was triggered
+    - last_todo_write: Todos from the last TodoWrite tool result
+
+    Args:
+        transcript: List of transcript entries.
+        max_entries: Maximum entries to process (safety guard).
+
+    Returns:
+        Dictionary with analysis results.
+    """
+    result: dict[str, Any] = {
+        "last_assistant_message": "",
+        "validation_ran": False,
+        "last_todo_write": None,
+    }
+
+    for i, entry in enumerate(transcript):
+        if i >= max_entries:
+            log_debug(f"transcript truncated at {max_entries} entries")
+            break
+
+        entry_type = entry.get("type", "")
+        entry_role = entry.get("role", "")
+
+        # Track last assistant message
+        if entry_role == "assistant":
+            content = entry.get("content") or ""
+            if content:
+                result["last_assistant_message"] = content
+
+        # Track TodoWrite results
+        if entry_type == "tool_result" and entry.get("tool") == "TodoWrite":
+            todos = entry.get("todos")
+            if todos is not None:
+                result["last_todo_write"] = todos
+
+        # Check for validation triggers
+        if not result["validation_ran"]:
+            # Check Task tool with validator
+            if entry_type == "tool_use" and entry.get("tool") == "Task":
+                input_data = entry.get("input") or {}
+                input_str = str(input_data).lower()
+                if "validator" in input_str:
+                    result["validation_ran"] = True
+
+            # Check assistant messages mentioning validation
+            if entry_role == "assistant":
+                content = (entry.get("content") or "")
+                if PATTERNS.match("validator", content):
+                    result["validation_ran"] = True
+
+    return result
+
+
+def get_incomplete_todos_from_todos(data: dict[str, Any]) -> int:
     """Count incomplete todos from .todos field."""
     todos = data.get("todos") or []
     return sum(1 for t in todos if t.get("status") in ("pending", "in_progress"))
 
 
-def get_incomplete_todos_from_transcript(data: dict) -> int:
-    """Count incomplete todos from last TodoWrite in transcript."""
-    transcript = data.get("transcript") or []
-    todo_writes = [
-        entry for entry in transcript
-        if entry.get("type") == "tool_result" and entry.get("tool") == "TodoWrite"
-    ]
-    if not todo_writes:
-        return 0
-    last_todos = todo_writes[-1].get("todos") or []
-    return sum(1 for t in last_todos if t.get("status") in ("pending", "in_progress"))
-
-
-def get_completed_todos_from_todos(data: dict) -> int:
+def get_completed_todos_from_todos(data: dict[str, Any]) -> int:
     """Count completed todos from .todos field."""
     todos = data.get("todos") or []
     return sum(1 for t in todos if t.get("status") == "completed")
 
 
-def get_completed_todos_from_transcript(data: dict) -> int:
-    """Count completed todos from last TodoWrite in transcript."""
-    transcript = data.get("transcript") or []
-    todo_writes = [
-        entry for entry in transcript
-        if entry.get("type") == "tool_result" and entry.get("tool") == "TodoWrite"
-    ]
-    if not todo_writes:
-        return 0
-    last_todos = todo_writes[-1].get("todos") or []
-    return sum(1 for t in last_todos if t.get("status") == "completed")
+def count_todos_by_status(todos: list[dict[str, Any]] | None) -> tuple[int, int]:
+    """
+    Count incomplete and completed todos from a list.
 
-
-def get_last_assistant_message(data: dict) -> str:
-    """Extract the last assistant message from transcript."""
-    transcript = data.get("transcript") or []
-    assistant_messages = [
-        entry for entry in transcript
-        if entry.get("role") == "assistant"
-    ]
-    if not assistant_messages:
-        return ""
-    return assistant_messages[-1].get("content") or ""
+    Returns:
+        Tuple of (incomplete_count, completed_count).
+    """
+    if not todos:
+        return 0, 0
+    incomplete = sum(1 for t in todos if t.get("status") in ("pending", "in_progress"))
+    completed = sum(1 for t in todos if t.get("status") == "completed")
+    return incomplete, completed
 
 
 def has_uncommitted_changes(cwd: str) -> bool:
@@ -84,56 +140,39 @@ def has_uncommitted_changes(cwd: str) -> bool:
         return False
 
 
-def validation_ran(data: dict) -> bool:
-    """Check if validation was triggered in recent transcript."""
-    transcript = data.get("transcript") or []
-    for entry in transcript:
-        entry_type = entry.get("type", "")
-        # Check for Task tool with validator
-        if entry_type == "tool_use" and entry.get("tool") == "Task":
-            input_data = entry.get("input") or {}
-            input_str = str(input_data).lower()
-            if "validator" in input_str:
-                return True
-        # Check for assistant messages mentioning validation
-        if entry_type == "assistant":
-            content = (entry.get("content") or "").lower()
-            if re.search(r"validator|validation|oh-my-claude:validator", content, re.IGNORECASE):
-                return True
-    return False
+def do_output_block(reason: str, context: str) -> None:
+    """Output a block decision for Stop hook."""
+    output_block("Stop", reason, context)
 
 
-def output_block(reason: str, context: str) -> None:
-    """Output a block decision with context."""
-    output = {
-        "hookSpecificOutput": {
-            "hookEventName": "Stop",
-            "decision": "block",
-            "reason": reason,
-            "additionalContext": context
-        }
-    }
-    print(json.dumps(output))
-
-
+@hook_main("Stop")
 def main() -> None:
-    # Read input from stdin
-    try:
-        data = json.load(sys.stdin)
-    except json.JSONDecodeError:
-        data = {}
+    # Read input safely
+    raw = read_stdin_safe()
+    data = parse_hook_input(raw)
 
     # Extract stop reason
     stop_reason = data.get("stopReason") or data.get("stop_reason") or "unknown"
 
     # Allow explicit user interrupts
     if stop_reason in ("user_interrupt", "explicit_stop", "user_cancelled", "abort"):
-        sys.exit(0)
+        output_empty()
 
-    # Check for incomplete todos
+    # Analyze transcript once
+    transcript = data.get("transcript") or []
+    analysis = analyze_transcript(transcript)
+
+    # Check for incomplete todos - first from .todos field
     incomplete_todos = get_incomplete_todos_from_todos(data)
-    if incomplete_todos == 0:
-        incomplete_todos = get_incomplete_todos_from_transcript(data)
+    completed_todos = get_completed_todos_from_todos(data)
+
+    # Fall back to transcript if no .todos field
+    if incomplete_todos == 0 and completed_todos == 0:
+        transcript_incomplete, transcript_completed = count_todos_by_status(
+            analysis["last_todo_write"]
+        )
+        incomplete_todos = transcript_incomplete
+        completed_todos = transcript_completed
 
     # If incomplete todos exist, inject strong continuation
     if incomplete_todos > 0:
@@ -151,11 +190,11 @@ You have {incomplete_todos} incomplete task(s) in your todo list.
 Use TodoWrite to review your current tasks, then proceed with the next incomplete item.
 
 CONTINUE WORKING NOW."""
-        output_block("Incomplete todos remain", context)
-        sys.exit(0)
+        do_output_block("Incomplete todos remain", context)
+        output_empty()
 
     # Check for incomplete work patterns in last message
-    last_message = get_last_assistant_message(data)
+    last_message = analysis["last_assistant_message"]
 
     # Patterns suggesting premature stopping
     premature_patterns = [
@@ -183,17 +222,12 @@ If you were in ULTRAWORK mode or working on a task:
 3. Complete the task fully before stopping
 
 Do NOT ask - just finish the work."""
-                output_block("Uncommitted changes with incomplete work pattern", context)
-                sys.exit(0)
-
-    # Check if todos existed (work was done) - count completed todos
-    completed_todos = get_completed_todos_from_todos(data)
-    if completed_todos == 0:
-        completed_todos = get_completed_todos_from_transcript(data)
+                do_output_block("Uncommitted changes with incomplete work pattern", context)
+                output_empty()
 
     # If work was done (completed todos exist), check validation status
     if completed_todos > 0:
-        if not validation_ran(data):
+        if not analysis["validation_ran"]:
             # Validation hasn't run yet - inject prompt to run validator
             context = f"""[AUTO-VALIDATION REQUIRED]
 
@@ -206,8 +240,8 @@ Use Task with subagent_type="oh-my-claude:validator" to verify the work:
 - Verify the implementation matches requirements
 
 Do NOT stop until validation passes. Run the validator now."""
-            output_block("Validation required before completion", context)
-            sys.exit(0)
+            do_output_block("Validation required before completion", context)
+            output_empty()
         else:
             # Validation already ran - inject completion summary prompt
             context = """[COMPLETION SUMMARY REQUIRED]
@@ -220,11 +254,11 @@ Work is complete and validated. Before stopping, provide a brief completion summ
 3. **Validation results** - Brief note on test/lint status
 
 Provide this summary now, then you may stop."""
-            output_block("Completion summary required", context)
-            sys.exit(0)
+            do_output_block("Completion summary required", context)
+            output_empty()
 
     # No intervention needed - allow stop
-    sys.exit(0)
+    output_empty()
 
 
 if __name__ == "__main__":

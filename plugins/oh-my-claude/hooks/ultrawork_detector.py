@@ -10,10 +10,71 @@ Context protection is handled by context-guardian.sh (always-on).
 This hook adds MODE-SPECIFIC behaviors on top.
 """
 
-import json
 import re
-import sys
 from pathlib import Path
+
+from hook_utils import (
+    RegexCache,
+    hook_main,
+    log_debug,
+    output_context,
+    output_empty,
+    parse_hook_input,
+    read_stdin_safe,
+)
+
+# =============================================================================
+# Pre-compiled regex patterns (module-level cache)
+# =============================================================================
+# Patterns simplified to reduce ReDoS risk:
+# - Replaced \s+ with single space where possible
+# - Kept alternation groups bounded
+
+PATTERNS = RegexCache()
+
+# Ultrawork mode triggers
+PATTERNS.add(
+    "ultrawork",
+    r"(ultrawork|ulw|just work|dont stop|until done|keep going|finish everything|"
+    r"relentless|get it done|make it happen|no excuses|full send|go all in|"
+    r"complete everything|finish it|see it through|dont give up|ship it|crush it|"
+    r"nail it|lets go|do it all|handle everything)",
+    re.IGNORECASE,
+)
+
+# Search mode triggers
+PATTERNS.add(
+    "search",
+    r"(search for|find all|locate|where is|look for|grep for|hunt down|"
+    r"track down|show me where|find me|get me all|list all)",
+    re.IGNORECASE,
+)
+
+# Analyze mode triggers
+PATTERNS.add(
+    "analyze",
+    r"(analyze|analyse|understand|explain how|how does|investigate|deep dive|"
+    r"examine|inspect|audit|break down|walk through|tell me about|"
+    r"help me understand|whats going on)",
+    re.IGNORECASE,
+)
+
+# Ultrathink mode triggers
+PATTERNS.add(
+    "ultrathink",
+    r"(ultrathink|think deeply|deep analysis|think hard|careful analysis|"
+    r"thoroughly analyze)",
+    re.IGNORECASE,
+)
+
+# Ultradebug mode triggers
+PATTERNS.add(
+    "ultradebug",
+    r"(ultradebug|debug this|fix this bug|troubleshoot|diagnose|"
+    r"why is this failing|root cause|whats wrong|whats broken|"
+    r"figure out why|fix the issue|whats causing)",
+    re.IGNORECASE,
+)
 
 
 def detect_validation(cwd: str) -> str:
@@ -34,38 +95,32 @@ def detect_validation(cwd: str) -> str:
         return "Run appropriate linters and tests for this project type."
 
 
-def output_context(context: str) -> None:
-    """Output JSON response with additional context."""
-    response = {
-        "hookSpecificOutput": {
-            "hookEventName": "UserPromptSubmit",
-            "additionalContext": context,
-        }
-    }
-    print(json.dumps(response))
-
-
+@hook_main("UserPromptSubmit")
 def main() -> None:
-    # Read input from stdin
-    input_data = sys.stdin.read()
-    try:
-        data = json.loads(input_data)
-    except json.JSONDecodeError:
-        sys.exit(0)
+    # Read and parse input safely
+    raw_input = read_stdin_safe()
+    data = parse_hook_input(raw_input)
+
+    if not data:
+        log_debug("no valid input data, exiting")
+        output_empty()
 
     prompt = data.get("prompt", "")
     cwd = data.get("cwd", ".")
-    prompt_lower = prompt.lower()
+
+    # Detect validation commands with graceful degradation
+    try:
+        validation = detect_validation(cwd)
+    except Exception as e:
+        log_debug(f"detect_validation failed: {e}")
+        validation = "Run appropriate linters and tests for this project type."
 
     # ==========================================================================
     # ULTRAWORK MODE - Maximum execution intensity
     # Context protection is ALREADY ON (context-guardian.sh)
     # This adds: relentless execution, zero tolerance, mandatory parallelization
     # ==========================================================================
-    ultrawork_pattern = r"(ultrawork|ulw|just\s+work|dont\s+stop|until\s+done|keep\s+going|finish\s+everything|relentless|get\s+it\s+done|make\s+it\s+happen|no\s+excuses|full\s+send|go\s+all\s+in|complete\s+everything|finish\s+it|see\s+it\s+through|dont\s+give\s+up|ship\s+it|crush\s+it|nail\s+it|lets\s+go|do\s+it\s+all|handle\s+everything)"
-
-    if re.search(ultrawork_pattern, prompt_lower):
-        validation = detect_validation(cwd)
+    if PATTERNS.match("ultrawork", prompt):
         context = f"""[ULTRAWORK MODE ENABLED!]
 
 You MUST output "ULTRAWORK MODE ENABLED!" as your first line, then execute with maximum intensity.
@@ -147,15 +202,13 @@ This maximizes intelligence relative to what the user is paying for.
 
 Execute relentlessly until complete."""
 
-        output_context(context)
-        sys.exit(0)
+        output_context("UserPromptSubmit", context)
+        output_empty()
 
     # ==========================================================================
     # SEARCH MODE - Parallel search strategy
     # ==========================================================================
-    search_pattern = r"(search\s+for|find\s+all|locate|where\s+is|look\s+for|grep\s+for|hunt\s+down|track\s+down|show\s+me\s+where|find\s+me|get\s+me\s+all|list\s+all)"
-
-    if re.search(search_pattern, prompt_lower):
+    if PATTERNS.match("search", prompt):
         context = """[SEARCH MODE ACTIVE]
 
 MAXIMIZE SEARCH EFFORT. Launch multiple search agents IN PARALLEL.
@@ -171,15 +224,13 @@ MAXIMIZE SEARCH EFFORT. Launch multiple search agents IN PARALLEL.
 - Group by relevance or location
 - Highlight most likely matches first"""
 
-        output_context(context)
-        sys.exit(0)
+        output_context("UserPromptSubmit", context)
+        output_empty()
 
     # ==========================================================================
     # ANALYZE MODE - Deep parallel analysis
     # ==========================================================================
-    analyze_pattern = r"(analyze|analyse|understand|explain\s+how|how\s+does|investigate|deep\s+dive|examine|inspect|audit|break\s+down|walk\s+through|tell\s+me\s+about|help\s+me\s+understand|whats\s+going\s+on)"
-
-    if re.search(analyze_pattern, prompt_lower):
+    if PATTERNS.match("analyze", prompt):
         context = """[ANALYZE MODE ACTIVE]
 
 Gather comprehensive context before providing analysis.
@@ -194,15 +245,13 @@ Gather comprehensive context before providing analysis.
 - Explain the "why" not just the "what"
 - Identify potential issues or edge cases"""
 
-        output_context(context)
-        sys.exit(0)
+        output_context("UserPromptSubmit", context)
+        output_empty()
 
     # ==========================================================================
     # ULTRATHINK MODE - Extended reasoning before action
     # ==========================================================================
-    ultrathink_pattern = r"(ultrathink|think\s+deeply|deep\s+analysis|think\s+hard|careful\s+analysis|thoroughly\s+analyze)"
-
-    if re.search(ultrathink_pattern, prompt_lower):
+    if PATTERNS.match("ultrathink", prompt):
         context = """[ULTRATHINK MODE ACTIVE]
 
 Extended reasoning before any action.
@@ -220,15 +269,13 @@ Extended reasoning before any action.
 - Challenge your own assumptions
 - Consider maintainability and future implications"""
 
-        output_context(context)
-        sys.exit(0)
+        output_context("UserPromptSubmit", context)
+        output_empty()
 
     # ==========================================================================
     # ULTRADEBUG MODE - Systematic debugging protocol
     # ==========================================================================
-    ultradebug_pattern = r"(ultradebug|debug\s+this|fix\s+this\s+bug|troubleshoot|diagnose|why\s+is\s+this\s+failing|root\s+cause|whats\s+wrong|whats\s+broken|figure\s+out\s+why|fix\s+the\s+issue|whats\s+causing)"
-
-    if re.search(ultradebug_pattern, prompt_lower):
+    if PATTERNS.match("ultradebug", prompt):
         context = """[ULTRADEBUG MODE ACTIVE]
 
 Systematic debugging with evidence-based diagnosis.
@@ -250,11 +297,12 @@ Systematic debugging with evidence-based diagnosis.
 ## Parallel Investigation
 - Launch multiple agents: one for failing code path, one for similar code that works"""
 
-        output_context(context)
-        sys.exit(0)
+        output_context("UserPromptSubmit", context)
+        output_empty()
 
     # No trigger - pass through (context-guardian already provided baseline rules at SessionStart)
-    sys.exit(0)
+    log_debug("no mode trigger detected")
+    output_empty()
 
 
 if __name__ == "__main__":

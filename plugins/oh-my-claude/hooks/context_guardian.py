@@ -8,11 +8,7 @@ SessionStart hook: Establishes context protection as STANDARD OPERATING PROCEDUR
 This runs every session - context protection is not optional
 """
 
-import json
-import sys
-
-# Consume stdin (hook input) - not needed for this hook
-sys.stdin.read()
+from hook_utils import hook_main, output_context, read_stdin_safe
 
 CONTEXT = """[oh-my-claude: Context Protection ACTIVE]
 
@@ -64,11 +60,14 @@ You are an **orchestrator**, not an implementer. You:
 
 Subagent context is ISOLATED from yours. Use them freely - it costs you nothing."""
 
-output = {
-    "hookSpecificOutput": {
-        "hookEventName": "SessionStart",
-        "additionalContext": CONTEXT
-    }
-}
 
-print(json.dumps(output), end="")
+@hook_main("SessionStart")
+def main() -> None:
+    """Inject context protection instructions at session start."""
+    # Consume stdin (hook input) - not needed for this hook
+    read_stdin_safe()
+    output_context("SessionStart", CONTEXT)
+
+
+if __name__ == "__main__":
+    main()

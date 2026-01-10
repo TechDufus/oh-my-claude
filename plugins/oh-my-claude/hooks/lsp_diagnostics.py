@@ -12,10 +12,18 @@ Provides immediate feedback on code quality issues
 import json
 import os
 import re
-import shutil
 import subprocess
-import sys
 from pathlib import Path
+
+from hook_utils import (
+    WHICH,
+    get_nested,
+    hook_main,
+    output_context,
+    output_empty,
+    parse_hook_input,
+    read_stdin_safe,
+)
 
 
 def run_cmd(cmd: list[str], cwd: str | None = None) -> str:
@@ -64,7 +72,7 @@ def detect_severity(output: str, error_patterns: list[str], warning_patterns: li
 #   - special: optional function for special handling (returns (output, severity) or None)
 
 def check_shellcheck(file_path: str) -> tuple[str, str] | None:
-    if not shutil.which("shellcheck"):
+    if not WHICH.available("shellcheck"):
         return None
     output = run_cmd(["shellcheck", "-f", "gcc", file_path])
     if not output:
@@ -74,7 +82,7 @@ def check_shellcheck(file_path: str) -> tuple[str, str] | None:
 
 
 def check_typescript(file_path: str) -> tuple[str, str] | None:
-    if not shutil.which("tsc"):
+    if not WHICH.available("tsc"):
         return None
     output = run_cmd(["tsc", "--noEmit", "--pretty", "false", file_path])
     if not output:
@@ -88,7 +96,7 @@ def check_typescript(file_path: str) -> tuple[str, str] | None:
 
 
 def check_eslint(file_path: str) -> tuple[str, str] | None:
-    if not shutil.which("eslint"):
+    if not WHICH.available("eslint"):
         return None
     output = run_cmd(["eslint", "--format", "compact", file_path])
     if not output:
@@ -99,12 +107,12 @@ def check_eslint(file_path: str) -> tuple[str, str] | None:
 
 def check_python(file_path: str) -> tuple[str, str] | None:
     # Prefer ruff (fast), fall back to pyright
-    if shutil.which("ruff"):
+    if WHICH.available("ruff"):
         output = run_cmd(["ruff", "check", "--output-format=concise", file_path])
         if output:
             return output, "warning"
         return None
-    if shutil.which("pyright"):
+    if WHICH.available("pyright"):
         raw = run_cmd(["pyright", "--outputjson", file_path])
         if raw:
             try:
@@ -126,7 +134,7 @@ def check_python(file_path: str) -> tuple[str, str] | None:
 
 
 def check_go(file_path: str) -> tuple[str, str] | None:
-    if not shutil.which("go"):
+    if not WHICH.available("go"):
         return None
     output = run_cmd(["go", "vet", file_path])
     if output:
@@ -135,7 +143,7 @@ def check_go(file_path: str) -> tuple[str, str] | None:
 
 
 def check_rust(file_path: str) -> tuple[str, str] | None:
-    if not shutil.which("cargo"):
+    if not WHICH.available("cargo"):
         return None
     cargo_dir = find_project_root(file_path, ["Cargo.toml"])
     if not cargo_dir:
@@ -151,7 +159,7 @@ def check_rust(file_path: str) -> tuple[str, str] | None:
 
 
 def check_json(file_path: str) -> tuple[str, str] | None:
-    if not shutil.which("jq"):
+    if not WHICH.available("jq"):
         return None
     output = run_cmd(["jq", "empty", file_path])
     if output:
@@ -160,7 +168,7 @@ def check_json(file_path: str) -> tuple[str, str] | None:
 
 
 def check_yaml(file_path: str) -> tuple[str, str] | None:
-    if not shutil.which("yamllint"):
+    if not WHICH.available("yamllint"):
         return None
     output = run_cmd(["yamllint", "-f", "parsable", file_path])
     if not output:
@@ -170,7 +178,7 @@ def check_yaml(file_path: str) -> tuple[str, str] | None:
 
 
 def check_terraform(file_path: str) -> tuple[str, str] | None:
-    if not shutil.which("tflint"):
+    if not WHICH.available("tflint"):
         return None
     output = run_cmd(["tflint", "--format", "compact", file_path])
     if not output:
@@ -182,7 +190,7 @@ def check_terraform(file_path: str) -> tuple[str, str] | None:
 
 
 def check_lua(file_path: str) -> tuple[str, str] | None:
-    if not shutil.which("luacheck"):
+    if not WHICH.available("luacheck"):
         return None
     output = run_cmd(["luacheck", "--formatter", "plain", file_path])
     if not output or "0 warnings" in output:
@@ -194,7 +202,7 @@ def check_lua(file_path: str) -> tuple[str, str] | None:
 
 
 def check_markdown(file_path: str) -> tuple[str, str] | None:
-    if not shutil.which("markdownlint"):
+    if not WHICH.available("markdownlint"):
         return None
     output = run_cmd(["markdownlint", file_path])
     if output:
@@ -203,7 +211,7 @@ def check_markdown(file_path: str) -> tuple[str, str] | None:
 
 
 def check_swift(file_path: str) -> tuple[str, str] | None:
-    if not shutil.which("swiftlint"):
+    if not WHICH.available("swiftlint"):
         return None
     output = run_cmd(["swiftlint", "lint", "--quiet", "--path", file_path])
     if not output:
@@ -215,7 +223,7 @@ def check_swift(file_path: str) -> tuple[str, str] | None:
 
 
 def check_kotlin(file_path: str) -> tuple[str, str] | None:
-    if not shutil.which("ktlint"):
+    if not WHICH.available("ktlint"):
         return None
     output = run_cmd(["ktlint", file_path])
     if output:
@@ -224,12 +232,13 @@ def check_kotlin(file_path: str) -> tuple[str, str] | None:
 
 
 def check_csharp(file_path: str) -> tuple[str, str] | None:
-    if not shutil.which("dotnet"):
+    if not WHICH.available("dotnet"):
         return None
     dotnet_dir = find_project_root(file_path, ["*.csproj", "*.sln"])
     if not dotnet_dir:
         return None
-    raw = run_cmd(["dotnet", "build", "--no-restore", "-v", "q"], cwd=dotnet_dir)
+    # Use --no-restore, -v q, and --nologo to minimize side effects
+    raw = run_cmd(["dotnet", "build", "--no-restore", "-v", "q", "--nologo"], cwd=dotnet_dir)
     if not raw:
         return None
     # Filter to CS errors/warnings only
@@ -244,7 +253,7 @@ def check_csharp(file_path: str) -> tuple[str, str] | None:
 
 
 def check_zig(file_path: str) -> tuple[str, str] | None:
-    if not shutil.which("zig"):
+    if not WHICH.available("zig"):
         return None
     output = run_cmd(["zig", "ast-check", file_path])
     if output:
@@ -253,7 +262,7 @@ def check_zig(file_path: str) -> tuple[str, str] | None:
 
 
 def check_dockerfile(file_path: str) -> tuple[str, str] | None:
-    if not shutil.which("hadolint"):
+    if not WHICH.available("hadolint"):
         return None
     output = run_cmd(["hadolint", "--format", "gcc", file_path])
     if not output:
@@ -295,24 +304,26 @@ EXTENSION_CHECKERS = {
 }
 
 
+@hook_main("PostToolUse")
 def main() -> None:
-    # Read input from stdin
-    try:
-        input_data = json.load(sys.stdin)
-    except json.JSONDecodeError:
-        sys.exit(0)
+    # Read input safely with timeout and size limits
+    raw = read_stdin_safe()
+    input_data = parse_hook_input(raw)
 
-    # Extract tool name and file path
+    if not input_data:
+        return output_empty()
+
+    # Extract tool name and file path (safely handles non-dict tool_input)
     tool_name = input_data.get("tool_name", "")
-    file_path = input_data.get("tool_input", {}).get("file_path", "")
+    file_path = get_nested(input_data, "tool_input", "file_path", default="")
 
     # Only process Edit and Write tools
     if tool_name not in ("Edit", "Write"):
-        sys.exit(0)
+        return output_empty()
 
     # Need a file path to analyze
     if not file_path or not os.path.isfile(file_path):
-        sys.exit(0)
+        return output_empty()
 
     basename = os.path.basename(file_path)
     ext = file_path.rsplit(".", 1)[-1] if "." in file_path else ""
@@ -327,8 +338,10 @@ def main() -> None:
 
     # If no diagnostics, exit silently
     if not result:
-        sys.exit(0)
+        return output_empty()
 
+    # Type narrowing for pyright
+    assert result is not None
     diagnostics, severity = result
 
     # Truncate if too long
@@ -350,14 +363,7 @@ File: {file_path}
 
 Consider fixing these issues before proceeding."""
 
-    output = {
-        "hookSpecificOutput": {
-            "hookEventName": "PostToolUse",
-            "additionalContext": context,
-        }
-    }
-
-    print(json.dumps(output))
+    output_context("PostToolUse", context)
 
 
 if __name__ == "__main__":

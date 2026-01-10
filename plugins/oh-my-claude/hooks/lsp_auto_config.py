@@ -8,11 +8,18 @@ lsp_auto_config.py
 SessionStart hook: Auto-detects project languages and checks LSP server availability
 """
 
-import json
 import os
-import sys
 from pathlib import Path
-from shutil import which
+
+from hook_utils import (
+    WHICH,
+    hook_main,
+    log_debug,
+    output_context,
+    output_empty,
+    parse_hook_input,
+    read_stdin_safe,
+)
 
 
 # LSP servers to check (language -> command name)
@@ -43,112 +50,123 @@ INSTALL_CMDS = {
     "swift": "(included with Xcode)",
 }
 
+# Marker files that indicate a language without traversal
+MARKER_FILES = {
+    "package.json": "typescript",
+    "tsconfig.json": "typescript",
+    "pyproject.toml": "python",
+    "setup.py": "python",
+    "requirements.txt": "python",
+    "go.mod": "go",
+    "Cargo.toml": "rust",
+    "pom.xml": "java",
+    "build.gradle": "java",
+    "CMakeLists.txt": "c",
+    "Makefile": "c",
+    "composer.json": "php",
+    "Gemfile": "ruby",
+    "Package.swift": "swift",
+}
 
-def find_files_with_extensions(directory: Path, extensions: list[str], max_depth: int = 3) -> bool:
-    """Check if any files with given extensions exist within max_depth."""
-    def search(path: Path, depth: int) -> bool:
-        if depth > max_depth:
-            return False
-        try:
-            for entry in path.iterdir():
-                if entry.is_file() and entry.suffix in extensions:
-                    return True
-                if entry.is_dir() and not entry.name.startswith('.'):
-                    if search(entry, depth + 1):
-                        return True
-        except PermissionError:
-            pass
-        return False
-    return search(directory, 1)
+# Extension to language mapping
+EXTENSION_TO_LANG = {
+    ".ts": "typescript",
+    ".tsx": "typescript",
+    ".js": "typescript",
+    ".jsx": "typescript",
+    ".py": "python",
+    ".go": "go",
+    ".rs": "rust",
+    ".java": "java",
+    ".c": "c",
+    ".cpp": "c",
+    ".h": "c",
+    ".hpp": "c",
+    ".php": "php",
+    ".rb": "ruby",
+    ".kt": "kotlin",
+    ".kts": "kotlin",
+    ".swift": "swift",
+}
 
 
 def detect_languages(directory: Path) -> set[str]:
-    """Detect languages in project based on file presence."""
-    detected = set()
+    """Detect languages in project based on file presence.
 
-    # TypeScript/JavaScript
-    if ((directory / "package.json").exists() or
-        (directory / "tsconfig.json").exists() or
-        find_files_with_extensions(directory, [".ts", ".tsx", ".js", ".jsx"])):
-        detected.add("typescript")
+    Optimized to check marker files first (no traversal), then do a single
+    filesystem walk to collect all extensions in one pass.
+    """
+    detected: set[str] = set()
 
-    # Python
-    if ((directory / "pyproject.toml").exists() or
-        (directory / "setup.py").exists() or
-        (directory / "requirements.txt").exists() or
-        find_files_with_extensions(directory, [".py"])):
-        detected.add("python")
+    # Check marker files first (no traversal needed)
+    for marker, lang in MARKER_FILES.items():
+        if (directory / marker).exists():
+            detected.add(lang)
+            log_debug(f"marker file {marker} -> {lang}")
 
-    # Go
-    if ((directory / "go.mod").exists() or
-        find_files_with_extensions(directory, [".go"])):
-        detected.add("go")
+    # Single traversal to collect extensions
+    found_extensions: set[str] = set()
+    max_depth = 3
 
-    # Rust
-    if ((directory / "Cargo.toml").exists() or
-        find_files_with_extensions(directory, [".rs"])):
-        detected.add("rust")
+    try:
+        for root, dirs, files in os.walk(directory):
+            # Calculate depth relative to start directory
+            rel_path = Path(root).relative_to(directory)
+            depth = len(rel_path.parts) + 1 if rel_path.parts else 1
 
-    # Java
-    if ((directory / "pom.xml").exists() or
-        (directory / "build.gradle").exists() or
-        find_files_with_extensions(directory, [".java"])):
-        detected.add("java")
+            if depth > max_depth:
+                dirs[:] = []  # Don't descend further
+                continue
 
-    # C/C++
-    if ((directory / "CMakeLists.txt").exists() or
-        (directory / "Makefile").exists() or
-        find_files_with_extensions(directory, [".c", ".cpp", ".h", ".hpp"])):
-        detected.add("c")
+            # Skip hidden directories
+            dirs[:] = [d for d in dirs if not d.startswith(".")]
 
-    # PHP
-    if ((directory / "composer.json").exists() or
-        find_files_with_extensions(directory, [".php"])):
-        detected.add("php")
+            # Collect extensions from files
+            for filename in files:
+                ext = Path(filename).suffix
+                if ext in EXTENSION_TO_LANG:
+                    found_extensions.add(ext)
 
-    # Ruby
-    if ((directory / "Gemfile").exists() or
-        find_files_with_extensions(directory, [".rb"])):
-        detected.add("ruby")
+    except PermissionError:
+        log_debug("permission error during directory traversal")
 
-    # Kotlin
-    if find_files_with_extensions(directory, [".kt", ".kts"]):
-        detected.add("kotlin")
-
-    # Swift
-    if ((directory / "Package.swift").exists() or
-        find_files_with_extensions(directory, [".swift"])):
-        detected.add("swift")
+    # Map extensions to languages
+    for ext in found_extensions:
+        lang = EXTENSION_TO_LANG.get(ext)
+        if lang:
+            detected.add(lang)
+            log_debug(f"extension {ext} -> {lang}")
 
     return detected
 
 
-def check_server(server: str) -> bool:
-    """Check if LSP server is available."""
-    return which(server) is not None
-
-
+@hook_main("SessionStart")
 def main() -> None:
-    # Read input from stdin
-    input_data = json.loads(sys.stdin.read())
+    # Safe stdin reading with timeout and size limits
+    raw_input = read_stdin_safe()
+    input_data = parse_hook_input(raw_input)
+
     cwd = Path(input_data.get("cwd", "."))
+    log_debug(f"detecting languages in {cwd}")
 
     # Detect languages
     detected_langs = detect_languages(cwd)
 
     # If no languages detected, exit silently
     if not detected_langs:
-        sys.exit(0)
+        log_debug("no languages detected")
+        output_empty()
+        return
 
-    # Build status report
-    available = []
-    missing = []
-    install_hints = []
+    # Build status report using cached which lookups
+    available: list[str] = []
+    missing: list[str] = []
+    install_hints: list[str] = []
 
     for lang in detected_langs:
         server = LSP_SERVERS.get(lang)
         if server:
-            if check_server(server):
+            if WHICH.available(server):
                 available.append(lang)
             else:
                 missing.append(lang)
@@ -156,6 +174,8 @@ def main() -> None:
 
     # Output install hints for missing servers to stderr
     if missing:
+        import sys
+
         for hint in install_hints:
             print(hint, file=sys.stderr)
 
@@ -164,7 +184,7 @@ def main() -> None:
         context_parts = [
             "[oh-my-claude LSP Status]",
             "",
-            f"Detected: {' '.join(sorted(detected_langs))}"
+            f"Detected: {' '.join(sorted(detected_langs))}",
         ]
 
         if available:
@@ -173,27 +193,24 @@ def main() -> None:
             )
 
         if missing:
-            context_parts.extend([
-                f"Missing: {' '.join(sorted(missing))}",
-                "Install: ./scripts/install-lsp.sh <language>  (auto-detects best package manager)"
-            ])
+            context_parts.extend(
+                [
+                    f"Missing: {' '.join(sorted(missing))}",
+                    "Install: ./scripts/install-lsp.sh <language>  (auto-detects best package manager)",
+                ]
+            )
 
         # Check if LSP is enabled
         if os.environ.get("ENABLE_LSP_TOOL") != "1":
-            context_parts.extend([
-                "",
-                "Enable LSP: export ENABLE_LSP_TOOL=1 (add to shell profile)"
-            ])
+            context_parts.extend(
+                [
+                    "",
+                    "Enable LSP: export ENABLE_LSP_TOOL=1 (add to shell profile)",
+                ]
+            )
 
         context = "\n".join(context_parts)
-
-        output = {
-            "hookSpecificOutput": {
-                "hookEventName": "SessionStart",
-                "additionalContext": context
-            }
-        }
-        print(json.dumps(output))
+        output_context("SessionStart", context)
 
 
 if __name__ == "__main__":
