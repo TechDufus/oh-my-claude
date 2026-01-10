@@ -197,3 +197,23 @@ Claude Code caches plugins by version. **Any change to cached content requires a
 | README.md | NO |
 
 Forgetting to bump the version means users won't see your changes until they manually clear their cache.
+
+### Plugin Structure Gotchas
+
+These will save you hours of debugging:
+
+1. **Plugins MUST live in a subdirectory** - `marketplace.json` at repo root, plugin files in `plugins/your-plugin/`
+
+2. **NEVER use `../` paths in plugin.json** - When installed, files are copied to cache. Paths escaping the plugin directory don't exist.
+   ```json
+   // WRONG: "hooks": "../hooks/hooks.json"
+   // RIGHT: "hooks": "./hooks/hooks.json" (or omit - see #3)
+   ```
+
+3. **hooks/hooks.json is AUTO-DISCOVERED** - Don't reference it in plugin.json or you get "Duplicate hooks file detected"
+
+4. **Use ${CLAUDE_PLUGIN_ROOT} in hooks.json** - For script paths inside hook definitions
+
+5. **marketplace.json source** must point to the plugin subdirectory: `"source": "./plugins/oh-my-claude"`
+
+See `/PLUGIN-STRUCTURE.md` in this repo for the full guide.
