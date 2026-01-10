@@ -1,6 +1,6 @@
 {
   "name": "oh-my-claude",
-  "version": "0.0.33",
+  "version": "0.0.32",
   "description": "Add 'ultrawork' to any prompt for maximum parallel execution.",
   "author": {
     "name": "TechDufus",
@@ -12,147 +12,9 @@
     "ultrawork",
     "parallel",
     "subagents",
-    "workflow",
-    "lsp"
+    "workflow"
   ],
   "skills": [
     "./skills/git-commit-validator/SKILL.md"
-  ],
-  "lspServers": {
-    "pyright": {
-      "command": "pyright-langserver",
-      "args": ["--stdio"],
-      "extensionToLanguage": {
-        ".py": "python",
-        ".pyi": "python"
-      }
-    },
-    "typescript": {
-      "command": "typescript-language-server",
-      "args": ["--stdio"],
-      "extensionToLanguage": {
-        ".ts": "typescript",
-        ".tsx": "typescriptreact",
-        ".js": "javascript",
-        ".jsx": "javascriptreact",
-        ".mjs": "javascript",
-        ".mts": "typescript",
-        ".cjs": "javascript",
-        ".cts": "typescript"
-      }
-    },
-    "gopls": {
-      "command": "gopls",
-      "args": ["serve"],
-      "extensionToLanguage": {
-        ".go": "go",
-        ".mod": "go.mod",
-        ".sum": "go.sum"
-      }
-    },
-    "rust-analyzer": {
-      "command": "rust-analyzer",
-      "extensionToLanguage": {
-        ".rs": "rust"
-      }
-    },
-    "clangd": {
-      "command": "clangd",
-      "extensionToLanguage": {
-        ".c": "c",
-        ".h": "c",
-        ".cpp": "cpp",
-        ".cc": "cpp",
-        ".cxx": "cpp",
-        ".hpp": "cpp",
-        ".hxx": "cpp",
-        ".C": "cpp",
-        ".H": "cpp"
-      }
-    },
-    "bash-language-server": {
-      "command": "bash-language-server",
-      "args": ["start"],
-      "extensionToLanguage": {
-        ".sh": "shellscript",
-        ".bash": "shellscript",
-        ".zsh": "shellscript"
-      }
-    },
-    "yaml-language-server": {
-      "command": "yaml-language-server",
-      "args": ["--stdio"],
-      "extensionToLanguage": {
-        ".yaml": "yaml",
-        ".yml": "yaml"
-      }
-    },
-    "vscode-json-languageserver": {
-      "command": "vscode-json-language-server",
-      "args": ["--stdio"],
-      "extensionToLanguage": {
-        ".json": "json",
-        ".jsonc": "jsonc"
-      }
-    },
-    "vscode-css-languageserver": {
-      "command": "vscode-css-language-server",
-      "args": ["--stdio"],
-      "extensionToLanguage": {
-        ".css": "css",
-        ".scss": "scss",
-        ".less": "less"
-      }
-    },
-    "vscode-html-languageserver": {
-      "command": "vscode-html-language-server",
-      "args": ["--stdio"],
-      "extensionToLanguage": {
-        ".html": "html",
-        ".htm": "html"
-      }
-    },
-    "dockerfile-language-server": {
-      "command": "docker-langserver",
-      "args": ["--stdio"],
-      "extensionToLanguage": {
-        "Dockerfile": "dockerfile"
-      }
-    },
-    "terraform-ls": {
-      "command": "terraform-ls",
-      "args": ["serve"],
-      "extensionToLanguage": {
-        ".tf": "terraform",
-        ".tfvars": "terraform"
-      }
-    },
-    "solargraph": {
-      "command": "solargraph",
-      "args": ["stdio"],
-      "extensionToLanguage": {
-        ".rb": "ruby",
-        ".rake": "ruby",
-        ".gemspec": "ruby"
-      }
-    },
-    "lua-language-server": {
-      "command": "lua-language-server",
-      "extensionToLanguage": {
-        ".lua": "lua"
-      }
-    },
-    "zls": {
-      "command": "zls",
-      "extensionToLanguage": {
-        ".zig": "zig"
-      }
-    },
-    "sourcekit-lsp": {
-      "command": "sourcekit-lsp",
-      "extensionToLanguage": {
-        ".swift": "swift"
-      }
-    }
-  }
+  ]
 }
