@@ -77,7 +77,7 @@ echo "Backed up settings to ${SETTINGS_FILE}.bak"
 chmod +x "${PLUGIN_DIR}/hooks/"*.py 2>/dev/null || true
 
 # Read hooks config and substitute CLAUDE_PLUGIN_ROOT with actual path
-HOOKS_JSON=$(cat "$HOOKS_CONFIG" | sed "s|\${CLAUDE_PLUGIN_ROOT}|${PLUGIN_DIR}|g")
+HOOKS_JSON=$(sed "s|\${CLAUDE_PLUGIN_ROOT}|${PLUGIN_DIR}|g" "$HOOKS_CONFIG")
 
 # Get list of hook event types from our config
 HOOK_EVENTS=$(echo "$HOOKS_JSON" | jq -r '.hooks | keys[]')
