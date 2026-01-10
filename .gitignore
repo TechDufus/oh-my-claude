@@ -22,3 +22,6 @@ __pycache__/
 
 # Logs
 *.log
+
+# Demo GIFs (large files, regenerate locally with VHS)
+demo/*.gif
