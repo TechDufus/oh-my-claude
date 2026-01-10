@@ -4,105 +4,105 @@ allowed-tools:
   - Bash(command:*)
   - Bash(which:*)
   - Bash(echo:*)
+  - Bash(ls:*)
+  - Bash(jq:*)
+  - Bash(wc:*)
 ---
 
-# /lsp - LSP and Linter Status
+# /lsp - LSP Diagnostics
 
-Shows which LSP servers and CLI linters are installed, helping users understand what code diagnostics are available.
-
-## Usage
-
-```
-/lsp
-```
+Shows what language intelligence Claude Code has access to via oh-my-claude.
 
 ## Execution
 
-Run the detection script and format output exactly as shown.
-
-### Step 1: Check All Tools
-
-Run this bash script to check installations:
+Run this single diagnostic script:
 
 ```bash
-echo "## LSP Server Status"
+#!/usr/bin/env bash
+
+# Colors/formatting via unicode
+READY="✓"
+MISSING="✗"
+
+check() { command -v "$1" &>/dev/null && echo "$READY" || echo "$MISSING"; }
+
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+echo "  oh-my-claude LSP Diagnostics"
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 echo ""
-echo "| Language | Server | Status |"
-echo "|----------|--------|--------|"
+echo "  CONFIGURED LANGUAGE SERVERS"
+echo "  These have .lsp.json configs - Claude Code uses them when available"
+echo ""
+echo "  Language          Server                        Status"
+echo "  ─────────────────────────────────────────────────────────────────────"
 
-# Check each LSP server
-check_cmd() { command -v "$1" &>/dev/null && echo "✓ Installed" || echo "✗ Missing"; }
-
-echo "| TypeScript/JS | typescript-language-server | $(check_cmd typescript-language-server) |"
-echo "| Python | pyright-langserver | $(check_cmd pyright-langserver) |"
-echo "| Bash | bash-language-server | $(check_cmd bash-language-server) |"
-echo "| Go | gopls | $(check_cmd gopls) |"
-echo "| Rust | rust-analyzer | $(check_cmd rust-analyzer) |"
-echo "| C/C++ | clangd | $(check_cmd clangd) |"
-echo "| Java | jdtls | $(check_cmd jdtls) |"
-echo "| PHP | intelephense | $(check_cmd intelephense) |"
-echo "| Ruby | solargraph | $(check_cmd solargraph) |"
-echo "| Lua | lua-language-server | $(check_cmd lua-language-server) |"
-echo "| Zig | zls | $(check_cmd zls) |"
-echo "| Swift | sourcekit-lsp | $(check_cmd sourcekit-lsp) |"
-echo "| Kotlin | kotlin-language-server | $(check_cmd kotlin-language-server) |"
-echo "| C# | OmniSharp | $(check_cmd OmniSharp) |"
-echo "| Terraform | terraform-ls | $(check_cmd terraform-ls) |"
-echo "| YAML | yaml-language-server | $(check_cmd yaml-language-server) |"
-echo "| Dockerfile | docker-langserver | $(check_cmd docker-langserver) |"
+printf "  %-17s %-29s %s\n" "TypeScript/JS" "typescript-language-server" "$(check typescript-language-server)"
+printf "  %-17s %-29s %s\n" "Python" "pyright-langserver" "$(check pyright-langserver)"
+printf "  %-17s %-29s %s\n" "Go" "gopls" "$(check gopls)"
+printf "  %-17s %-29s %s\n" "Rust" "rust-analyzer" "$(check rust-analyzer)"
+printf "  %-17s %-29s %s\n" "C/C++" "clangd" "$(check clangd)"
+printf "  %-17s %-29s %s\n" "Java" "jdtls" "$(check jdtls)"
+printf "  %-17s %-29s %s\n" "PHP" "intelephense" "$(check intelephense)"
+printf "  %-17s %-29s %s\n" "Ruby" "solargraph" "$(check solargraph)"
+printf "  %-17s %-29s %s\n" "Lua" "lua-language-server" "$(check lua-language-server)"
+printf "  %-17s %-29s %s\n" "Swift" "sourcekit-lsp" "$(check sourcekit-lsp)"
+printf "  %-17s %-29s %s\n" "Kotlin" "kotlin-language-server" "$(check kotlin-language-server)"
+printf "  %-17s %-29s %s\n" "C#" "OmniSharp" "$(check OmniSharp)"
+printf "  %-17s %-29s %s\n" "Zig" "zls" "$(check zls)"
+printf "  %-17s %-29s %s\n" "Terraform" "terraform-ls" "$(check terraform-ls)"
+printf "  %-17s %-29s %s\n" "YAML" "yaml-language-server" "$(check yaml-language-server)"
+printf "  %-17s %-29s %s\n" "Dockerfile" "docker-langserver" "$(check docker-langserver)"
 
 echo ""
-echo "## CLI Linter Status"
+echo "  CLI LINTER FALLBACKS"
+echo "  Used when LSP unavailable - checked after Edit/Write operations"
 echo ""
-echo "| Extension | Linter | Status |"
-echo "|-----------|--------|--------|"
+echo "  Extension         Linter                        Status"
+echo "  ─────────────────────────────────────────────────────────────────────"
 
-echo "| .sh/.bash | shellcheck | $(check_cmd shellcheck) |"
-echo "| .ts/.tsx | tsc | $(check_cmd tsc) |"
-echo "| .js/.jsx | eslint | $(check_cmd eslint) |"
-echo "| .py | ruff | $(check_cmd ruff) |"
-echo "| .go | go vet | $(check_cmd go) |"
-echo "| .rs | cargo | $(check_cmd cargo) |"
-echo "| .json | jq | $(check_cmd jq) |"
-echo "| .yaml/.yml | yamllint | $(check_cmd yamllint) |"
-echo "| .tf | tflint | $(check_cmd tflint) |"
-echo "| .lua | luacheck | $(check_cmd luacheck) |"
-echo "| .md | markdownlint | $(check_cmd markdownlint) |"
-echo "| .swift | swiftlint | $(check_cmd swiftlint) |"
-echo "| .kt | ktlint | $(check_cmd ktlint) |"
-echo "| .cs | dotnet | $(check_cmd dotnet) |"
-echo "| .zig | zig | $(check_cmd zig) |"
-echo "| Dockerfile | hadolint | $(check_cmd hadolint) |"
+printf "  %-17s %-29s %s\n" ".sh .bash" "shellcheck" "$(check shellcheck)"
+printf "  %-17s %-29s %s\n" ".ts .tsx" "tsc" "$(check tsc)"
+printf "  %-17s %-29s %s\n" ".js .jsx" "eslint" "$(check eslint)"
+printf "  %-17s %-29s %s\n" ".py" "ruff" "$(check ruff)"
+printf "  %-17s %-29s %s\n" ".go" "go vet" "$(check go)"
+printf "  %-17s %-29s %s\n" ".rs" "cargo check" "$(check cargo)"
+printf "  %-17s %-29s %s\n" ".json" "jq" "$(check jq)"
+printf "  %-17s %-29s %s\n" ".yaml .yml" "yamllint" "$(check yamllint)"
+printf "  %-17s %-29s %s\n" ".tf" "tflint" "$(check tflint)"
+printf "  %-17s %-29s %s\n" ".lua" "luacheck" "$(check luacheck)"
+printf "  %-17s %-29s %s\n" ".md" "markdownlint" "$(check markdownlint)"
+printf "  %-17s %-29s %s\n" ".swift" "swiftlint" "$(check swiftlint)"
+printf "  %-17s %-29s %s\n" ".kt .kts" "ktlint" "$(check ktlint)"
+printf "  %-17s %-29s %s\n" ".cs" "dotnet build" "$(check dotnet)"
+printf "  %-17s %-29s %s\n" ".zig" "zig ast-check" "$(check zig)"
+printf "  %-17s %-29s %s\n" "Dockerfile" "hadolint" "$(check hadolint)"
+
+# Count ready vs missing
+LSP_READY=0
+LSP_TOTAL=16
+for cmd in typescript-language-server pyright-langserver gopls rust-analyzer clangd jdtls intelephense solargraph lua-language-server sourcekit-lsp kotlin-language-server OmniSharp zls terraform-ls yaml-language-server docker-langserver; do
+    command -v "$cmd" &>/dev/null && ((LSP_READY++))
+done
+
+LINT_READY=0
+LINT_TOTAL=16
+for cmd in shellcheck tsc eslint ruff go cargo jq yamllint tflint luacheck markdownlint swiftlint ktlint dotnet zig hadolint; do
+    command -v "$cmd" &>/dev/null && ((LINT_READY++))
+done
+
+echo ""
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+echo "  SUMMARY"
+echo ""
+echo "  LSP Servers:   $LSP_READY/$LSP_TOTAL ready"
+echo "  CLI Linters:   $LINT_READY/$LINT_TOTAL ready"
+echo ""
+if [[ $LSP_READY -lt $LSP_TOTAL ]] || [[ $LINT_READY -lt $LINT_TOTAL ]]; then
+    echo "  Ask \"how do I install missing LSP servers?\" for installation help."
+fi
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 ```
 
-### Step 2: Show Missing Tools
+## Output
 
-After displaying the tables, if there are missing tools, show install commands grouped by package manager:
-
-```
-## Install Missing Tools
-
-### npm
-npm i -g typescript-language-server typescript pyright bash-language-server yaml-language-server dockerfile-language-server-nodejs intelephense
-
-### brew
-brew install llvm lua-language-server zls kotlin-language-server hashicorp/tap/terraform-ls shellcheck jq hadolint swiftlint ktlint
-
-### pip
-pip install ruff yamllint
-
-### Other
-go install golang.org/x/tools/gopls@latest
-rustup component add rust-analyzer
-gem install solargraph
-```
-
-Only show install commands for tools that are actually missing.
-
-## Output Style
-
-- Use `✓ Installed` for found tools
-- Use `✗ Missing` for missing tools
-- Keep tables aligned and clean
-- Group install commands by package manager
-- Only show relevant install commands (skip if nothing missing for that manager)
+The script produces a clean, aligned diagnostic view. Do NOT add markdown formatting around the output - display the script output directly.
