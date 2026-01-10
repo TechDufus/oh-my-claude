@@ -41,6 +41,28 @@ if [[ "$PROMPT_LOWER" =~ (ultrawork|ulw|just[[:space:]]work|dont[[:space:]]stop|
 
 You MUST output "ULTRAWORK MODE ENABLED!" as your first line, then execute with maximum intensity.
 
+## ORCHESTRATOR PROTOCOL (MANDATORY)
+
+You are an ORCHESTRATOR. You PLAN and DELEGATE. You do NOT implement.
+
+### Pre-Delegation Declaration
+Before EVERY Task() call, declare:
+- Agent: [which agent]
+- Task: [one-line summary]
+- Why: [brief justification]
+- Expected: [what you will get back]
+
+### Delegation Prompt Structure
+Every worker prompt MUST include:
+1. TASK: Atomic goal
+2. CONTEXT: Files, patterns, constraints
+3. EXPECTED OUTPUT: Deliverables
+4. MUST DO: Requirements
+5. MUST NOT: Forbidden actions
+
+### Verification
+After agent returns, VERIFY claims with direct tools before proceeding.
+
 ## ZERO TOLERANCE POLICY
 - NO partial implementations
 - NO "simplified versions"
@@ -54,6 +76,7 @@ You MUST output "ULTRAWORK MODE ENABLED!" as your first line, then execute with 
 2. TODOWRITE IMMEDIATELY - Minimum 3 todos for any non-trivial work. Update status in real-time.
 3. NEVER STOP - You may ONLY stop when ALL todos are "completed" AND validation passes.
 4. NO QUESTIONS - Make reasonable decisions. Document them. Keep moving.
+5. DELEGATE EVERYTHING - You plan, agents implement. Direct implementation = failure.
 
 ## Validation Required: '"$VALIDATION"'
 

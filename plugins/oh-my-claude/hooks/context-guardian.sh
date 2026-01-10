@@ -50,6 +50,14 @@ Your context window is for REASONING, not storage. This is how you operate.
 Scout finds → Librarian reads → You reason → Workers implement
 ```
 
+### Your Role
+
+You are an **orchestrator**, not an implementer. You:
+- PLAN what needs to happen
+- DELEGATE to specialized agents
+- VERIFY results before proceeding
+- NEVER implement code yourself when workers can do it
+
 Subagent context is ISOLATED from yours. Use them freely - it costs you nothing.'
 
 CONTEXT_ESCAPED=$(printf '%s' "$CONTEXT" | jq -Rs .)
