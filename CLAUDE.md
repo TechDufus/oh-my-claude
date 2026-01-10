@@ -138,6 +138,14 @@ Claude Code manages LSP server lifecycle automatically. Install the server and i
 | Java | jdtls | Eclipse JDT Language Server |
 | PHP | intelephense | `npm i -g intelephense` |
 | Ruby | solargraph | `gem install solargraph` |
+| Lua | lua-language-server | `brew install lua-language-server` |
+| Zig | zls | `brew install zls` or from source |
+| Swift | sourcekit-lsp | Included with Xcode |
+| Kotlin | kotlin-language-server | `brew install kotlin-language-server` |
+| C# | OmniSharp | `brew install omnisharp` |
+| Terraform | terraform-ls | `brew install hashicorp/tap/terraform-ls` |
+| YAML | yaml-language-server | `npm i -g yaml-language-server` |
+| Dockerfile | docker-langserver | `npm i -g dockerfile-language-server-nodejs` |
 
 ### CLI Linter Fallbacks
 
@@ -153,6 +161,14 @@ If an LSP server isn't installed, the PostToolUse hook falls back to CLI linters
 | `.rs` | cargo check | Rust compile errors |
 | `.json` | jq | JSON syntax |
 | `.yaml`, `.yml` | yamllint | YAML syntax and style |
+| `.tf`, `.tfvars` | tflint | Terraform issues |
+| `.lua` | luacheck | Lua lint errors |
+| `.md` | markdownlint | Markdown style |
+| `.swift` | swiftlint | Swift style and errors |
+| `.kt`, `.kts` | ktlint | Kotlin style |
+| `.cs` | dotnet build | C# compile errors |
+| `.zig` | zig ast-check | Zig syntax errors |
+| `Dockerfile` | hadolint | Dockerfile best practices |
 
 If neither LSP nor linter is installed, diagnostics are silently skipped.
 

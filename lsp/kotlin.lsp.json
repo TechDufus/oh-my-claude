@@ -1,0 +1,11 @@
+{
+  "command": "kotlin-language-server",
+  "args": [],
+  "transport": "stdio",
+  "extensionToLanguage": {
+    ".kt": "kotlin",
+    ".kts": "kotlin"
+  },
+  "initializationOptions": {},
+  "settings": {}
+}

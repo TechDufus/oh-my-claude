@@ -1,0 +1,10 @@
+{
+  "command": "sourcekit-lsp",
+  "args": [],
+  "transport": "stdio",
+  "extensionToLanguage": {
+    ".swift": "swift"
+  },
+  "initializationOptions": {},
+  "settings": {}
+}

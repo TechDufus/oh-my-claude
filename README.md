@@ -70,7 +70,7 @@ These also activate ultrawork mode:
 On session start, oh-my-claude **detects** your project languages and **checks** for LSP servers. It does NOT auto-install anything - you install the servers you need.
 
 ### What You Get
-- **Auto-detection** of TypeScript, Python, Go, Rust, Java, C/C++, PHP, Ruby, Kotlin, Swift
+- **Auto-detection** of TypeScript, Python, Go, Rust, Java, C/C++, PHP, Ruby, Kotlin, Swift, Lua, Zig, Terraform, YAML, Dockerfile, Markdown
 - **Status report** showing which LSP servers are available vs missing
 - **Installation guidance** with commands for missing servers
 
@@ -152,6 +152,79 @@ Use via `Task(subagent_type="oh-my-claude:agent-name")`:
 - Track everything with TodoWrite
 - Never stop until done
 - No partial solutions, no asking for permission
+
+## Contributing
+
+### Adding LSP Support for a New Language
+
+Two extension points:
+
+#### 1. Native LSP Config
+
+Create `lsp/<language>.lsp.json`:
+
+```json
+{
+  "command": "language-server-binary",
+  "args": ["--stdio"],
+  "transport": "stdio",
+  "extensionToLanguage": {
+    ".ext": "language-id"
+  },
+  "initializationOptions": {},
+  "settings": {}
+}
+```
+
+**Required fields:**
+- `command` - LSP server binary name
+- `args` - Usually `["--stdio"]`
+- `transport` - Always `"stdio"`
+- `extensionToLanguage` - Map extensions to [LSP language IDs](https://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification/#textDocumentItem)
+
+#### 2. CLI Linter Fallback
+
+Add a case block to `hooks/lsp-diagnostics.sh`:
+
+```bash
+ext)
+    if command -v linter &>/dev/null; then
+        DIAGNOSTICS=$(linter --flags "$FILE_PATH" 2>&1) || true
+        if [[ -n "$DIAGNOSTICS" ]]; then
+            if echo "$DIAGNOSTICS" | grep -q 'error'; then
+                SEVERITY="error"
+            else
+                SEVERITY="warning"
+            fi
+        fi
+    fi
+    ;;
+```
+
+**Guidelines:**
+- Use `command -v` to check linter exists
+- Append `|| true` to prevent script failure
+- Parse output to set `SEVERITY` (error/warning/info)
+- Prefer machine-readable output formats
+
+### Version Bumping
+
+Claude Code caches plugins. **Any change requires a version bump** in `.claude-plugin/plugin.json`:
+
+| Change Type | Bump Version? |
+|-------------|---------------|
+| Agents, Hooks, Skills, LSP configs | YES |
+| CLAUDE.md, README.md | NO |
+
+### Testing
+
+```bash
+# Validate LSP config syntax
+jq . lsp/your-language.lsp.json
+
+# Test linter hook
+echo '{"tool_name":"Write","tool_input":{"file_path":"test.ext"}}' | ./hooks/lsp-diagnostics.sh
+```
 
 ## Uninstall
 

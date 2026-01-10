@@ -1,0 +1,11 @@
+{
+  "command": "zls",
+  "args": [],
+  "transport": "stdio",
+  "extensionToLanguage": {
+    ".zig": "zig",
+    ".zon": "zig"
+  },
+  "initializationOptions": {},
+  "settings": {}
+}

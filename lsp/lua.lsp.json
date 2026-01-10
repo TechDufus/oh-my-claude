@@ -1,0 +1,19 @@
+{
+  "command": "lua-language-server",
+  "args": [],
+  "transport": "stdio",
+  "extensionToLanguage": {
+    ".lua": "lua"
+  },
+  "initializationOptions": {},
+  "settings": {
+    "Lua": {
+      "diagnostics": {
+        "globals": ["vim"]
+      },
+      "workspace": {
+        "checkThirdParty": false
+      }
+    }
+  }
+}

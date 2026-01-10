@@ -21,13 +21,33 @@ if [[ -z "$FILE_PATH" || ! -f "$FILE_PATH" ]]; then
     exit 0
 fi
 
-# Get file extension
+# Get file extension and basename
 EXT="${FILE_PATH##*.}"
+BASENAME=$(basename "$FILE_PATH")
 
 # Run appropriate diagnostic based on file type
 DIAGNOSTICS=""
 SEVERITY="info"
 
+## Handle Dockerfile (no extension, matched by name)
+if [[ "$BASENAME" == "Dockerfile"* || "$BASENAME" == "*.dockerfile" ]]; then
+    if command -v hadolint &>/dev/null; then
+        DIAGNOSTICS=$(hadolint --format gcc "$FILE_PATH" 2>&1) || true
+        if [[ -n "$DIAGNOSTICS" ]]; then
+            if echo "$DIAGNOSTICS" | grep -q ':.*: error:'; then
+                SEVERITY="error"
+            else
+                SEVERITY="warning"
+            fi
+        fi
+    fi
+    if [[ -n "$DIAGNOSTICS" ]]; then
+        # Skip to output section
+        :
+    else
+        exit 0
+    fi
+else
 case "$EXT" in
     sh|bash)
         # Shellcheck for shell scripts
@@ -135,11 +155,103 @@ case "$EXT" in
         fi
         ;;
 
+    tf|tfvars)
+        # Terraform linting
+        if command -v tflint &>/dev/null; then
+            DIAGNOSTICS=$(tflint --format compact "$FILE_PATH" 2>&1) || true
+            if [[ -n "$DIAGNOSTICS" ]]; then
+                if echo "$DIAGNOSTICS" | grep -q 'Error:'; then
+                    SEVERITY="error"
+                else
+                    SEVERITY="warning"
+                fi
+            fi
+        fi
+        ;;
+
+    lua)
+        # Lua linting
+        if command -v luacheck &>/dev/null; then
+            DIAGNOSTICS=$(luacheck --formatter plain "$FILE_PATH" 2>&1) || true
+            if [[ -n "$DIAGNOSTICS" && "$DIAGNOSTICS" != *"0 warnings"* ]]; then
+                if echo "$DIAGNOSTICS" | grep -qE '\([EF]\d+\)'; then
+                    SEVERITY="error"
+                else
+                    SEVERITY="warning"
+                fi
+            fi
+        fi
+        ;;
+
+    md|markdown)
+        # Markdown linting
+        if command -v markdownlint &>/dev/null; then
+            DIAGNOSTICS=$(markdownlint "$FILE_PATH" 2>&1) || true
+            if [[ -n "$DIAGNOSTICS" ]]; then
+                SEVERITY="warning"
+            fi
+        fi
+        ;;
+
+    swift)
+        # Swift linting
+        if command -v swiftlint &>/dev/null; then
+            DIAGNOSTICS=$(swiftlint lint --quiet --path "$FILE_PATH" 2>&1) || true
+            if [[ -n "$DIAGNOSTICS" ]]; then
+                if echo "$DIAGNOSTICS" | grep -q ': error:'; then
+                    SEVERITY="error"
+                else
+                    SEVERITY="warning"
+                fi
+            fi
+        fi
+        ;;
+
+    kt|kts)
+        # Kotlin linting
+        if command -v ktlint &>/dev/null; then
+            DIAGNOSTICS=$(ktlint "$FILE_PATH" 2>&1) || true
+            if [[ -n "$DIAGNOSTICS" ]]; then
+                SEVERITY="warning"
+            fi
+        fi
+        ;;
+
+    cs)
+        # C# - dotnet format check (requires being in dotnet project)
+        if command -v dotnet &>/dev/null; then
+            dotnet_dir=$(dirname "$FILE_PATH")
+            while [[ "$dotnet_dir" != "/" ]]; do
+                if ls "$dotnet_dir"/*.csproj &>/dev/null || ls "$dotnet_dir"/*.sln &>/dev/null; then
+                    DIAGNOSTICS=$(cd "$dotnet_dir" && dotnet build --no-restore -v q 2>&1 | grep -E "(error|warning) CS" | head -20) || true
+                    if echo "$DIAGNOSTICS" | grep -q 'error CS'; then
+                        SEVERITY="error"
+                    elif [[ -n "$DIAGNOSTICS" ]]; then
+                        SEVERITY="warning"
+                    fi
+                    break
+                fi
+                dotnet_dir=$(dirname "$dotnet_dir")
+            done
+        fi
+        ;;
+
+    zig)
+        # Zig check
+        if command -v zig &>/dev/null; then
+            DIAGNOSTICS=$(zig ast-check "$FILE_PATH" 2>&1) || true
+            if [[ -n "$DIAGNOSTICS" ]]; then
+                SEVERITY="error"
+            fi
+        fi
+        ;;
+
     *)
         # No diagnostic available for this file type
         exit 0
         ;;
 esac
+fi
 
 # If no diagnostics, exit silently
 if [[ -z "$DIAGNOSTICS" ]]; then
