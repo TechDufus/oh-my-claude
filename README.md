@@ -1,7 +1,6 @@
 <img width="1328" height="611" alt="oh-my-claude_hero" src="https://github.com/user-attachments/assets/ca862678-da89-45c3-8385-fb45415c1b6e" />
 
 <p align="center">
-  <a href="https://github.com/TechDufus/oh-my-claude/releases"><img src="https://img.shields.io/github/v/release/TechDufus/oh-my-claude?style=flat-square&label=version" alt="Version"></a>
   <a href="https://github.com/TechDufus/oh-my-claude/blob/main/LICENSE"><img src="https://img.shields.io/github/license/TechDufus/oh-my-claude?style=flat-square" alt="License"></a>
   <a href="https://github.com/TechDufus/oh-my-claude/stargazers"><img src="https://img.shields.io/github/stars/TechDufus/oh-my-claude?style=flat-square" alt="Stars"></a>
   <a href="https://github.com/TechDufus/oh-my-claude/issues"><img src="https://img.shields.io/github/issues/TechDufus/oh-my-claude?style=flat-square" alt="Issues"></a>
