@@ -13,12 +13,12 @@
 
 ## TL;DR — Skip This README
 
-Just add **ultrawork** to any prompt:
+Just add a trigger word anywhere in your prompt:
 
 ```
-ultrawork fix all the type errors
-ultrawork refactor the entire auth system
-ultrawork implement user analytics with tests
+fix all the type errors, ultrawork
+ulw refactor the entire auth system
+implement user analytics with tests, just get it done
 ```
 
 Claude will parallelize everything, delegate file reads to subagents, track progress with todos, and refuse to stop until the job is done. No partial implementations. No asking for permission. Just execution.
