@@ -25,6 +25,9 @@ from hook_utils import (
     read_stdin_safe,
 )
 
+# Tools that can be invoked via uvx (Python packages only)
+UVX_TOOLS = {"ruff", "pyright", "yamllint", "taplo", "markdownlint-cli2"}
+
 
 def run_cmd(cmd: list[str], cwd: str | None = None) -> str:
     """Run a command and return stdout+stderr, or empty string on failure."""
@@ -39,6 +42,18 @@ def run_cmd(cmd: list[str], cwd: str | None = None) -> str:
         return (result.stdout + result.stderr).strip()
     except (subprocess.TimeoutExpired, FileNotFoundError, OSError):
         return ""
+
+
+def run_with_fallback(cmd: list[str], cwd: str | None = None) -> str:
+    """Run command, falling back to uvx for Python-packaged tools."""
+    tool = cmd[0]
+    # Try PATH first (fast)
+    if WHICH.available(tool):
+        return run_cmd(cmd, cwd)
+    # uvx fallback for Python packages
+    if tool in UVX_TOOLS:
+        return run_cmd(["uvx"] + cmd, cwd)
+    return ""
 
 
 def find_project_root(start_path: str, marker_files: list[str]) -> str | None:
@@ -106,30 +121,42 @@ def check_eslint(file_path: str) -> tuple[str, str] | None:
 
 
 def check_python(file_path: str) -> tuple[str, str] | None:
-    # Prefer ruff (fast), fall back to pyright
-    if WHICH.available("ruff"):
-        output = run_cmd(["ruff", "check", "--output-format=concise", file_path])
-        if output:
-            return output, "warning"
-        return None
-    if WHICH.available("pyright"):
-        raw = run_cmd(["pyright", "--outputjson", file_path])
-        if raw:
-            try:
-                data = json.loads(raw)
-                diagnostics = data.get("generalDiagnostics", [])
-                lines = []
+    """Run both ruff (lint) and pyright (types) for comprehensive coverage."""
+    outputs = []
+    max_severity = "info"
+
+    # Run ruff for lint issues
+    ruff_output = run_with_fallback(["ruff", "check", "--output-format=concise", file_path])
+    if ruff_output:
+        # Filter out the "Found X errors" summary line
+        lines = [ln for ln in ruff_output.split("\n") if ln and not ln.startswith("Found ")]
+        if lines:
+            outputs.append("# ruff (lint)")
+            outputs.extend(lines)
+            max_severity = "warning"
+
+    # Run pyright for type issues
+    pyright_raw = run_with_fallback(["pyright", "--outputjson", file_path])
+    if pyright_raw:
+        try:
+            data = json.loads(pyright_raw)
+            diagnostics = data.get("generalDiagnostics", [])
+            if diagnostics:
+                outputs.append("# pyright (types)")
                 for d in diagnostics:
                     line = d.get("range", {}).get("start", {}).get("line", 0)
                     sev = d.get("severity", "info")
                     msg = d.get("message", "")
-                    lines.append(f"{file_path}:{line}: {sev}: {msg}")
-                output = "\n".join(lines)
-                if output:
-                    severity = "error" if ": error:" in output else "warning"
-                    return output, severity
-            except json.JSONDecodeError:
-                pass
+                    outputs.append(f"{file_path}:{line}: {sev}: {msg}")
+                    if sev == "error":
+                        max_severity = "error"
+                    elif sev == "warning" and max_severity != "error":
+                        max_severity = "warning"
+        except json.JSONDecodeError:
+            pass
+
+    if outputs:
+        return "\n".join(outputs), max_severity
     return None
 
 
@@ -168,9 +195,7 @@ def check_json(file_path: str) -> tuple[str, str] | None:
 
 
 def check_yaml(file_path: str) -> tuple[str, str] | None:
-    if not WHICH.available("yamllint"):
-        return None
-    output = run_cmd(["yamllint", "-f", "parsable", file_path])
+    output = run_with_fallback(["yamllint", "-f", "parsable", file_path])
     if not output:
         return None
     severity = detect_severity(output, [r"\[error\]"], [r"\[warning\]"])
@@ -202,9 +227,7 @@ def check_lua(file_path: str) -> tuple[str, str] | None:
 
 
 def check_markdown(file_path: str) -> tuple[str, str] | None:
-    if not WHICH.available("markdownlint"):
-        return None
-    output = run_cmd(["markdownlint", file_path])
+    output = run_with_fallback(["markdownlint-cli2", file_path])
     if output:
         return output, "warning"
     return None
