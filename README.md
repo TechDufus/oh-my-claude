@@ -35,6 +35,7 @@ Claude will parallelize everything, delegate file reads to subagents, track prog
 - [What Ultrawork Actually Does](#what-ultrawork-actually-does)
 - [The Agent Team](#the-agent-team)
 - [All Components](#all-components)
+- [LSP Support](#lsp-support)
 - [For LLM Agents](#for-llm-agents)
 - [Philosophy](#philosophy)
 - [Contributing](#contributing)
@@ -175,6 +176,59 @@ Subagent context is **isolated** from your main context. When a librarian reads 
 | Skill | Trigger |
 |-------|---------|
 | **git-commit-validator** | Auto-invoked on commit requests |
+
+---
+
+## LSP Support
+
+This plugin provides LSP (Language Server Protocol) configurations for 16 languages. Claude Code uses these to give you real-time diagnostics, go-to-definition, find references, and hover information.
+
+### How It Works
+
+1. **You install** the language server binary (e.g., `npm install -g typescript-language-server`)
+2. **This plugin provides** the configuration telling Claude Code how to connect
+3. **Claude Code** uses its native LSP tools (`lsp_diagnostics`, `lsp_hover`, etc.)
+
+### Supported Languages
+
+| Language | Server | Install Command |
+|----------|--------|-----------------|
+| Python | pyright | `pip install pyright` or `npm install -g pyright` |
+| TypeScript/JavaScript | typescript-language-server | `npm install -g typescript-language-server typescript` |
+| Go | gopls | `go install golang.org/x/tools/gopls@latest` |
+| Rust | rust-analyzer | [rust-analyzer.github.io](https://rust-analyzer.github.io/manual.html#installation) |
+| C/C++ | clangd | `brew install llvm` or system package manager |
+| Bash/Shell | bash-language-server | `npm install -g bash-language-server` |
+| YAML | yaml-language-server | `npm install -g yaml-language-server` |
+| JSON | vscode-json-language-server | `npm install -g vscode-langservers-extracted` |
+| CSS/SCSS/Less | vscode-css-language-server | `npm install -g vscode-langservers-extracted` |
+| HTML | vscode-html-language-server | `npm install -g vscode-langservers-extracted` |
+| Dockerfile | docker-langserver | `npm install -g dockerfile-language-server-nodejs` |
+| Terraform | terraform-ls | `brew install hashicorp/tap/terraform-ls` |
+| Ruby | solargraph | `gem install solargraph` |
+| Lua | lua-language-server | [github.com/LuaLS/lua-language-server](https://github.com/LuaLS/lua-language-server) |
+| Zig | zls | [github.com/zigtools/zls](https://github.com/zigtools/zls) |
+| Swift | sourcekit-lsp | Included with Xcode |
+
+### Verifying LSP Is Working
+
+In Claude Code, the LSP tools become available once servers are installed and detected:
+
+```
+# Check what's installed and running
+lsp_servers
+
+# Get diagnostics for a file
+lsp_diagnostics path/to/file.ts
+
+# Hover over a symbol (get type info)
+lsp_hover path/to/file.ts line character
+
+# Find all references
+lsp_find_references path/to/file.ts line character
+```
+
+If you see "Executable not found in $PATH" in `/plugin Errors`, install the required binary.
 
 ---
 
