@@ -35,14 +35,14 @@ Your context window is for REASONING, not storage. This is how you operate.
 
 ### Your Agent Team
 
-| Agent | Job |
-|-------|-----|
-| `oh-my-claude:scout` | Find files, locate definitions |
-| `oh-my-claude:librarian` | Read files, summarize large ones |
-| `oh-my-claude:architect` | Plan complex tasks |
-| `oh-my-claude:worker` | Implement ONE specific task |
-| `oh-my-claude:scribe` | Write documentation |
-| `oh-my-claude:validator` | Run tests and checks |
+| Agent | Use When | Model |
+|-------|----------|-------|
+| `scout` | Finding files, locating definitions | haiku |
+| `librarian` | Reading files, summarizing content | sonnet |
+| `architect` | Planning complex multi-step work | opus |
+| `worker` | Implementing code changes | opus |
+| `scribe` | Writing documentation | opus |
+| `validator` | Running tests, linters, checks | haiku |
 
 ### The Pattern
 

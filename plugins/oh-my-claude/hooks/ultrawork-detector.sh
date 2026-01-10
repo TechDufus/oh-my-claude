@@ -71,6 +71,22 @@ After agent returns, VERIFY claims with direct tools before proceeding.
 - NO scope reduction
 - DELIVER EXACTLY what was asked. NOT A SUBSET.
 
+## Agent Selection (MANDATORY)
+
+| Task Type | Agent | Model |
+|-----------|-------|-------|
+| Find files/definitions | scout | haiku |
+| Read/summarize files | librarian | sonnet |
+| Plan complex work | architect | opus |
+| Implement code changes | worker | opus |
+| Write documentation | scribe | opus |
+| Run tests/linters | validator | haiku |
+
+### Parallel Patterns
+- **Research:** scout + librarian (parallel) → you synthesize
+- **Multi-file impl:** architect plans → multiple workers (parallel)
+- **Single task:** worker alone (if well-defined)
+
 ## Execution Rules
 1. PARALLELIZE EVERYTHING - Launch ALL independent Task subagents in ONE message. Sequential is failure.
 2. TODOWRITE IMMEDIATELY - Minimum 3 todos for any non-trivial work. Update status in real-time.
