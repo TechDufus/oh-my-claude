@@ -60,7 +60,17 @@ One keyword. Total transformation.
 
 ## Install
 
-### From GitHub (recommended)
+Supported on macOS and Linux. Windows support is planned.
+
+### Step 1: Install uv (required)
+
+```bash
+curl -LsSf https://astral.sh/uv/install.sh | sh
+```
+
+uv manages Python automatically. No separate Python install needed.
+
+### Step 2: Install the plugin
 
 ```bash
 # In Claude Code:
@@ -68,7 +78,7 @@ One keyword. Total transformation.
 /plugin install oh-my-claude@oh-my-claude
 ```
 
-### From Local Directory
+### Alternative: From Local Directory
 
 ```bash
 git clone https://github.com/TechDufus/oh-my-claude /tmp/oh-my-claude
@@ -77,7 +87,9 @@ git clone https://github.com/TechDufus/oh-my-claude /tmp/oh-my-claude
 /plugin install oh-my-claude@oh-my-claude
 ```
 
-Restart Claude Code. Done.
+### Step 3: Restart Claude Code
+
+Required for hooks to activate.
 
 ### Update
 
