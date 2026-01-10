@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # context-guardian.sh
 # SessionStart hook: Injects always-on context protection rules for every session
 # This is the "batteries included" baseline that makes Claude feel better automatically

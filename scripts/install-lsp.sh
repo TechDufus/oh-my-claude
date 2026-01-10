@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # install-lsp.sh
 # Smart LSP server installer - detects OS/arch and uses best available package manager
 #

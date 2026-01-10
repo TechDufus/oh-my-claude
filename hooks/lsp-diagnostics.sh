@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # lsp-diagnostics.sh
 # PostToolUse hook: Runs language-specific diagnostics after Edit/Write operations
 # Provides immediate feedback on code quality issues

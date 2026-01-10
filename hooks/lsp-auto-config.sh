@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # lsp-auto-config.sh
 # SessionStart hook: Auto-detects project languages and checks LSP server availability
 

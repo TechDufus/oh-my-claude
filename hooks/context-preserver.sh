@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # context-preserver.sh
 # PreCompact hook: Injects reminder to preserve important context before compaction
 

@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # ultrawork-detector.sh
 # Detects ultrawork/search/analyze triggers and injects execution directives
 

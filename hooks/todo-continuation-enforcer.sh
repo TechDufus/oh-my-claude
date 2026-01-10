@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # todo-continuation-enforcer.sh
 # Stop hook: Prevents stopping when todos are incomplete
 #
