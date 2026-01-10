@@ -169,6 +169,3 @@ command -v shellcheck && shellcheck -f gcc script.sh
 # - Portability issues
 ```
 
-## LSP Integration Note
-
-The PostToolUse hook (`lsp-diagnostics.sh`) automatically runs diagnostics after Edit/Write operations when `ENABLE_LSP_TOOL=1` is set. This provides immediate feedback. The Validator agent provides comprehensive validation for final checks before completion.

@@ -126,7 +126,6 @@ echo ""
 echo "Features enabled:"
 echo "  - ultrawork mode (use 'ultrawork' in prompts)"
 echo "  - Context Guardian (auto-delegation guidance)"
-echo "  - LSP diagnostics (auto after Edit/Write if linters installed)"
 echo "  - Todo continuation (prevents stopping with incomplete todos)"
 echo "  - Context preservation (saves state before /compact)"
 if [[ "$UV_INSTALLED" == "true" ]]; then

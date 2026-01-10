@@ -94,7 +94,6 @@ For complex tasks, persist learnings to avoid losing context:
 | Command | Purpose |
 |---------|---------|
 | `/prime` | Context recovery after /clear |
-| `/lsp` | Show LSP/linter installation status |
 
 ## Skills
 
@@ -107,5 +106,4 @@ For complex tasks, persist learnings to avoid losing context:
 - **Context Guardian** - Injects protection rules at session start
 - **Ultrawork Detector** - Detects keywords, adjusts intensity
 - **Context Monitor** - Warns at 70%+ context usage, critical at 85%
-- **LSP Diagnostics** - Reports errors after Edit/Write
 - **Todo Enforcer** - Prevents stopping with incomplete todos

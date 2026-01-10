@@ -6,11 +6,6 @@
         "hooks": [
           {
             "type": "command",
-            "command": "uv run --script ${CLAUDE_PLUGIN_ROOT}/hooks/lsp_auto_config.py",
-            "timeout": 10
-          },
-          {
-            "type": "command",
             "command": "uv run --script ${CLAUDE_PLUGIN_ROOT}/hooks/context_guardian.py",
             "timeout": 5
           }
@@ -45,11 +40,6 @@
       {
         "matcher": ".*",
         "hooks": [
-          {
-            "type": "command",
-            "command": "uv run --script ${CLAUDE_PLUGIN_ROOT}/hooks/lsp_diagnostics.py",
-            "timeout": 10
-          },
           {
             "type": "command",
             "command": "uv run --script ${CLAUDE_PLUGIN_ROOT}/hooks/context_monitor.py",

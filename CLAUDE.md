@@ -12,7 +12,7 @@ Claude Code plugin providing ultrawork mode, context protection, and specialized
     ├── .claude-plugin/plugin.json    # Plugin metadata (version x1)
     ├── agents/                       # 6 agents (auto-discovered)
     ├── hooks/                        # Python hooks with inline uv deps
-    ├── commands/                     # /lsp, /prime (auto-discovered)
+    ├── commands/                     # /prime (auto-discovered)
     ├── skills/                       # git-commit-validator (in plugin.json)
     └── CLAUDE.md                     # Plugin instructions for Claude
 ```

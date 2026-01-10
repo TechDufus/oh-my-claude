@@ -34,7 +34,6 @@ Claude will parallelize everything, delegate file reads to subagents, track prog
 - [Magic Keywords](#magic-keywords)
 - [What Ultrawork Actually Does](#what-ultrawork-actually-does)
 - [The Agent Team](#the-agent-team)
-- [LSP Support](#lsp-support)
 - [All Components](#all-components)
 - [For LLM Agents](#for-llm-agents)
 - [Philosophy](#philosophy)
@@ -154,73 +153,22 @@ Subagent context is **isolated** from your main context. When a librarian reads 
 
 ---
 
-## LSP Support
-
-oh-my-claude auto-detects your project languages and checks for LSP servers on session start. It reports what's available and what's missing.
-
-### Supported Languages
-
-TypeScript, Python, Go, Rust, Java, C/C++, PHP, Ruby, Kotlin, Swift, Lua, Zig, Terraform, YAML, Dockerfile, Markdown
-
-### Enable LSP Tools
-
-```bash
-# Add to your shell profile (.zshrc, .bashrc, etc.)
-export ENABLE_LSP_TOOL=1
-```
-
-### Check Status
-
-```bash
-/lsp  # Shows what's installed vs missing
-```
-
-### Install Servers
-
-LSP servers must be in your PATH. Use the helper or install manually:
-
-```bash
-# Helper script (auto-detects best package manager)
-./plugins/oh-my-claude/scripts/install-lsp.sh typescript
-./plugins/oh-my-claude/scripts/install-lsp.sh python
-./plugins/oh-my-claude/scripts/install-lsp.sh all --check
-
-# Or manually:
-bun install -g typescript-language-server typescript
-uv tool install pyright
-go install golang.org/x/tools/gopls@latest
-rustup component add rust-analyzer
-```
-
-### Available LSP Tools
-
-When enabled, Claude gets IDE-level intelligence:
-- `goToDefinition` — Jump to symbol definition
-- `findReferences` — Find all usages
-- `hover` — Type info and documentation
-- `documentSymbol` — File outline
-- `getDiagnostics` — Errors and warnings
-
----
-
 ## All Components
 
 ### Hooks (Automatic)
 
 | Hook | When | What |
 |------|------|------|
-| **lsp-auto-config** | Session start | Detects languages, checks LSP status |
+| **context-guardian** | Session start | Injects context protection rules |
 | **ultrawork-detector** | Prompt submit | Detects keywords, injects execution directives |
-| **todo-continuation-enforcer** | Stop | Prevents stopping with incomplete todos |
-| **context-preserver** | Pre-compact | Preserves state before context compaction |
-| **lsp-diagnostics** | Post tool use | Reports errors after file edits |
+| **todo-enforcer** | Stop | Prevents stopping with incomplete todos |
+| **context-monitor** | Post tool use | Warns at high context usage |
 
 ### Commands
 
 | Command | Description |
 |---------|-------------|
 | `/prime` | Context recovery after /clear |
-| `/lsp` | Show LSP/linter installation status |
 
 ### Skills
 
@@ -267,13 +215,6 @@ After restart, use **ultrawork** in any prompt to activate parallel execution mo
 
 ## Contributing
 
-### Adding LSP Support
-
-1. Create `plugins/oh-my-claude/lsp/<language>.lsp.json`
-2. Add fallback to `plugins/oh-my-claude/hooks/lsp-diagnostics.sh`
-
-See [PLUGIN-STRUCTURE.md](./PLUGIN-STRUCTURE.md) for the full guide.
-
 ### Version Bumping
 
 Any change to cached content requires version bumps in BOTH:
@@ -293,5 +234,3 @@ Any change to cached content requires version bumps in BOTH:
 ## Credits
 
 Inspired by [oh-my-opencode](https://github.com/code-yeongyu/oh-my-opencode).
-
-LSP implementation informed by [boostvolt/claude-code-lsps](https://github.com/boostvolt/claude-code-lsps), [Piebald-AI/claude-code-lsps](https://github.com/Piebald-AI/claude-code-lsps), and [ktnyt/cclsp](https://github.com/ktnyt/cclsp).
