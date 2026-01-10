@@ -7,6 +7,10 @@ tools:
   - Grep
   - Write
   - Edit
+  - Bash(*--help*)
+  - Bash(*--version*)
+  - Bash(cat:*)
+  - Bash(head:*)
 ---
 
 # Scribe

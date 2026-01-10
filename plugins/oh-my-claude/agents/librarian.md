@@ -4,6 +4,7 @@ description: "Smart file reading agent. Reads files intelligently, summarizes la
 tools:
   - Read
   - Grep
+  - Glob
   - Bash(wc:*)
 ---
 
