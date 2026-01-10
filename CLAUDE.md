@@ -185,7 +185,7 @@ If neither LSP nor linter is installed, diagnostics are silently skipped.
 
 ### Version Bumping
 
-Claude Code caches plugins by version. **Any change to cached content requires a version bump** in `.claude-plugin/plugin.json`:
+Claude Code caches plugins by version. **Any change to cached content requires a version bump** in both `.claude-plugin/plugin.json` AND `.claude-plugin/marketplace.json`:
 
 | Change Type | Requires Version Bump |
 |-------------|----------------------|
