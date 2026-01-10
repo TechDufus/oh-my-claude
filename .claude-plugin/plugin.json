@@ -1,6 +1,6 @@
 {
   "name": "oh-my-claude",
-  "version": "0.0.11",
+  "version": "0.0.12",
   "description": "Add 'ultrawork' to any prompt for maximum parallel execution.",
   "author": {
     "name": "TechDufus",
@@ -11,7 +11,6 @@
   "keywords": ["ultrawork", "parallel", "subagents", "workflow"],
   "hooks": "../hooks/hooks.json",
   "skills": [
-    "../skills/git-commit-validator/SKILL.md",
-    "../skills/lsp/SKILL.md"
+    "../skills/git-commit-validator/SKILL.md"
   ]
 }
