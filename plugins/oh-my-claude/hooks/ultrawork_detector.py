@@ -132,11 +132,44 @@ Expected: List of file paths with line references to auth logic
 
 ### Delegation Prompt Structure
 Every worker prompt MUST include:
-1. TASK: Atomic goal
+1. TASK: Atomic goal (one sentence)
 2. CONTEXT: Files, patterns, constraints
-3. EXPECTED OUTPUT: Deliverables
-4. MUST DO: Requirements
+3. EXPECTED OUTPUT: Specific deliverables
+4. MUST DO: Non-negotiable requirements
 5. MUST NOT: Forbidden actions
+6. ACCEPTANCE CRITERIA: How to verify done
+7. RELEVANT CODE: Key snippets or file references
+
+Example worker delegation:
+```
+TASK: Add validation to the login form
+
+CONTEXT:
+- File: src/components/LoginForm.tsx
+- Using zod for validation (see src/lib/validators.ts)
+- Must match existing validation patterns
+
+EXPECTED OUTPUT:
+- Updated LoginForm.tsx with email/password validation
+- Error messages displayed below fields
+
+MUST DO:
+- Use zod schema validation
+- Show inline error messages
+- Validate on blur and submit
+
+MUST NOT:
+- Change form layout
+- Add new dependencies
+
+ACCEPTANCE CRITERIA:
+- Invalid email shows "Invalid email format"
+- Empty password shows "Password required"
+- Form doesn't submit until valid
+
+RELEVANT CODE:
+- src/lib/validators.ts:15-30 (existing patterns)
+```
 
 ### Verification
 After agent returns, VERIFY claims with direct tools before proceeding.
