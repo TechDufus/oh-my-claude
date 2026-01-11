@@ -60,6 +60,7 @@ All agents use `model: inherit` - same model as your session.
 | **worker** | BUILD | Single focused implementation task |
 | **scribe** | WRITE | Documentation, READMEs, comments |
 | **validator** | CHECK | Tests, linters, verification |
+| **orchestrator** | COORDINATE | Complex multi-agent work, cannot implement directly |
 
 Usage: `Task(subagent_type="oh-my-claude:scout", prompt="Find auth files")`
 
