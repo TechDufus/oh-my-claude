@@ -135,5 +135,27 @@ For complex tasks, persist learnings to avoid losing context:
 
 - **Context Guardian** - Injects protection rules at session start
 - **Ultrawork Detector** - Detects keywords, adjusts intensity
+- **Context Protector** - Blocks large file reads (>100 lines), forces librarian delegation
+- **Safe Permissions** - Auto-approves safe commands (tests, linters, readonly git)
 - **Context Monitor** - Warns at 70%+ context usage, critical at 85%
 - **Todo Enforcer** - Prevents stopping with incomplete todos
+
+## Configuration
+
+Customize behavior via environment variables in your `settings.json`:
+
+```json
+{
+  "env": {
+    "OMC_LARGE_FILE_THRESHOLD": "100"
+  }
+}
+```
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `OMC_LARGE_FILE_THRESHOLD` | `100` | Lines before Read is blocked |
+| `OMC_ALLOW_LARGE_READS` | `0` | Set to `1` to disable large file blocking |
+| `OMC_CONTEXT_WARN_PCT` | `70` | Context % to trigger warning |
+| `OMC_CONTEXT_CRITICAL_PCT` | `85` | Context % for critical warning |
+| `OMC_SAFE_PERMISSIONS` | `1` | Set to `0` to disable auto-approvals |

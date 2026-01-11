@@ -4,16 +4,19 @@ These tests ensure the context monitoring hook correctly:
 1. Estimates token usage from transcript data
 2. Triggers warnings at appropriate thresholds (70% warning, 85% critical)
 3. Prevents warning spam by tracking warned sessions
+4. Respects environment variable configuration
 """
 
 import pytest
 
 from context_monitor import (
     CONTEXT_LIMIT,
-    CRITICAL_THRESHOLD,
-    WARNING_THRESHOLD,
+    DEFAULT_CRITICAL_PCT,
+    DEFAULT_WARNING_PCT,
     _warned_sessions,
     estimate_tokens,
+    get_critical_threshold,
+    get_warning_threshold,
 )
 
 
@@ -107,8 +110,8 @@ class TestEstimateTokens:
         assert result >= 0
 
 
-class TestThresholdConstants:
-    """Tests to verify threshold constants are set correctly.
+class TestThresholdDefaults:
+    """Tests to verify default threshold values.
 
     These tests document the expected behavior and catch accidental changes.
     """
@@ -117,17 +120,61 @@ class TestThresholdConstants:
         """Context limit should be 200,000 tokens (Claude's context window)."""
         assert CONTEXT_LIMIT == 200_000
 
-    def test_warning_threshold_is_70_percent(self):
-        """Warning should trigger at 70% usage."""
-        assert WARNING_THRESHOLD == 0.70
+    def test_default_warning_is_70_percent(self):
+        """Default warning should be at 70% usage."""
+        assert DEFAULT_WARNING_PCT == 70
 
-    def test_critical_threshold_is_85_percent(self):
-        """Critical warning should trigger at 85% usage."""
-        assert CRITICAL_THRESHOLD == 0.85
+    def test_default_critical_is_85_percent(self):
+        """Default critical should be at 85% usage."""
+        assert DEFAULT_CRITICAL_PCT == 85
 
     def test_critical_above_warning(self):
         """Critical threshold must be higher than warning threshold."""
-        assert CRITICAL_THRESHOLD > WARNING_THRESHOLD
+        assert get_critical_threshold() > get_warning_threshold()
+
+
+class TestThresholdEnvVars:
+    """Tests for environment variable configuration."""
+
+    def test_default_warning_threshold(self, monkeypatch):
+        """Without env var, should return default 70%."""
+        monkeypatch.delenv("OMC_CONTEXT_WARN_PCT", raising=False)
+        assert get_warning_threshold() == 0.70
+
+    def test_default_critical_threshold(self, monkeypatch):
+        """Without env var, should return default 85%."""
+        monkeypatch.delenv("OMC_CONTEXT_CRITICAL_PCT", raising=False)
+        assert get_critical_threshold() == 0.85
+
+    def test_custom_warning_threshold(self, monkeypatch):
+        """Custom warning threshold via env var."""
+        monkeypatch.setenv("OMC_CONTEXT_WARN_PCT", "60")
+        assert get_warning_threshold() == 0.60
+
+    def test_custom_critical_threshold(self, monkeypatch):
+        """Custom critical threshold via env var."""
+        monkeypatch.setenv("OMC_CONTEXT_CRITICAL_PCT", "90")
+        assert get_critical_threshold() == 0.90
+
+    def test_invalid_warning_returns_default(self, monkeypatch):
+        """Invalid env var value should return default."""
+        monkeypatch.setenv("OMC_CONTEXT_WARN_PCT", "not_a_number")
+        assert get_warning_threshold() == 0.70
+
+    def test_invalid_critical_returns_default(self, monkeypatch):
+        """Invalid env var value should return default."""
+        monkeypatch.setenv("OMC_CONTEXT_CRITICAL_PCT", "invalid")
+        assert get_critical_threshold() == 0.85
+
+    def test_threshold_clamped_to_100(self, monkeypatch):
+        """Threshold above 100 should be clamped."""
+        monkeypatch.setenv("OMC_CONTEXT_WARN_PCT", "150")
+        assert get_warning_threshold() == 1.0
+
+    def test_threshold_clamped_to_0(self, monkeypatch):
+        """Negative threshold should be clamped to 0."""
+        monkeypatch.setenv("OMC_CONTEXT_WARN_PCT", "-10")
+        assert get_warning_threshold() == 0.0
 
 
 class TestThresholdBehavior:
@@ -141,38 +188,45 @@ class TestThresholdBehavior:
         # 69% of 200k = 138k tokens = 552k chars
         tokens_at_69_percent = int(CONTEXT_LIMIT * 0.69)
         usage_pct = tokens_at_69_percent / CONTEXT_LIMIT
+        warning_threshold = get_warning_threshold()
 
-        assert usage_pct < WARNING_THRESHOLD
+        assert usage_pct < warning_threshold
 
     def test_at_warning_threshold(self):
         """Usage at exactly 70% should trigger warning."""
         tokens_at_70_percent = int(CONTEXT_LIMIT * 0.70)
         usage_pct = tokens_at_70_percent / CONTEXT_LIMIT
+        warning_threshold = get_warning_threshold()
+        critical_threshold = get_critical_threshold()
 
-        assert usage_pct >= WARNING_THRESHOLD
-        assert usage_pct < CRITICAL_THRESHOLD
+        assert usage_pct >= warning_threshold
+        assert usage_pct < critical_threshold
 
     def test_between_warning_and_critical(self):
         """Usage between 70-85% should trigger warning, not critical."""
         tokens_at_80_percent = int(CONTEXT_LIMIT * 0.80)
         usage_pct = tokens_at_80_percent / CONTEXT_LIMIT
+        warning_threshold = get_warning_threshold()
+        critical_threshold = get_critical_threshold()
 
-        assert usage_pct >= WARNING_THRESHOLD
-        assert usage_pct < CRITICAL_THRESHOLD
+        assert usage_pct >= warning_threshold
+        assert usage_pct < critical_threshold
 
     def test_at_critical_threshold(self):
         """Usage at exactly 85% should trigger critical warning."""
         tokens_at_85_percent = int(CONTEXT_LIMIT * 0.85)
         usage_pct = tokens_at_85_percent / CONTEXT_LIMIT
+        critical_threshold = get_critical_threshold()
 
-        assert usage_pct >= CRITICAL_THRESHOLD
+        assert usage_pct >= critical_threshold
 
     def test_above_critical_threshold(self):
         """Usage above 85% should trigger critical warning."""
         tokens_at_90_percent = int(CONTEXT_LIMIT * 0.90)
         usage_pct = tokens_at_90_percent / CONTEXT_LIMIT
+        critical_threshold = get_critical_threshold()
 
-        assert usage_pct >= CRITICAL_THRESHOLD
+        assert usage_pct >= critical_threshold
 
 
 class TestSessionDeduplication:
@@ -233,10 +287,11 @@ class TestTokenToCharacterMapping:
 
         This helps understand what "70% context" means in practice.
         """
-        warning_tokens = int(CONTEXT_LIMIT * WARNING_THRESHOLD)  # 140,000 tokens
-        chars_needed = warning_tokens * 4  # ~560,000 chars
+        warning_threshold = get_warning_threshold()
+        warning_tokens = int(CONTEXT_LIMIT * warning_threshold)  # 140,000 tokens at default
+        chars_needed = warning_tokens * 4  # ~560,000 chars at default
 
-        # Verify our math
+        # Verify our math (at default 70%)
         assert warning_tokens == 140_000
         assert chars_needed == 560_000
 
@@ -248,8 +303,9 @@ class TestTokenToCharacterMapping:
 
     def test_chars_to_reach_critical_threshold(self):
         """Calculate chars needed to reach 85% critical threshold."""
-        critical_tokens = int(CONTEXT_LIMIT * CRITICAL_THRESHOLD)  # 170,000 tokens
-        chars_needed = critical_tokens * 4  # ~680,000 chars
+        critical_threshold = get_critical_threshold()
+        critical_tokens = int(CONTEXT_LIMIT * critical_threshold)  # 170,000 tokens at default
+        chars_needed = critical_tokens * 4  # ~680,000 chars at default
 
         assert critical_tokens == 170_000
         assert chars_needed == 680_000
