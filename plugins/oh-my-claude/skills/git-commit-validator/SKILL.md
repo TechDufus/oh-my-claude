@@ -60,13 +60,59 @@ Based on the diff, determine:
 1. **Type**: feat, fix, docs, refactor, test, chore, perf, ci, build, style, revert
 2. **Scope** (optional): module or area affected
 3. **Description**: concise, imperative mood, lowercase
+4. **Body**: see decision matrix below
 
 **Message Format:**
 ```
 <type>[optional scope]: <description>
 
-[optional body - explain WHY, not WHAT]
+[body - required for non-trivial changes]
+
+[optional footer - breaking changes, issue refs]
 ```
+
+## Commit Body Decision Matrix
+
+**The body is NOT optional for most real work.** Use this matrix:
+
+| Change Type | Body Required? | Body Content |
+|-------------|---------------|--------------|
+| Typo fix, single-line change | No | Subject is sufficient |
+| Config tweak, version bump | No | Subject is sufficient |
+| Bug fix | **YES** | What caused it, how you fixed it |
+| New feature | **YES** | What it does, why it's needed, key design choices |
+| Refactor | **YES** | What changed structurally, why this approach |
+| Multiple files changed | **YES** | What each area of change accomplishes |
+| Breaking change | **YES** | What breaks, migration path |
+| Performance improvement | **YES** | What was slow, what's faster, by how much |
+
+### Body Quality Standards
+
+**Good body content includes:**
+- **Context**: Why this change is needed (the problem)
+- **Approach**: How you solved it (key decisions)
+- **Impact**: What this enables or fixes
+- **Caveats**: Limitations, follow-up work, edge cases
+
+**Use bullet points** when listing multiple changes:
+```
+- Add validation for email format
+- Refactor user service to async
+- Update tests for new behavior
+```
+
+**Wrap at 72 characters** - hard requirement for git tooling compatibility.
+
+### Sizing Your Commit Message
+
+| Diff Size | Expected Message |
+|-----------|-----------------|
+| 1-10 lines | Subject only (if truly trivial) |
+| 10-50 lines | Subject + 1-2 sentence body |
+| 50-200 lines | Subject + paragraph or bullets |
+| 200+ lines | Subject + detailed body with sections |
+
+**When in doubt, write more.** A detailed commit message is a gift to future developers (including yourself).
 
 ### Step 4: Validate Message
 
@@ -104,10 +150,11 @@ EOF
 - **Type**: lowercase (feat, fix, docs, style, refactor, test, chore, perf, ci, build, revert)
 - **Description**: lowercase start, no period at end, imperative mood
 
-### Body Lines (Optional)
+### Body Lines (Required for non-trivial changes)
 - Max 72 characters per line
 - Blank line between subject and body
-- Explain "why" not "what"
+- Explain "why" not just "what"
+- See decision matrix above for when body is required
 
 ### Forbidden Content
 - NO AI attribution ("Generated with Claude", "Created by AI")
@@ -132,22 +179,70 @@ EOF
 
 ## Examples
 
-**Simple feature:**
+### Minimal (only for truly trivial changes)
+
 ```
-feat: add user authentication
+docs: fix typo in readme
 ```
 
-**Bug fix with scope:**
 ```
-fix(api): resolve timeout on large requests
+chore: bump lodash to 4.17.21
 ```
 
-**With body for complex changes:**
-```
-refactor(auth): simplify token validation
+### Standard (most commits should look like this)
 
-Previous implementation checked tokens in three places.
-Consolidated to single middleware for consistency.
+```
+fix(api): resolve timeout on large file uploads
+
+Requests over 10MB were hitting the default 30s timeout.
+Increased timeout to 5 minutes for upload endpoints and added
+progress tracking to prevent connection drops.
+```
+
+```
+feat(auth): add password reset via email
+
+Users can now request a password reset link sent to their
+registered email. Link expires after 1 hour.
+
+- Add /auth/forgot-password endpoint
+- Add /auth/reset-password endpoint with token validation
+- Integrate SendGrid for transactional emails
+- Add rate limiting (3 requests per hour per email)
+```
+
+### Detailed (for large or complex changes)
+
+```
+refactor(database): migrate from callbacks to async/await
+
+The callback-based database layer was causing pyramid-of-doom
+issues and making error handling inconsistent across services.
+
+Changes:
+- Convert all db methods to return Promises
+- Update 47 call sites across 12 service files
+- Add connection pool management with proper cleanup
+- Standardize error types (DbConnectionError, DbQueryError)
+
+This unblocks the upcoming transaction support work.
+```
+
+```
+feat(hooks): add pre-delegation context injection
+
+Problem: Agents were receiving prompts without project context,
+leading to inconsistent code style and missed conventions.
+
+Solution: SessionStart hook now injects a delegation template
+into Claude's context that gets included with every Task() call.
+
+Template includes:
+- 7 sections covering task, context, expected output
+- MUST DO / MUST NOT constraints
+- Verification checklist
+
+This standardizes agent output quality across all delegations.
 ```
 
 ## Why No AI Attribution?
