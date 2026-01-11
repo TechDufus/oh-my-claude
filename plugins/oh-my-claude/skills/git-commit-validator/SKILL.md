@@ -7,6 +7,7 @@ allowed-tools:
   - Bash(git add:*)
   - Bash(git commit:*)
   - Bash(git log:*)
+  - Bash(${CLAUDE_PLUGIN_ROOT}/skills/git-commit-validator/scripts/:*)
   - Read
   - Grep
 ---
