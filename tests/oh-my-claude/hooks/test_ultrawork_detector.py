@@ -109,71 +109,39 @@ class TestUltraworkPatterns:
         """Non-trigger text should not match ultrawork."""
         assert PATTERNS.match("ultrawork", "please help me") is None
         assert PATTERNS.match("ultrawork", "analyze this code") is None
-        assert PATTERNS.match("ultrawork", "ship it") is None  # No longer a trigger
-        assert PATTERNS.match("ultrawork", "just work") is None  # No longer a trigger
+        assert PATTERNS.match("ultrawork", "ship it") is None
+        assert PATTERNS.match("ultrawork", "just work") is None
 
 
-class TestSearchPatterns:
-    """Tests for search mode trigger patterns."""
-
-    @pytest.mark.parametrize(
-        "trigger",
-        [
-            "search for",
-            "find all",
-            "locate",
-            "where is",
-            "look for",
-            "grep for",
-            "hunt down",
-            "track down",
-            "show me where",
-            "find me",
-            "get me all",
-            "list all",
-        ],
-    )
-    def test_search_triggers(self, trigger):
-        """Each search trigger should match."""
-        assert PATTERNS.match("search", trigger) is not None
-
-    def test_search_in_sentence(self):
-        """Search triggers should match within sentences."""
-        assert PATTERNS.match("search", "search for all auth files") is not None
-        assert PATTERNS.match("search", "where is the config?") is not None
-
-
-class TestAnalyzePatterns:
-    """Tests for analyze mode trigger patterns."""
+class TestUltraresearchPatterns:
+    """Tests for ultraresearch mode trigger patterns."""
 
     @pytest.mark.parametrize(
         "trigger",
         [
-            "analyze",
-            "analyse",  # British spelling
-            "understand",
-            "explain how",
-            "how does",
-            "investigate",
-            "deep dive",
-            "examine",
-            "inspect",
-            "audit",
-            "break down",
-            "walk through",
-            "tell me about",
-            "help me understand",
-            "whats going on",
+            "ultraresearch",
+            "ulr",
         ],
     )
-    def test_analyze_triggers(self, trigger):
-        """Each analyze trigger should match."""
-        assert PATTERNS.match("analyze", trigger) is not None
+    def test_ultraresearch_triggers(self, trigger):
+        """Each ultraresearch trigger should match."""
+        assert PATTERNS.match("ultraresearch", trigger) is not None
 
-    def test_analyze_both_spellings(self):
-        """Both analyze and analyse should match."""
-        assert PATTERNS.match("analyze", "analyze the code") is not None
-        assert PATTERNS.match("analyze", "analyse the code") is not None
+    def test_ultraresearch_case_insensitive(self):
+        """Ultraresearch patterns should be case insensitive."""
+        assert PATTERNS.match("ultraresearch", "ULTRARESEARCH") is not None
+        assert PATTERNS.match("ultraresearch", "ULR") is not None
+        assert PATTERNS.match("ultraresearch", "Ultraresearch") is not None
+
+    def test_ultraresearch_in_sentence(self):
+        """Ultraresearch triggers should match within sentences."""
+        assert PATTERNS.match("ultraresearch", "ultraresearch best practices") is not None
+        assert PATTERNS.match("ultraresearch", "ulr what are the patterns") is not None
+
+    def test_non_ultraresearch_no_match(self):
+        """Non-trigger text should not match ultraresearch."""
+        assert PATTERNS.match("ultraresearch", "research this") is None
+        assert PATTERNS.match("ultraresearch", "look up") is None
 
 
 class TestUltrathinkPatterns:
@@ -183,16 +151,28 @@ class TestUltrathinkPatterns:
         "trigger",
         [
             "ultrathink",
-            "think deeply",
-            "deep analysis",
-            "think hard",
-            "careful analysis",
-            "thoroughly analyze",
+            "ult",
         ],
     )
     def test_ultrathink_triggers(self, trigger):
         """Each ultrathink trigger should match."""
         assert PATTERNS.match("ultrathink", trigger) is not None
+
+    def test_ultrathink_case_insensitive(self):
+        """Ultrathink patterns should be case insensitive."""
+        assert PATTERNS.match("ultrathink", "ULTRATHINK") is not None
+        assert PATTERNS.match("ultrathink", "ULT") is not None
+        assert PATTERNS.match("ultrathink", "Ultrathink") is not None
+
+    def test_ultrathink_in_sentence(self):
+        """Ultrathink triggers should match within sentences."""
+        assert PATTERNS.match("ultrathink", "ultrathink about this problem") is not None
+        assert PATTERNS.match("ultrathink", "ult before implementing") is not None
+
+    def test_non_ultrathink_no_match(self):
+        """Non-trigger text should not match ultrathink."""
+        assert PATTERNS.match("ultrathink", "think about it") is None
+        assert PATTERNS.match("ultrathink", "deep analysis") is None
 
 
 class TestUltradebugPatterns:
@@ -202,50 +182,57 @@ class TestUltradebugPatterns:
         "trigger",
         [
             "ultradebug",
-            "debug this",
-            "fix this bug",
-            "troubleshoot",
-            "diagnose",
-            "why is this failing",
-            "root cause",
-            "whats wrong",
-            "whats broken",
-            "figure out why",
-            "fix the issue",
-            "whats causing",
+            "uld",
         ],
     )
     def test_ultradebug_triggers(self, trigger):
         """Each ultradebug trigger should match."""
         assert PATTERNS.match("ultradebug", trigger) is not None
 
+    def test_ultradebug_case_insensitive(self):
+        """Ultradebug patterns should be case insensitive."""
+        assert PATTERNS.match("ultradebug", "ULTRADEBUG") is not None
+        assert PATTERNS.match("ultradebug", "ULD") is not None
+        assert PATTERNS.match("ultradebug", "Ultradebug") is not None
+
+    def test_ultradebug_in_sentence(self):
+        """Ultradebug triggers should match within sentences."""
+        assert PATTERNS.match("ultradebug", "ultradebug this issue") is not None
+        assert PATTERNS.match("ultradebug", "uld the failing test") is not None
+
+    def test_non_ultradebug_no_match(self):
+        """Non-trigger text should not match ultradebug."""
+        assert PATTERNS.match("ultradebug", "debug this") is None
+        assert PATTERNS.match("ultradebug", "fix this bug") is None
+
 
 class TestPatternNonOverlap:
     """Tests to ensure patterns don't incorrectly match other modes."""
 
-    def test_ultrawork_doesnt_match_analyze(self):
-        """Ultrawork pattern shouldn't match analyze triggers."""
-        assert PATTERNS.match("ultrawork", "analyze this") is None
+    def test_ultrawork_doesnt_match_others(self):
+        """Ultrawork pattern shouldn't match other ultra triggers."""
+        assert PATTERNS.match("ultrawork", "ultraresearch") is None
+        assert PATTERNS.match("ultrawork", "ultrathink") is None
+        assert PATTERNS.match("ultrawork", "ultradebug") is None
 
-    def test_search_doesnt_match_ultrawork(self):
-        """Search pattern shouldn't match ultrawork triggers."""
-        assert PATTERNS.match("search", "ultrawork") is None
-        assert PATTERNS.match("search", "ulw") is None
+    def test_ultraresearch_doesnt_match_others(self):
+        """Ultraresearch pattern shouldn't match other triggers."""
+        assert PATTERNS.match("ultraresearch", "ultrawork") is None
+        assert PATTERNS.match("ultraresearch", "ulw") is None
 
     def test_specific_mode_detection(self):
         """Each mode should detect its own triggers correctly."""
         test_cases = [
             ("ultrawork", "ulw fix bugs", True),
             ("ultrawork", "ultrawork fix bugs", True),
-            ("search", "ulw fix bugs", False),
-            ("analyze", "ulw fix bugs", False),
-            ("search", "search for the config", True),
-            ("ultrawork", "search for the config", False),
-            ("analyze", "analyze the codebase", True),
-            ("ultrawork", "analyze the codebase", False),
-            # Former triggers that should no longer match
-            ("ultrawork", "ship it", False),
-            ("ultrawork", "just work on this", False),
+            ("ultraresearch", "ulw fix bugs", False),
+            ("ultrathink", "ulw fix bugs", False),
+            ("ultraresearch", "ulr best practices", True),
+            ("ultrawork", "ulr best practices", False),
+            ("ultrathink", "ult before coding", True),
+            ("ultrawork", "ult before coding", False),
+            ("ultradebug", "uld the issue", True),
+            ("ultrawork", "uld the issue", False),
         ]
         for pattern_name, text, should_match in test_cases:
             match = PATTERNS.match(pattern_name, text)

@@ -16,7 +16,7 @@ Just add a trigger word anywhere in your prompt:
 
 ```
 fix all the type errors, ultrawork
-ulw refactor the entire auth system
+ultraresearch best practices for API design
 ```
 
 <p align="center">
@@ -108,13 +108,12 @@ Required for hooks to activate.
 
 ## Magic Keywords
 
-| Keyword | Effect |
-|---------|--------|
-| **ultrawork** / **ulw** | Maximum parallel execution — won't stop until done |
-| **ultrathink** | Extended reasoning with sequential-thinking MCP before action |
-| **ultradebug** | Systematic debugging with evidence-based diagnosis |
-| **analyze** | Deep analysis with parallel context gathering |
-| **search for** | Multiple parallel search agents |
+| Keyword | Shortcut | Effect |
+|---------|----------|--------|
+| **ultrawork** | `ulw` | Maximum parallel execution — won't stop until done |
+| **ultraresearch** | `ulr` | Exhaust online sources — parallel WebSearch, cross-reference, cite everything |
+| **ultrathink** | `ult` | Extended reasoning before action — consider 3+ approaches |
+| **ultradebug** | `uld` | Systematic 7-step debugging with evidence-based diagnosis |
 
 ---
 

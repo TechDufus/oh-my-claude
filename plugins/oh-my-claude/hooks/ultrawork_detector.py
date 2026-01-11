@@ -32,44 +32,31 @@ from hook_utils import (
 
 PATTERNS = RegexCache()
 
-# Ultrawork mode triggers - simplified to just ultrawork/ulw for clarity
+# Ultrawork mode triggers
 PATTERNS.add(
     "ultrawork",
     r"\b(ultrawork|ulw)\b",
     re.IGNORECASE,
 )
 
-# Search mode triggers
+# Ultraresearch mode triggers - maximize online research
 PATTERNS.add(
-    "search",
-    r"(search for|find all|locate|where is|look for|grep for|hunt down|"
-    r"track down|show me where|find me|get me all|list all)",
-    re.IGNORECASE,
-)
-
-# Analyze mode triggers
-PATTERNS.add(
-    "analyze",
-    r"(analyze|analyse|understand|explain how|how does|investigate|deep dive|"
-    r"examine|inspect|audit|break down|walk through|tell me about|"
-    r"help me understand|whats going on)",
+    "ultraresearch",
+    r"\b(ultraresearch|ulr)\b",
     re.IGNORECASE,
 )
 
 # Ultrathink mode triggers
 PATTERNS.add(
     "ultrathink",
-    r"(ultrathink|think deeply|deep analysis|think hard|careful analysis|"
-    r"thoroughly analyze)",
+    r"\b(ultrathink|ult)\b",
     re.IGNORECASE,
 )
 
 # Ultradebug mode triggers
 PATTERNS.add(
     "ultradebug",
-    r"(ultradebug|debug this|fix this bug|troubleshoot|diagnose|"
-    r"why is this failing|root cause|whats wrong|whats broken|"
-    r"figure out why|fix the issue|whats causing)",
+    r"\b(ultradebug|uld)\b",
     re.IGNORECASE,
 )
 
@@ -296,44 +283,50 @@ Execute relentlessly until complete."""
         output_empty()
 
     # ==========================================================================
-    # SEARCH MODE - Parallel search strategy
+    # ULTRARESEARCH MODE - Maximum online research
     # ==========================================================================
-    if PATTERNS.match("search", prompt):
-        context = """[SEARCH MODE ACTIVE]
+    if PATTERNS.match("ultraresearch", prompt):
+        context = """[ULTRARESEARCH MODE ACTIVE]
 
-MAXIMIZE SEARCH EFFORT. Launch multiple search agents IN PARALLEL.
+MAXIMIZE RESEARCH. Exhaust every available source before synthesizing.
+
+## Research Protocol
+1. IDENTIFY SOURCES - Determine all relevant search angles
+2. PARALLEL SEARCH - Launch multiple WebSearch queries simultaneously
+3. DEEP FETCH - WebFetch the most promising results
+4. CROSS-REFERENCE - Verify claims across multiple sources
+5. SYNTHESIZE - Combine findings into actionable intelligence
 
 ## Search Strategy
-- Launch 2-3 oh-my-claude:scout Tasks in ONE message with different strategies
-- One for exact matches, one for fuzzy/related terms
-- Use Grep for content, Glob for file patterns
-- Combine results and deduplicate
+Launch 3-5 WebSearch queries IN PARALLEL covering:
+- Official documentation
+- GitHub repositories/issues
+- Blog posts and tutorials
+- Stack Overflow / community discussions
+- Recent news/updates (include current year in queries)
 
-## Report Format
-- List all findings with file:line references
-- Group by relevance or location
-- Highlight most likely matches first"""
+## Fetch Strategy
+For each search result category, WebFetch at least:
+- 1 official source (docs, specs)
+- 1-2 community sources (blogs, tutorials)
+- 1 code example (GitHub, gists)
 
-        output_context("UserPromptSubmit", context)
-        output_empty()
-
-    # ==========================================================================
-    # ANALYZE MODE - Deep parallel analysis
-    # ==========================================================================
-    if PATTERNS.match("analyze", prompt):
-        context = """[ANALYZE MODE ACTIVE]
-
-Gather comprehensive context before providing analysis.
-
-## Analysis Protocol
-- Launch parallel agents: one for main component, one for dependencies, one for tests
-- Trace data/control flow through the system
-- Provide evidence for every claim (file:line references)
+## Quality Standards
+- Cite EVERY claim with source URL
+- Prefer official docs over blog posts
+- Note publication dates for time-sensitive info
+- Flag conflicting information across sources
+- Distinguish facts from opinions
 
 ## Output Requirements
-- No speculation without verification
-- Explain the "why" not just the "what"
-- Identify potential issues or edge cases"""
+- Summary of key findings first
+- Detailed breakdown by topic
+- Source list at end with URLs
+- Explicit confidence levels for uncertain claims
+
+## Parallel Execution
+You MUST launch multiple WebSearch calls in a SINGLE message.
+Sequential searches = failure. Maximize parallel queries."""
 
         output_context("UserPromptSubmit", context)
         output_empty()

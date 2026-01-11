@@ -112,12 +112,11 @@ For complex tasks, persist learnings to avoid losing context:
 
 ## Other Keywords
 
-| Keyword | Effect |
-|---------|--------|
-| **ultrathink** | Extended reasoning before action |
-| **ultradebug** | Systematic 7-step debugging |
-| **analyze** | Deep analysis, parallel context gathering |
-| **search for** | Multiple parallel scouts |
+| Keyword | Shortcut | Effect |
+|---------|----------|--------|
+| **ultraresearch** | `ulr` | Maximum online research — parallel WebSearch, cross-reference sources |
+| **ultrathink** | `ult` | Extended reasoning before action — consider 3+ approaches |
+| **ultradebug** | `uld` | Systematic 7-step debugging with evidence |
 
 ## Commands
 
