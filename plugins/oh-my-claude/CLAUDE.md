@@ -100,6 +100,7 @@ For complex tasks, persist learnings to avoid losing context:
 | Skill | Trigger |
 |-------|---------|
 | `git-commit-validator` | Any git workflow: "commit", "ship it", "push this", "let's merge", finishing work |
+| `pr-creation` | Creating PRs: "create PR", "open PR", "ready for review", "push for PR" |
 
 ## Hooks (Automatic)
 

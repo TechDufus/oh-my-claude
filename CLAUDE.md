@@ -31,9 +31,17 @@ Claude Code caches plugins. **Any change requires bumping version in BOTH**:
 
 Then: `/plugin update oh-my-claude` and start new session.
 
+### Testing
+
+Run hook unit tests:
+```bash
+cd tests/oh-my-claude/hooks
+uv run --with pytest pytest . -v
+```
+
 ### CI/CD
 
-GitHub Actions validates: JSON syntax, version sync across files, no `../` paths, hook scripts exist and executable, shellcheck, skill files exist.
+GitHub Actions validates: JSON syntax, version sync across files, no `../` paths, hook scripts exist and executable, shellcheck, ruff linting, pytest, skill directories exist.
 
 ## Hook Development
 

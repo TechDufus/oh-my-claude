@@ -108,17 +108,18 @@ jobs:
           done
           echo "All shell scripts passed shellcheck!"
 
-      - name: Validate skill files exist
+      - name: Validate skill directories exist
         run: |
-          echo "Checking skill files..."
+          echo "Checking skill directories..."
           PLUGIN_DIR="plugins/oh-my-claude"
 
           for skill in $(jq -r '.skills[]' "$PLUGIN_DIR/.claude-plugin/plugin.json"); do
             SKILL_PATH="$PLUGIN_DIR/$skill"
-            if [ ! -f "$SKILL_PATH" ]; then
-              echo "ERROR: Skill file not found: $SKILL_PATH"
+            if [ -d "$SKILL_PATH" ] && [ -f "$SKILL_PATH/SKILL.md" ]; then
+              echo "OK: $SKILL_PATH (directory with SKILL.md)"
+            else
+              echo "ERROR: Skill not found or missing SKILL.md: $SKILL_PATH"
               exit 1
             fi
-            echo "OK: $SKILL_PATH"
           done
-          echo "All skill files exist!"
+          echo "All skill directories valid!"

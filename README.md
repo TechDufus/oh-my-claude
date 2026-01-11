@@ -184,6 +184,7 @@ Subagent context is **isolated** from your main context. When a librarian reads 
 | Skill | Trigger |
 |-------|---------|
 | **git-commit-validator** | Auto-invoked on commit requests |
+| **pr-creation** | Auto-invoked on PR creation requests |
 
 ---
 
