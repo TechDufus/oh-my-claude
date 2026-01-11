@@ -6,6 +6,12 @@ tools:
   - Read
   - Glob
   - Grep
+hooks:
+  Stop:
+    - matcher: "*"
+      hooks:
+        - type: prompt
+          prompt: "Your response MUST end with a verdict line. If missing, add: 'VERDICT: PASS' (all checks passed) or 'VERDICT: FAIL - <reason>' (any failures). Check your response now and add the verdict if missing."
 ---
 
 # Validator

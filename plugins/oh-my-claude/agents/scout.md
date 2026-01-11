@@ -4,6 +4,7 @@ description: "Quick reconnaissance agent. Finds files, locates definitions, chec
 tools:
   - Glob
   - Grep
+  - Read
   - Bash(find:*)
   - Bash(wc:*)
   - Bash(ls:*)

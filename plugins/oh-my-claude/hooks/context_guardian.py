@@ -6,9 +6,21 @@
 context_guardian.py
 SessionStart hook: Establishes context protection as STANDARD OPERATING PROCEDURE
 This runs every session - context protection is not optional
+
+For subagents (when agent_type is set), we skip the SOP since:
+- Subagents already run in isolated context
+- They don't need orchestration instructions
+- Their agent .md file provides specific guidance
 """
 
-from hook_utils import hook_main, output_context, read_stdin_safe
+from hook_utils import (
+    get_nested,
+    hook_main,
+    output_context,
+    output_empty,
+    parse_hook_input,
+    read_stdin_safe,
+)
 
 CONTEXT = """[oh-my-claude: Context Protection ACTIVE]
 
@@ -63,9 +75,23 @@ Subagent context is ISOLATED from yours. Use them freely - it costs you nothing.
 
 @hook_main("SessionStart")
 def main() -> None:
-    """Inject context protection instructions at session start."""
-    # Consume stdin (hook input) - not needed for this hook
-    read_stdin_safe()
+    """Inject context protection instructions at session start.
+
+    Skips SOP for subagents (agent_type is set) since they:
+    - Already run in isolated context
+    - Have their own instructions in their agent .md file
+    - Don't need to be told to delegate to themselves
+    """
+    raw = read_stdin_safe()
+    data = parse_hook_input(raw)
+
+    # Check if this is a subagent (agent_type is set when --agent is specified)
+    agent_type = get_nested(data, "agent_type", default=None)
+    if agent_type:
+        # Subagent - skip SOP, they have their own instructions
+        return output_empty()
+
+    # Main session - inject full context protection SOP
     output_context("SessionStart", CONTEXT)
 
 
