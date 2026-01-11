@@ -62,11 +62,31 @@ When Claude Code installs a plugin, it copies files from the `source` path. Path
 **Right:**
 ```json
 {
+  "skills": ["./skills/my-skill"]
+}
+```
+
+### 3. Skills point to DIRECTORIES, not SKILL.md files
+
+Skills are registered by pointing to the skill's **folder**, not the SKILL.md file inside.
+
+**Wrong:**
+```json
+{
   "skills": ["./skills/my-skill/SKILL.md"]
 }
 ```
 
-### 3. hooks/hooks.json is AUTO-DISCOVERED
+**Right:**
+```json
+{
+  "skills": ["./skills/my-skill"]
+}
+```
+
+Claude Code auto-discovers the SKILL.md inside each directory.
+
+### 4. hooks/hooks.json is AUTO-DISCOVERED
 
 Do NOT reference it in plugin.json. Claude Code automatically loads `hooks/hooks.json` if it exists.
 
@@ -86,7 +106,7 @@ Do NOT reference it in plugin.json. Claude Code automatically loads `hooks/hooks
 
 If you reference it explicitly, you get: `Duplicate hooks file detected`
 
-### 4. marketplace.json source must point to plugin directory
+### 5. marketplace.json source must point to plugin directory
 
 ```json
 {
@@ -100,7 +120,7 @@ If you reference it explicitly, you get: `Duplicate hooks file detected`
 }
 ```
 
-### 5. Use ${CLAUDE_PLUGIN_ROOT} in hooks.json
+### 6. Use ${CLAUDE_PLUGIN_ROOT} in hooks.json
 
 For hook script paths, use the environment variable:
 
@@ -125,7 +145,7 @@ For hook script paths, use the environment variable:
 | `hooks/hooks.json` | Yes | Don't reference in plugin.json |
 | `agents/*.md` | Yes | Agent definitions |
 | `commands/*.md` | Yes | Slash commands |
-| `skills/*/SKILL.md` | No | Must list in plugin.json |
+| `skills/*/SKILL.md` | No | Must list skill DIRECTORY (not file) in plugin.json |
 | `.mcp.json` | Yes | MCP server config |
 | `CLAUDE.md` | Yes | Instructions for Claude |
 

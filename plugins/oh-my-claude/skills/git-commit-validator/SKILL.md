@@ -1,12 +1,13 @@
 ---
 name: git-commit-validator
-description: "MUST be used whenever creating git commits. Handles full commit workflow: staging, message generation, validation, and commit execution. Enforces conventional commit format."
+description: "MUST be used for ANY git workflow that involves committing code. This includes explicit commit requests AND implicit ones like 'ship it', 'push this', 'let's merge', or finishing implementation work. Handles staging, message generation, validation, and commit execution with conventional commit format."
 allowed-tools:
   - Bash(git status:*)
   - Bash(git diff:*)
   - Bash(git add:*)
   - Bash(git commit:*)
   - Bash(git log:*)
+  - Bash(git push:*)
   - Read
   - Grep
 ---
@@ -17,13 +18,19 @@ This skill MUST be invoked whenever you are about to create a git commit. It han
 
 ## When This Skill Activates
 
-**Auto-invoke this skill when:**
-- User asks to "commit" changes
-- User says "commit this", "make a commit", "create a commit"
-- After completing implementation work when a commit is needed
-- Any request involving `git commit`
+**Auto-invoke this skill when the user implies code should be committed or pushed:**
 
-**Do NOT commit without this skill.**
+| Category | Trigger Phrases |
+|----------|-----------------|
+| **Explicit commit** | "commit", "make a commit", "commit this" |
+| **Ship/push intent** | "ship it", "push this", "let's push", "push it up", "send it" |
+| **Finalization** | "wrap it up", "finalize this", "we're done", "that's it" |
+| **Merge intent** | "get this merged", "ready for PR", "let's merge" |
+| **After implementation** | When you complete work and there are uncommitted changes |
+
+**Key insight:** If the user's intent results in `git commit` being run, this skill MUST be used first.
+
+**Do NOT run `git commit` without this skill.**
 
 ## Complete Commit Workflow
 

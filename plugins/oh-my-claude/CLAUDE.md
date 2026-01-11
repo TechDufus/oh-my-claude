@@ -99,7 +99,7 @@ For complex tasks, persist learnings to avoid losing context:
 
 | Skill | Trigger |
 |-------|---------|
-| `git-commit-validator` | Any commit request |
+| `git-commit-validator` | Any git workflow: "commit", "ship it", "push this", "let's merge", finishing work |
 
 ## Hooks (Automatic)
 
