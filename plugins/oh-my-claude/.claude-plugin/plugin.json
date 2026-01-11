@@ -17,6 +17,7 @@
   "skills": [
     "./skills/git-commit-validator",
     "./skills/pr-creation",
-    "./skills/plan"
+    "./skills/plan",
+    "./skills/worktree"
   ]
 }
