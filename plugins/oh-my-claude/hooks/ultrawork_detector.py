@@ -60,6 +60,32 @@ PATTERNS.add(
     re.IGNORECASE,
 )
 
+# Trivial request patterns - simple tasks that don't need full orchestration
+TRIVIAL_PATTERNS = [
+    r"^fix (the )?typo",
+    r"^change .* to .*",
+    r"^what (is|does|are)",
+    r"^show me",
+    r"^list\b",
+    r"^how do I",
+    r"^explain\b",
+    r"^run (the )?(tests?|build|lint)",
+]
+
+
+def is_trivial_request(prompt: str) -> bool:
+    """Check if prompt matches trivial patterns.
+
+    Strips the ultrawork/ulw keyword prefix before matching.
+    """
+    prompt_lower = prompt.lower().strip()
+    # Strip the ultrawork/ulw prefix to match the actual request
+    prompt_lower = re.sub(r"^(ultrawork|ulw)\s+", "", prompt_lower)
+    for pattern in TRIVIAL_PATTERNS:
+        if re.match(pattern, prompt_lower, re.IGNORECASE):
+            return True
+    return False
+
 
 def detect_validation(cwd: str) -> str:
     """Detect project type for smart validation commands."""
@@ -105,7 +131,20 @@ def main() -> None:
     # This adds: relentless execution, zero tolerance, mandatory parallelization
     # ==========================================================================
     if PATTERNS.match("ultrawork", prompt):
-        context = f"""[ULTRAWORK MODE ACTIVE]
+        # Check if this is a trivial request
+        trivial_note = ""
+        if is_trivial_request(prompt):
+            trivial_note = """## TRIVIAL TASK DETECTED
+
+This appears to be a simple task (typo fix, quick question, simple command).
+Ultrawork mode acknowledged, but full orchestration overhead is unnecessary.
+**Direct action is fine** - skip heavy delegation for this one.
+
+---
+
+"""
+
+        context = f"""{trivial_note}[ULTRAWORK MODE ACTIVE]
 
 This is RELENTLESS MODE. You will work until COMPLETE, not until tired.
 You will find problems before the user does. You will not cut corners.
