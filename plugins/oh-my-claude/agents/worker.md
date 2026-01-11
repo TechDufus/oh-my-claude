@@ -95,6 +95,15 @@ Bad Worker task (too vague):
 Bad Worker task (too broad):
 > "Implement the entire authentication system"
 
+## Notepad Awareness
+
+When you discover something important during implementation:
+- **Pattern or gotcha?** → Append to `.claude/notepads/learnings.md`
+- **Made a design choice?** → Append to `.claude/notepads/decisions.md`
+- **Hit a blocker?** → Append to `.claude/notepads/issues.md`
+
+Use the entry format: `## [YYYY-MM-DD HH:MM] {title}` with Source line.
+
 ## Completion Criteria
 
 A task is complete when:

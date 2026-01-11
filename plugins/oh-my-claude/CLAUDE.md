@@ -106,11 +106,26 @@ Context protection is always on. Ultrawork adds execution intensity.
 
 For complex tasks, persist learnings to avoid losing context:
 
-| File | Purpose |
-|------|---------|
-| `.claude/notepads/learnings.md` | Patterns discovered, gotchas found |
-| `.claude/notepads/decisions.md` | Design decisions with rationale |
-| `.claude/notepads/issues.md` | Problems encountered, blockers |
+| Notepad | Purpose | When to Use |
+|---------|---------|-------------|
+| `.claude/notepads/learnings.md` | Patterns discovered, gotchas found | After discovering something non-obvious |
+| `.claude/notepads/decisions.md` | Design decisions with rationale | After making architectural choices |
+| `.claude/notepads/issues.md` | Problems encountered, blockers | When hitting blockers or finding bugs |
+| `.claude/notepads/context.md` | Project-specific context | Key info for /prime recovery |
+
+**Entry Format:**
+```markdown
+## [YYYY-MM-DD HH:MM] {title}
+Source: {agent-name or "user"}
+
+{content}
+```
+
+**Protocol:**
+- Write to notepads BEFORE context fills up
+- Read notepads when resuming work or after /prime
+- Include notepad wisdom in agent delegations
+- Agents should append findings, not overwrite
 
 ## Other Keywords
 

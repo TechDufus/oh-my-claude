@@ -212,7 +212,11 @@ Task(
   1. `CLAUDE.md` - Look for "## Active Work" section
   2. `.claude/CLAUDE.md` - Project-specific instructions
   3. `TODO.md` or `TODO` - Any tracked tasks
-  4. Recent changes: `git diff --name-only HEAD~5..HEAD 2>/dev/null | head -20`
+  4. Check for `.claude/notepads/` directory:
+     - Read `learnings.md` if exists (patterns/gotchas discovered)
+     - Read `decisions.md` if exists (design decisions with rationale)
+     - Read `context.md` if exists (project-specific context for recovery)
+  5. Recent changes: `git diff --name-only HEAD~5..HEAD 2>/dev/null | head -20`
   </standard_checks>
 
   <task_focused_exploration>
@@ -234,6 +238,11 @@ Task(
   - Phase (if tracked)
   - Blockers or notes
 
+  From notepads (if they exist):
+  - Key learnings and gotchas from previous sessions
+  - Important design decisions and their rationale
+  - Project-specific context that aids recovery
+
   From recent changes:
   - Primary directories being worked on
   - Patterns (all tests? one module? scattered?)
@@ -248,6 +257,11 @@ Task(
   Return structured XML:
   <project_analysis>
     <active_work>...</active_work>
+    <notepad_context>                     <!-- only if notepads exist -->
+      <learnings>...</learnings>
+      <decisions>...</decisions>
+      <context>...</context>
+    </notepad_context>
     <focus_areas>...</focus_areas>
     <project_type>...</project_type>
     <available_commands>...</available_commands>
