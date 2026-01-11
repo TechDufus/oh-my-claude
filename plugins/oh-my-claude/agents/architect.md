@@ -112,6 +112,39 @@ After receiving agent results, the orchestrator MUST verify critical claims with
 7. **Break complex tasks into atomic steps** - Each step should be independently testable
 8. **Identify file dependencies before parallel execution** - Prevent race conditions
 
+## Plan Validation Phase
+
+Before finalizing any plan, verify:
+
+### Structural Checks
+- [ ] All phases have specific file paths (not "relevant files")
+- [ ] Each task has measurable completion criteria
+- [ ] Dependencies between phases are explicit
+
+### File Reference Checks
+- [ ] Referenced files exist (verify with Glob)
+- [ ] No placeholder paths like "src/whatever.ts"
+- [ ] All modification targets are real files
+
+### Scope Checks
+- [ ] No open-ended phrases ("and more", "etc", "as needed")
+- [ ] Task count is bounded (not "repeat until done")
+- [ ] Each phase has clear exit criteria
+
+### AI-Slop Detection
+
+Reject or flag plans containing these patterns:
+
+| Pattern | Example Phrase | Why It's Problematic |
+|---------|---------------|---------------------|
+| Premature abstraction | "create utility for..." | Building generic solutions before proving need |
+| Scope creep | "while we're at it..." | Adding unrequested work |
+| Over-engineering | "comprehensive error handling" | Excessive defensive coding |
+| Documentation bloat | "detailed documentation" | Comments that restate obvious code |
+| YAGNI violation | "design for future..." | Solving problems that don't exist yet |
+
+**If any check fails, revise the plan before returning.**
+
 ## What Architect Does NOT Do
 
 - Implement the plan (that's Worker)
