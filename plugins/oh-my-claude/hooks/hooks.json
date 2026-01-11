@@ -20,6 +20,16 @@
             "timeout": 10
           }
         ]
+      },
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "uv run --script ${CLAUDE_PLUGIN_ROOT}/hooks/tdd_enforcer.py",
+            "timeout": 5
+          }
+        ]
       }
     ],
     "PermissionRequest": [

@@ -176,3 +176,4 @@ Customize behavior via environment variables in your `settings.json`:
 | `OMC_CONTEXT_WARN_PCT` | `70` | Context % to trigger warning |
 | `OMC_CONTEXT_CRITICAL_PCT` | `85` | Context % for critical warning |
 | `OMC_SAFE_PERMISSIONS` | `1` | Set to `0` to disable auto-approvals |
+| `OMC_TDD_MODE` | `off` | TDD enforcement: `off`, `guided`, `enforced` |
