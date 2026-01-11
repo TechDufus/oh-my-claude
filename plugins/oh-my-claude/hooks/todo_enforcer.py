@@ -10,6 +10,7 @@ Stop hook: Prevents stopping when todos are incomplete
 Called when Claude tries to stop. Returns continuation prompt if work remains.
 """
 
+import os
 import re
 import subprocess
 from pathlib import Path
@@ -140,6 +141,40 @@ def has_uncommitted_changes(cwd: str) -> bool:
         return False
 
 
+def check_git_uncommitted(cwd: str | None = None) -> bool:
+    """Check if there are uncommitted changes."""
+    try:
+        result = subprocess.run(
+            ["git", "status", "--porcelain"],
+            capture_output=True,
+            text=True,
+            cwd=cwd,
+            timeout=5
+        )
+        return bool(result.stdout.strip()) if result.returncode == 0 else False
+    except Exception:
+        return False
+
+
+def check_active_plans(cwd: str | None = None) -> list[str]:
+    """Check for active plan drafts in .claude/plans/drafts/."""
+    draft_dir = Path(cwd or ".") / ".claude" / "plans" / "drafts"
+    if not draft_dir.exists():
+        return []
+    drafts = list(draft_dir.glob("*.md"))
+    return [d.name for d in drafts]
+
+
+def should_check_git() -> bool:
+    """Check if git check is enabled via env var."""
+    return os.environ.get("OMC_STOP_CHECK_GIT", "0") == "1"
+
+
+def should_check_plans() -> bool:
+    """Check if plan check is enabled via env var."""
+    return os.environ.get("OMC_STOP_CHECK_PLANS", "1") == "1"  # Default enabled
+
+
 def do_output_block(reason: str, context: str) -> None:
     """Output a block decision for Stop hook."""
     output_block("Stop", reason, context)
@@ -174,23 +209,45 @@ def main() -> None:
         incomplete_todos = transcript_incomplete
         completed_todos = transcript_completed
 
-    # If incomplete todos exist, inject strong continuation
-    if incomplete_todos > 0:
-        context = f"""[TODO CONTINUATION - CANNOT STOP]
+    # Collect all issues that should prevent stopping
+    cwd = data.get("cwd") or "."
+    issues: list[str] = []
 
-You have {incomplete_todos} incomplete task(s) in your todo list.
+    # Check 1: Incomplete todos
+    if incomplete_todos > 0:
+        issues.append(f"Incomplete todos: {incomplete_todos} remaining")
+
+    # Check 2: Active plan drafts (if enabled)
+    if should_check_plans():
+        active_drafts = check_active_plans(cwd)
+        if active_drafts:
+            issues.append(f"Active plan drafts: {', '.join(active_drafts)}")
+
+    # Check 3: Uncommitted git changes (if enabled)
+    if should_check_git():
+        if check_git_uncommitted(cwd):
+            issues.append("Uncommitted changes present")
+
+    # If any issues exist, block with combined message
+    if issues:
+        issues_text = "\n".join(f"- {issue}" for issue in issues)
+        context = f"""[WORK INCOMPLETE - CANNOT STOP]
+
+The following issues prevent stopping:
+{issues_text}
 
 ## Rules
-- You CANNOT stop until ALL todos are marked 'completed'
-- Review your TodoWrite list immediately
-- Continue with the next 'pending' or 'in_progress' item
+- You CANNOT stop until ALL issues are resolved
+- For incomplete todos: Review your TodoWrite list and continue working
+- For active plans: Complete or archive the plan drafts
+- For uncommitted changes: Commit or stash the changes
 - Do NOT ask for permission - just continue working
 
 ## Next Action
-Use TodoWrite to review your current tasks, then proceed with the next incomplete item.
+Address the issues above, starting with the most critical.
 
 CONTINUE WORKING NOW."""
-        do_output_block("Incomplete todos remain", context)
+        do_output_block("Work incomplete", context)
         output_empty()
 
     # Check for incomplete work patterns in last message
@@ -210,7 +267,6 @@ CONTINUE WORKING NOW."""
     for pattern in premature_patterns:
         if pattern.lower() in last_message.lower():
             # Check if there's uncommitted work suggesting incomplete task
-            cwd = data.get("cwd") or "."
             if has_uncommitted_changes(cwd):
                 context = """[INCOMPLETE WORK DETECTED]
 
