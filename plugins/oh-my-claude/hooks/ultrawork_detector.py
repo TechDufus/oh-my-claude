@@ -150,6 +150,8 @@ Pass `model="inherit"` or omit the model parameter entirely - both work.
 |-----------|-------|---------|-----------|
 | Find files/definitions | scout | haiku | **inherits your model** |
 | Read/summarize files | librarian | sonnet | **inherits your model** |
+| Git recon (tags, commits, branches) | scout | haiku | **inherits your model** |
+| Git analysis (diffs, changelogs) | librarian | sonnet | **inherits your model** |
 | Plan complex work | architect | opus | **inherits your model** |
 | Implement code changes | worker | opus | **inherits your model** |
 | Write documentation | scribe | opus | **inherits your model** |

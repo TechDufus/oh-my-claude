@@ -54,8 +54,8 @@ All agents use `model: inherit` - same model as your session.
 
 | Agent | Job | When |
 |-------|-----|------|
-| **scout** | FIND | "Where is X?", locate files/definitions |
-| **librarian** | READ | Files >100 lines, summarize, extract |
+| **scout** | FIND | "Where is X?", locate files/definitions, git recon (tags, branches, commit lists) |
+| **librarian** | READ | Files >100 lines, summarize, extract, git analysis (diffs, changelogs) |
 | **architect** | PLAN | Complex tasks needing decomposition |
 | **worker** | BUILD | Single focused implementation task |
 | **scribe** | WRITE | Documentation, READMEs, comments |
@@ -77,6 +77,8 @@ You are the conductor. Agents play the music.
 |-----------|---------|
 | Find files | Task(scout) |
 | Understand code | Task(librarian) |
+| Git recon (tags, branches, commits) | Task(scout) |
+| Git analysis (diffs, changelogs) | Task(librarian) |
 | Implement feature | Task(worker) with spec |
 | Verify work | Task(validator) |
 | Complex task | Task(architect) first |
