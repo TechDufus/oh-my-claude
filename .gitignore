@@ -18,6 +18,8 @@ node_modules/
 # Python
 __pycache__/
 .ruff_cache/
+.pytest_cache/
+.venv/
 *.pyc
 
 # Logs

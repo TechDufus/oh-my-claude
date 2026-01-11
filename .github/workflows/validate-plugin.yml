@@ -79,15 +79,25 @@ jobs:
           done
           echo "All hook scripts exist and are executable!"
 
+      - name: Install uv
+        uses: astral-sh/setup-uv@v4
+
       - name: Lint Python hooks
         run: |
           echo "Checking Python hook scripts..."
-          pip install ruff
+          uv tool install ruff
           find plugins/oh-my-claude/hooks -name "*.py" -type f | while read -r script; do
             echo "Checking $script..."
             ruff check "$script" || exit 1
           done
           echo "All Python scripts passed ruff!"
+
+      - name: Run hook unit tests
+        run: |
+          echo "Running pytest on hook tests..."
+          cd tests/oh-my-claude/hooks
+          uv run --with pytest pytest . -v --tb=short
+          echo "All tests passed!"
 
       - name: Shellcheck shell scripts
         run: |

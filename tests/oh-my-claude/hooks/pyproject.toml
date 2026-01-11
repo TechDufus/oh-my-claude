@@ -1,0 +1,28 @@
+[project]
+name = "oh-my-claude-hooks-tests"
+version = "0.0.1"
+description = "Tests for oh-my-claude hooks"
+requires-python = ">=3.11"
+
+[project.optional-dependencies]
+test = [
+    "pytest>=8.0",
+    "pytest-cov>=4.0",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["."]
+python_files = "test_*.py"
+python_functions = "test_*"
+addopts = "-v --tb=short"
+
+[tool.coverage.run]
+source = ["../../../plugins/oh-my-claude/hooks"]
+omit = ["*/__pycache__/*", "test_*.py", "conftest.py"]
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "if __name__ == .__main__.:",
+    "raise NotImplementedError",
+]
