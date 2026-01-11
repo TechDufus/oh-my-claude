@@ -6,14 +6,14 @@
   },
   "metadata": {
     "description": "Ultrawork mode for maximum parallel execution with intelligent subagent use",
-    "version": "0.1.4"
+    "version": "0.2.0"
   },
   "plugins": [
     {
       "name": "oh-my-claude",
       "source": "./plugins/oh-my-claude",
       "description": "Add 'ultrawork' to any prompt for maximum parallel execution.",
-      "version": "0.1.4",
+      "version": "0.2.0",
       "author": {
         "name": "TechDufus"
       },
@@ -31,7 +31,9 @@
       "category": "productivity",
       "skills": [
         "./skills/git-commit-validator",
-        "./skills/pr-creation"
+        "./skills/pr-creation",
+        "./skills/plan",
+        "./skills/worktree"
       ]
     }
   ]
