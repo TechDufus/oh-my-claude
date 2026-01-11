@@ -1,13 +1,12 @@
 ---
 name: git-commit-validator
-description: "MUST be used for ANY git workflow that involves committing code. This includes explicit commit requests AND implicit ones like 'ship it', 'push this', 'let's merge', or finishing implementation work. Handles staging, message generation, validation, and commit execution with conventional commit format."
+description: "MUST be used for ANY git workflow that involves committing code. This includes explicit commit requests AND implicit ones like 'ship it', 'wrap it up', or finishing implementation work. Handles staging, message generation, validation, and commit execution with conventional commit format."
 allowed-tools:
   - Bash(git status:*)
   - Bash(git diff:*)
   - Bash(git add:*)
   - Bash(git commit:*)
   - Bash(git log:*)
-  - Bash(git push:*)
   - Read
   - Grep
 ---
@@ -18,14 +17,13 @@ This skill MUST be invoked whenever you are about to create a git commit. It han
 
 ## When This Skill Activates
 
-**Auto-invoke this skill when the user implies code should be committed or pushed:**
+**Auto-invoke this skill when the user implies code should be committed:**
 
 | Category | Trigger Phrases |
 |----------|-----------------|
 | **Explicit commit** | "commit", "make a commit", "commit this" |
-| **Ship/push intent** | "ship it", "push this", "let's push", "push it up", "send it" |
+| **Ship intent** | "ship it", "send it" |
 | **Finalization** | "wrap it up", "finalize this", "we're done", "that's it" |
-| **Merge intent** | "get this merged", "ready for PR", "let's merge" |
 | **After implementation** | When you complete work and there are uncommitted changes |
 
 **Key insight:** If the user's intent results in `git commit` being run, this skill MUST be used first.
@@ -71,18 +69,21 @@ Based on the diff, determine:
 
 ### Step 4: Validate Message
 
-**Inline validation (no external script needed):**
+**Run the validation script before committing:**
 
-1. **Subject line <= 50 chars** - Count characters, reject if over
-2. **Body lines <= 72 chars** - If body present
-3. **Format check** - Must match: `^[a-z]+(\([a-z0-9\-]+\))?!?: .+$`
-   - Starts with lowercase type (feat, fix, etc.)
-   - Optional scope in parentheses
-   - Colon and space
-   - Description text
-4. **No AI attribution** - Reject if contains: "generated with", "co-authored-by.*claude", "ai-generated"
+```bash
+${CLAUDE_PLUGIN_ROOT}/skills/git-commit-validator/scripts/git-commit-helper.sh "your commit message here"
+```
 
-If validation fails, fix and retry. Do NOT proceed with invalid messages.
+- If the script returns **non-zero**, the message is invalid
+- Fix the message according to the script output and retry validation
+- Do NOT proceed to commit with an invalid message
+
+The script validates:
+1. **Subject line <= 50 chars**
+2. **Body lines <= 72 chars** (if body present)
+3. **Format check** - Must match conventional commit format
+4. **No AI attribution** - Rejects "generated with", "co-authored-by.*claude", "ai-generated"
 
 ### Step 5: Commit
 
@@ -156,3 +157,7 @@ Commit messages reflect intent and ownership of the change. AI attribution:
 - Adds no useful information
 
 The human owns the commit. The tool is irrelevant.
+
+---
+
+**Note:** This skill handles COMMIT only. Push must be requested separately.
