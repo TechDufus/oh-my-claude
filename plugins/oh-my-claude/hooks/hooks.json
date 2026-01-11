@@ -78,6 +78,11 @@
             "type": "command",
             "command": "uv run --script ${CLAUDE_PLUGIN_ROOT}/hooks/agent_usage_reminder.py",
             "timeout": 5
+          },
+          {
+            "type": "command",
+            "command": "uv run --script ${CLAUDE_PLUGIN_ROOT}/hooks/verification_reminder.py",
+            "timeout": 5
           }
         ]
       }
