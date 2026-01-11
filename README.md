@@ -136,7 +136,7 @@ The hook intercepts your prompt, detects the keyword, and injects execution dire
 
 ## The Agent Team
 
-Six specialized subagents, each optimized for a specific role:
+Seven specialized subagents, each optimized for a specific role:
 
 | Agent | Model | What It Does |
 |-------|-------|--------------|
@@ -146,6 +146,7 @@ Six specialized subagents, each optimized for a specific role:
 | **worker** | opus | Implementation — executes ONE specific task completely |
 | **scribe** | opus | Documentation — writes clear docs for code, APIs, systems |
 | **validator** | haiku | QA — runs tests, linters, type checks, reports pass/fail |
+| **orchestrator** | opus | Coordination — delegates to agents, cannot implement directly |
 
 ### Usage
 
