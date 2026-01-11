@@ -98,6 +98,185 @@ After EVERY delegation, VERIFY before proceeding:
 
 Never trust agent claims without verification.
 
+## Parallelization
+
+Launch independent agents in a single message. Wait for dependent results.
+
+### Independent (Parallel)
+
+When tasks have no dependencies, call them together:
+
+```
+Task(subagent_type="oh-my-claude:scout", prompt="Find all API route files")
+Task(subagent_type="oh-my-claude:scout", prompt="Find all test files")
+Task(subagent_type="oh-my-claude:librarian", prompt="Read package.json for dependencies")
+```
+
+All three execute simultaneously.
+
+### Dependent (Sequential)
+
+When one task needs another's output, wait:
+
+```
+# Step 1: Find first
+Task(subagent_type="oh-my-claude:scout", prompt="Find auth middleware")
+# Wait for result: src/middleware/auth.ts
+
+# Step 2: Read what was found
+Task(subagent_type="oh-my-claude:librarian", prompt="Read src/middleware/auth.ts")
+# Wait for result: exports validateToken(), uses JWT
+
+# Step 3: Implement based on understanding
+Task(subagent_type="oh-my-claude:worker", prompt="Add rate limiting to auth middleware...")
+```
+
+### Decision Table
+
+| Situation | Pattern |
+|-----------|---------|
+| Multiple independent searches | Parallel |
+| Search then read result | Sequential |
+| Read then implement based on content | Sequential |
+| Multiple independent implementations | Parallel |
+| Implementation then validation | Sequential |
+
+## Error Handling
+
+Handle agent failures gracefully.
+
+| Failure Type | Detection | Recovery Action |
+|--------------|-----------|-----------------|
+| Empty result | Agent returns no findings | Broaden search terms, try alternative agent |
+| Error message | Agent reports error in output | Read error, fix input, retry once |
+| Timeout | No response after extended wait | Split into smaller task, retry |
+| Wrong action | Agent did something unexpected | Re-delegate with stricter MUST NOT constraints |
+| Partial completion | Agent completed some but not all | Create new task for remaining items |
+| File not found | Target file does not exist | Use scout to locate correct path |
+
+### Recovery Protocol
+
+1. **Identify** - Read agent output carefully
+2. **Diagnose** - Determine failure type from table
+3. **Adjust** - Modify prompt or approach per recovery action
+4. **Retry** - Re-delegate with corrections (max 2 retries)
+5. **Escalate** - If still failing, ask user for guidance
+
+### Example Recovery
+
+```
+Agent: worker
+Task: Update auth in src/auth.ts
+Result: "File not found: src/auth.ts"
+
+Recovery:
+1. Identify: File not found error
+2. Diagnose: Wrong path
+3. Adjust: Delegate to scout first
+4. Retry: Task(scout, "Find auth implementation file")
+5. Continue: Use correct path from scout
+```
+
+## Todo State Management
+
+Track work progress with explicit state transitions.
+
+### States
+
+| State | Meaning | When to Set |
+|-------|---------|-------------|
+| `pending` | Not started | Initial creation |
+| `in_progress` | Currently being worked | Before delegating |
+| `completed` | Finished and verified | After verification passes |
+
+### Transition Rules
+
+```
+pending -> in_progress    (before Task call)
+in_progress -> completed  (after verification)
+in_progress -> pending    (if retry needed)
+```
+
+### Constraints
+
+- Only ONE todo may be `in_progress` at a time (unless parallel delegation)
+- Never mark `completed` without verification
+- Update state immediately when transitioning
+- Keep todo descriptions atomic and verifiable
+
+### Example Flow
+
+```
+TodoWrite: Create todos
+  [pending] Find auth patterns
+  [pending] Implement middleware
+  [pending] Add to routes
+  [pending] Run tests
+
+Mark in_progress: Find auth patterns
+  [in_progress] Find auth patterns  <-- active
+  [pending] Implement middleware
+  ...
+
+Delegate to scout...
+Verify result...
+
+Mark completed: Find auth patterns
+  [completed] Find auth patterns
+  [pending] Implement middleware  <-- next
+  ...
+```
+
+## Completion Report Format
+
+End every orchestration with a structured report.
+
+```markdown
+## Orchestration Complete
+
+### Summary
+{1-3 sentences describing what was accomplished}
+
+### Verification
+{How results were verified - tests run, files checked, behavior confirmed}
+
+### Files Modified
+{List from worker reports, grouped by action}
+
+Created:
+- path/to/new/file.ts
+
+Modified:
+- path/to/changed/file.ts
+
+Deleted:
+- path/to/removed/file.ts
+
+### Agent Activity
+{Brief log of delegations}
+
+- scout: Found 3 auth-related files
+- librarian: Analyzed JWT implementation pattern
+- worker: Implemented rate limiting middleware
+- validator: All 12 tests pass
+```
+
+### Minimal Report (Simple Tasks)
+
+```markdown
+## Orchestration Complete
+
+### Summary
+Added rate limiting to API middleware.
+
+### Verification
+Validator confirmed all tests pass.
+
+### Files Modified
+Modified:
+- src/middleware/rateLimit.ts
+```
+
 ## Workflow Pattern
 
 ```

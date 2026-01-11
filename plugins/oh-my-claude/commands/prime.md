@@ -28,7 +28,6 @@ Rapidly build complete understanding of current work state after `/clear` or new
 /prime                                    # General orientation
 /prime migrating postgres init scripts    # Focus exploration on postgres/init
 /prime reviewing PR #42                   # Pull PR context to forefront
-/prime debugging auth timeout             # Look for auth-related changes
 ```
 
 ## Arguments: $ARGUMENTS
@@ -37,13 +36,11 @@ Rapidly build complete understanding of current work state after `/clear` or new
 
 ## Philosophy
 
-**Problem**: Fresh sessions lack context about in-progress work. Manually explaining state wastes tokens and misses details.
+**Problem**: Fresh sessions lack context about in-progress work.
 
-**Solution**: Subagents explore repository state in parallel, then synthesize into a concise briefing. The main context receives only the summary, not the raw exploration data.
+**Solution**: Subagents explore repository state in parallel, then synthesize into a concise briefing. Main context receives only the summary, not raw exploration data.
 
-**Token Efficiency**: Each subagent has its own context window. Raw git diffs, PR bodies, and file contents stay in subagent contexts. Main context receives only distilled insights.
-
-**Task-Focused Priming**: When a task hint is provided, subagents prioritize context relevant to that task. This follows the "pyramid approach" - starting with task intent allows more targeted exploration.
+**Task-Focused**: When a task hint is provided, subagents prioritize context relevant to that task (pyramid approach - start with intent).
 
 ---
 
@@ -53,16 +50,13 @@ Parse `$ARGUMENTS` to extract:
 - **Task hint**: Any non-flag text (e.g., "migrating postgres init scripts")
 - **Flags**: `--quick`, `--verbose`
 
-If task hint is provided, it will be passed to all subagents to focus their exploration.
-
 ---
 
 ## Phase 0: Quick Snapshot (Main Agent)
 
-First, gather low-token essentials directly (no subagent needed):
+Run these commands in parallel via Bash tool:
 
 ```bash
-# Run these commands in parallel via Bash tool:
 git branch --show-current
 git rev-parse --abbrev-ref HEAD@{upstream} 2>/dev/null || echo "no upstream"
 git status --short --branch
@@ -70,7 +64,7 @@ git log --oneline -5
 git stash list --format="%gd: %s"
 ```
 
-**Parse and display immediately:**
+Display immediately:
 ```
 ## Quick Snapshot
 - **Branch**: <current-branch> (tracking: <upstream-or-none>)
@@ -79,7 +73,47 @@ git stash list --format="%gd: %s"
 - **Stashes**: <count or "none">
 ```
 
-If `--quick` flag provided, STOP HERE. Display snapshot and exit.
+If `--quick` flag provided, STOP HERE.
+
+---
+
+## Subagent Prompt Template
+
+All subagents receive this wrapper structure. Replace `{AGENT_NAME}`, `{WORD_LIMIT}`, `{COMMANDS}`, `{REQUIREMENTS}`, and `{XML_FIELDS}`:
+
+```
+Task(
+  subagent_type: "general-purpose",
+  description: "{description}",
+  prompt: """
+  <task_context>
+  TASK HINT: {task_hint or "None provided - do general analysis"}
+  </task_context>
+
+  {AGENT_SPECIFIC_INSTRUCTIONS}
+
+  Provide a CONCISE summary (under {WORD_LIMIT} words).
+  If task hint provided, prioritize findings relevant to that task.
+
+  <commands>
+  {COMMANDS}
+  </commands>
+
+  <analysis_requirements>
+  {REQUIREMENTS}
+  If task hint provided, add: **Task relevance**: Which findings relate to the hinted task?
+  </analysis_requirements>
+
+  <output_format>
+  Return structured XML:
+  <{agent}_analysis>
+    {XML_FIELDS}
+    <task_relevance>...</task_relevance>  <!-- only if task hint provided -->
+  </{agent}_analysis>
+  </output_format>
+  """
+)
+```
 
 ---
 
@@ -89,219 +123,94 @@ Launch THREE subagents simultaneously (all in single message):
 
 ### Subagent 1: Git Changes Analyst
 
-```
-Task(
-  subagent_type: "general-purpose",
-  description: "Analyze git changes",
-  prompt: """
-  <task_context>
-  TASK HINT: {task_hint or "None provided - do general analysis"}
-  </task_context>
+**Word limit**: 500 | **Description**: "Analyze git changes"
 
-  Analyze the current git state. Provide a CONCISE summary (under 500 words).
-  If a task hint is provided, prioritize findings relevant to that task.
+**Commands**:
+1. `git log main..HEAD --format='%h %s' 2>/dev/null || git log -10 --format='%h %s'`
+2. `git diff --cached --stat` (staged)
+3. `git diff --stat` (unstaged)
+4. `git diff --cached` (full staged - summarize, don't echo)
+5. `git diff` (full unstaged - summarize, don't echo)
+6. `git stash show -p stash@{0} 2>/dev/null` (if stashes exist)
+7. `git ls-files --others --exclude-standard | head -20` (untracked)
 
-  <commands>
-  Run these git commands:
-  1. `git log main..HEAD --format='%h %s' 2>/dev/null || git log -10 --format='%h %s'`
-  2. `git diff --cached --stat` (staged changes)
-  3. `git diff --stat` (unstaged changes)
-  4. `git diff --cached` (full staged diff - summarize, don't echo)
-  5. `git diff` (full unstaged diff - summarize, don't echo)
-  6. `git stash show -p stash@{0} 2>/dev/null` (if stashes exist)
-  7. `git ls-files --others --exclude-standard | head -20` (untracked files)
-  </commands>
+**Requirements**:
+- **Branch commits**: Group by feature/fix/refactor
+- **Staged/Unstaged/Untracked changes**: Categorize by src/test/config/docs
+- **Stash contents**: Any paused work?
+- **Work narrative**: 2-3 sentences on current developer activity
 
-  <analysis_requirements>
-  Analyze and report:
-  - **Branch commits**: What work has been done? Group by feature/fix/refactor.
-  - **Staged changes**: What's ready to commit? Categorize by src/test/config/docs.
-  - **Unstaged changes**: What's in progress? Any incomplete patterns?
-  - **Untracked files**: New files being created? What kind?
-  - **Stash contents**: Any paused work?
-  - **Work narrative**: 2-3 sentences on what developer is working on.
-
-  If task hint provided, add:
-  - **Task relevance**: Which changes/files relate to the hinted task?
-  </analysis_requirements>
-
-  <output_format>
-  Return structured XML:
-  <git_analysis>
-    <branch_commits>...</branch_commits>
-    <staged>...</staged>
-    <unstaged>...</unstaged>
-    <untracked>...</untracked>
-    <stashes>...</stashes>
-    <narrative>...</narrative>
-    <task_relevance>...</task_relevance>  <!-- only if task hint provided -->
-  </git_analysis>
-  </output_format>
-  """
-)
-```
+**XML Fields**: `branch_commits`, `staged`, `unstaged`, `untracked`, `stashes`, `narrative`
 
 ### Subagent 2: GitHub Context Analyst
 
-```
-Task(
-  subagent_type: "general-purpose",
-  description: "Analyze GitHub context",
-  prompt: """
-  <task_context>
-  TASK HINT: {task_hint or "None provided - do general analysis"}
-  </task_context>
+**Word limit**: 400 | **Description**: "Analyze GitHub context"
 
-  Gather GitHub context. Provide a CONCISE summary (under 400 words).
-  If task hint mentions PR/issue numbers, prioritize those.
+**Commands**:
+1. `gh pr list --state open --author @me --json number,title,headRefName,baseRefName,isDraft,updatedAt,reviewDecision --limit 5`
+2. `gh pr view --json number,title,body,state,commits,reviews,statusCheckRollup 2>/dev/null`
+3. `gh issue list --assignee @me --state open --json number,title,labels,updatedAt --limit 10`
+4. `gh run list --limit 3 --json conclusion,name,updatedAt,headBranch`
 
-  <commands>
-  Run these gh commands:
-  1. `gh pr list --state open --author @me --json number,title,headRefName,baseRefName,isDraft,updatedAt,reviewDecision --limit 5`
-  2. `gh pr view --json number,title,body,state,commits,reviews,statusCheckRollup 2>/dev/null` (current branch PR)
-  3. `gh issue list --assignee @me --state open --json number,title,labels,updatedAt --limit 10`
-  4. `gh run list --limit 3 --json conclusion,name,updatedAt,headBranch`
-  </commands>
+**Requirements**:
+- If current branch has PR: Draft status? Review feedback? CI status?
+- If branch name contains issue number: Fetch issue, extract requirements
+- If task hint mentions PR/issue: Fetch that directly
 
-  <analysis_requirements>
-  If current branch has a PR:
-  - Draft or ready for review?
-  - Review feedback (approved, changes requested)?
-  - CI status (passing, failing, pending)?
+**XML Fields**: `current_pr`, `related_issue`, `ci_status`, `other_prs`, `open_issues`
 
-  If branch name contains issue number (e.g., `fix-123`, `feature/456-desc`):
-  - Fetch issue: `gh issue view <number> --json title,body,labels`
-  - Extract key requirements
-
-  If task hint mentions specific PR/issue, fetch that directly.
-  </analysis_requirements>
-
-  <output_format>
-  Return structured XML:
-  <github_analysis>
-    <current_pr>...</current_pr>
-    <related_issue>...</related_issue>
-    <ci_status>...</ci_status>
-    <other_prs>...</other_prs>
-    <open_issues>...</open_issues>
-    <task_relevance>...</task_relevance>  <!-- only if task hint provided -->
-  </github_analysis>
-
-  SKIP empty sections. Return <github_analysis><none>No GitHub context available</none></github_analysis> if gh CLI fails.
-  </output_format>
-  """
-)
-```
+Return `<github_analysis><none>No GitHub context available</none></github_analysis>` if gh CLI fails.
 
 ### Subagent 3: Project Context Analyst
 
-```
-Task(
-  subagent_type: "general-purpose",
-  description: "Analyze project context",
-  prompt: """
-  <task_context>
-  TASK HINT: {task_hint or "None provided - do general analysis"}
-  </task_context>
+**Word limit**: 300 | **Description**: "Analyze project context"
 
-  Gather project-level context. Provide a CONCISE summary (under 300 words).
-  If task hint provided, explore files/directories relevant to that task.
+**Standard Checks**:
+1. `CLAUDE.md` - Look for "## Active Work" section
+2. `.claude/CLAUDE.md` - Project-specific instructions
+3. `TODO.md` or `TODO` - Tracked tasks
+4. `.claude/notepads/` - learnings.md, decisions.md, context.md
+5. `git diff --name-only HEAD~5..HEAD 2>/dev/null | head -20`
 
-  <standard_checks>
-  Check these files (if they exist):
-  1. `CLAUDE.md` - Look for "## Active Work" section
-  2. `.claude/CLAUDE.md` - Project-specific instructions
-  3. `TODO.md` or `TODO` - Any tracked tasks
-  4. Check for `.claude/notepads/` directory:
-     - Read `learnings.md` if exists (patterns/gotchas discovered)
-     - Read `decisions.md` if exists (design decisions with rationale)
-     - Read `context.md` if exists (project-specific context for recovery)
-  5. Recent changes: `git diff --name-only HEAD~5..HEAD 2>/dev/null | head -20`
-  </standard_checks>
+**Task-Focused Exploration** (if hint provided):
+- Glob: Find files matching task keywords
+- Grep: Search for relevant patterns
+- Read: Top 3-5 matching files, summarize structure
+- Note file locations for main agent reference
 
-  <task_focused_exploration>
-  IF TASK HINT PROVIDED:
-  - Use Glob to find files matching task keywords (e.g., "postgres" → **/postgres/**, **/*postgres*)
-  - Use Grep to search for relevant patterns in the codebase
-  - Read key files (limit to 3-5 most relevant) to understand current implementation
-  - Note file locations for the main agent to reference later
+**Requirements**:
+- Active work description and phase from CLAUDE.md
+- Key learnings, decisions, context from notepads
+- Primary directories and patterns from recent changes
+- Relevant files and conventions (if task hint provided)
 
-  Example: Task hint "postgres init scripts"
-  - Glob: **/postgres/**/*.sql, **/init*.sql, **/charts/**/templates/**
-  - Grep: "initdb", "postgres", "init-script"
-  - Read: Top 3-5 matching files, summarize structure
-  </task_focused_exploration>
-
-  <analysis_requirements>
-  From CLAUDE.md Active Work:
-  - Current task description
-  - Phase (if tracked)
-  - Blockers or notes
-
-  From notepads (if they exist):
-  - Key learnings and gotchas from previous sessions
-  - Important design decisions and their rationale
-  - Project-specific context that aids recovery
-
-  From recent changes:
-  - Primary directories being worked on
-  - Patterns (all tests? one module? scattered?)
-
-  From task exploration (if hint provided):
-  - Relevant file locations
-  - Current implementation summary
-  - Key patterns/conventions discovered
-  </analysis_requirements>
-
-  <output_format>
-  Return structured XML:
-  <project_analysis>
-    <active_work>...</active_work>
-    <notepad_context>                     <!-- only if notepads exist -->
-      <learnings>...</learnings>
-      <decisions>...</decisions>
-      <context>...</context>
-    </notepad_context>
-    <focus_areas>...</focus_areas>
-    <project_type>...</project_type>
-    <available_commands>...</available_commands>
-    <task_exploration>                    <!-- only if task hint provided -->
-      <relevant_files>...</relevant_files>
-      <implementation_summary>...</implementation_summary>
-      <conventions>...</conventions>
-    </task_exploration>
-  </project_analysis>
-  </output_format>
-  """
-)
-```
+**XML Fields**: `active_work`, `notepad_context` (with learnings/decisions/context), `focus_areas`, `project_type`, `available_commands`, `task_exploration` (with relevant_files/implementation_summary/conventions)
 
 ---
 
 ## Phase 2: Synthesis
 
-After all three subagents return, synthesize into a unified briefing.
+After all subagents return, synthesize into unified briefing.
 
-**Token Budget**: Keep synthesis under 800 tokens. Research shows LLM reasoning degrades around 3000 tokens - leave room for actual work.
+**Token Budget**: Keep under 800 tokens. Leave room for actual work.
 
-**If task hint was provided**, lead with task-relevant findings:
+### With Task Hint Format
 
 ```markdown
 # Work State Briefing
 
 ## TL;DR
-<One paragraph: Current state + relevance to the hinted task>
+<One paragraph: Current state + relevance to hinted task>
 
 ## Task Context: {task_hint}
-<Synthesize task-relevant findings from all three subagents>
-- **Relevant files**: <From Project Context Analyst>
-- **Related changes**: <From Git Changes Analyst>
-- **Associated PRs/issues**: <From GitHub Context Analyst>
-- **Implementation notes**: <Key patterns, conventions discovered>
+- **Relevant files**: <From Project Context>
+- **Related changes**: <From Git Changes>
+- **Associated PRs/issues**: <From GitHub Context>
+- **Implementation notes**: <Key patterns discovered>
 
 ## General State
 ### Git
-<Branch, commits, changes NOT related to task>
+<Non-task-related branch, commits, changes>
 
 ### GitHub
 <Other PRs, issues, CI status>
@@ -313,52 +222,40 @@ After all three subagents return, synthesize into a unified briefing.
 <Tailored to the hinted task>
 ```
 
-**If NO task hint**, use general format:
+### Without Task Hint Format
 
 ```markdown
 # Work State Briefing
 
 ## TL;DR
-<One paragraph summary: What work is in progress, what state it's in, what's next>
+<One paragraph: Work in progress, state, next steps>
 
 ## Git State
-<From Subagent 1: Branch, commits, changes summary>
+<Branch, commits, changes summary>
 
 ## GitHub Context
-<From Subagent 2: PR status, issue linkage, CI status>
+<PR status, issue linkage, CI>
 
 ## Project Context
-<From Subagent 3: Active work tracking, focus areas>
+<Active work, focus areas>
 
 ## Suggested Next Actions
-<Based on all context, suggest 2-3 logical next steps>
+<2-3 logical next steps>
 ```
 
 ---
 
 ## Mode Variations
 
-### `--quick` Mode
-- Only run Phase 0 (Quick Snapshot)
-- No subagents spawned
-- Minimal token usage (~100-200 tokens)
-- Best for: Quick orientation, simple repos
-
-### `--verbose` Mode
-- Include actual diff content in synthesis (not just summaries)
-- Higher token usage in main context
-- Best for: Complex changes needing detailed review
-
-### Default Mode (no flags)
-- Full Phase 0 + Phase 1 + Phase 2
-- Balanced token usage (~500-800 tokens in main context)
-- Best for: Most situations
+| Mode | Behavior | Token Usage | Best For |
+|------|----------|-------------|----------|
+| `--quick` | Phase 0 only, no subagents | ~100-200 | Quick orientation |
+| `--verbose` | Include actual diff content | Higher | Complex changes |
+| Default | Full Phase 0 + 1 + 2 | ~500-800 | Most situations |
 
 ---
 
-## Example Output
-
-### Example 1: With Task Hint
+## Example: With Task Hint
 
 **Command**: `/prime migrating postgres chart init scripts`
 
@@ -366,52 +263,37 @@ After all three subagents return, synthesize into a unified briefing.
 # Work State Briefing
 
 ## TL;DR
-Branch main is clean. Task: migrating postgres init scripts. Found existing
-init scripts in `charts/shared-init/` ConfigMap pattern. Three postgres charts
-currently reference shared init. No active PR for this migration.
+Branch main is clean. Found init scripts in `charts/shared-init/` ConfigMap.
+Three postgres charts reference shared init. No active PR for this migration.
 
 ## Task Context: migrating postgres chart init scripts
 
 ### Relevant Files
-- `charts/shared-init/templates/configmap.yaml` - Current shared init scripts
-- `charts/postgres-primary/values.yaml` - References shared-init
-- `charts/postgres-replica/values.yaml` - References shared-init
-- `charts/postgres-analytics/values.yaml` - References shared-init
+- `charts/shared-init/templates/configmap.yaml` - Current shared init
+- `charts/postgres-*/values.yaml` - Reference shared-init
 - `charts/shared-init/files/*.sql` - 4 SQL init scripts
 
 ### Current Implementation
-The shared-init chart creates a ConfigMap with SQL scripts mounted to
-`/docker-entrypoint-initdb.d/`. Each postgres chart depends on shared-init
-and mounts the ConfigMap. Scripts run in alphabetical order:
-`01-extensions.sql`, `02-schemas.sql`, `03-users.sql`, `04-grants.sql`.
+Shared-init creates ConfigMap with SQL scripts mounted to `/docker-entrypoint-initdb.d/`.
+Scripts: `01-extensions.sql`, `02-schemas.sql`, `03-users.sql`, `04-grants.sql`.
 
-### Conventions Discovered
-- Init scripts use numeric prefix for ordering
-- Secrets injected via `envFrom` in postgres pods
+### Conventions
+- Numeric prefix for ordering
+- Secrets via `envFrom`
 - Pattern: `{{ include "shared-init.fullname" . }}-scripts`
-
-### Related Changes
-- No recent commits touching init scripts
-- No staged/unstaged changes in charts/
-
-### Associated PRs/Issues
-- No open PRs for postgres migration
-- Issue #89 "Consolidate chart dependencies" may be related
 
 ## General State
 - **Branch**: main (clean)
 - **CI**: All passing
-- **Open Issues**: 3 assigned (none postgres-related)
 
 ## Suggested Next Actions
 1. Create branch: `feat/postgres-init-migration`
-2. Copy `charts/shared-init/files/*.sql` to each postgres chart
-3. Update each chart's templates to create local ConfigMap
-4. Remove shared-init dependency from each chart
-5. Test with `helm template` to verify output
+2. Copy SQL files to each postgres chart
+3. Update templates for local ConfigMap
+4. Remove shared-init dependency
 ```
 
-### Example 2: Without Task Hint
+## Example: Without Task Hint
 
 **Command**: `/prime`
 
@@ -419,31 +301,26 @@ and mounts the ConfigMap. Scripts run in alphabetical order:
 # Work State Briefing
 
 ## TL;DR
-Working on OAuth2 authentication feature (branch: feat/oauth2-login).
-3 commits made implementing provider abstraction. Current focus: Google OAuth
-callback handler. PR #47 is draft, CI passing. Related to issue #42.
+Working on OAuth2 feature (branch: feat/oauth2-login). 3 commits implementing
+provider abstraction. Focus: Google callback handler. PR #47 draft, CI passing.
 
 ## Git State
-- **Branch**: feat/oauth2-login (5 commits ahead of main)
-- **Commits**: Provider interface, Google impl, callback route stub
-- **Staged**: None
-- **Unstaged**: `src/auth/google.ts` (45 lines changed - callback logic)
-- **Untracked**: `src/auth/github.ts` (new file, likely next provider)
+- **Branch**: feat/oauth2-login (5 ahead of main)
+- **Unstaged**: `src/auth/google.ts` (callback logic)
+- **Untracked**: `src/auth/github.ts` (next provider)
 
 ## GitHub Context
-- **PR #47**: Draft, CI passing, no reviews yet
-- **Issue #42**: "Add social login" - requires Google + GitHub providers
-- **CI**: All checks passing on last push
+- **PR #47**: Draft, CI passing, no reviews
+- **Issue #42**: "Add social login" - requires Google + GitHub
 
 ## Project Context
-- **Active Work**: "Implementing OAuth2 callback handlers"
-- **Focus**: `src/auth/` directory
-- **Project**: TypeScript/Node.js (npm scripts available)
+- **Active Work**: OAuth2 callback handlers
+- **Focus**: `src/auth/`
 
 ## Suggested Next Actions
-1. Complete Google callback handler (unstaged changes)
+1. Complete Google callback handler
 2. Add tests for callback flow
-3. Start GitHub provider implementation (untracked file exists)
+3. Start GitHub provider
 ```
 
 ---
@@ -453,30 +330,18 @@ callback handler. PR #47 is draft, CI passing. Related to issue #42.
 - **Not a git repo**: Report error, suggest running from repo root
 - **No gh CLI**: Skip GitHub context, note in output
 - **No CLAUDE.md**: Skip project context section
-- **Empty branch** (no commits vs main): Focus on staged/unstaged only
-- **Network issues**: Timeout GitHub calls after 10s, report partial results
+- **Empty branch**: Focus on staged/unstaged only
+- **Network issues**: Timeout GitHub calls after 10s, report partial
 
 ---
 
-## Best Practices (from Research)
+## When to Use Task Hints
 
-### Prompt Structure (Applied)
-- **XML tags**: Subagent prompts use XML for structure (Claude was trained with XML)
-- **Pyramid approach**: Task intent → project context → specific changes
-- **Token budget**: Keep synthesis under 800 tokens (3000 threshold for reasoning)
-- **Document placement**: Context data before instructions in prompts
-
-### When to Use Task Hints
-| Scenario | Use Task Hint? | Example |
-|----------|----------------|---------|
+| Scenario | Use Hint? | Example |
+|----------|-----------|---------|
 | General orientation | No | `/prime` |
-| Resuming specific work | Yes | `/prime fixing auth timeout bug` |
+| Resuming specific work | Yes | `/prime fixing auth timeout` |
 | Starting new feature | Yes | `/prime implementing rate limiting` |
 | Reviewing PR | Yes | `/prime reviewing PR #42` |
-| Post-meeting context | Yes | `/prime discussed migration to postgres 15` |
 
-### Token Efficiency Tips
-1. **Use `--quick` for simple repos** - Skip subagents entirely
-2. **Be specific in task hints** - "postgres init scripts" beats "database stuff"
-3. **Don't chain with `/compact`** - Priming after compact defeats the purpose
-4. **Clear before priming** - `/clear` then `/prime` for cleanest context
+**Tips**: Be specific ("postgres init scripts" beats "database stuff"). Don't chain with `/compact`. Clear before priming for cleanest context.

@@ -125,6 +125,149 @@ OR
 - Write tests (that's Worker)
 - Skip checks without noting it
 
+## Example Validations
+
+**Input:** "Validate changes in src/auth/"
+**Approach:**
+1. Detect TypeScript project from `package.json`
+2. Run `npx tsc --noEmit src/auth/`
+3. Run `npx eslint src/auth/`
+4. Run `npx jest src/auth/`
+5. Report with VERDICT
+
+**Input:** "Run Python tests for the api module"
+**Approach:**
+1. Detect Python project from `pyproject.toml`
+2. Run `ruff check src/api/`
+3. Run `mypy src/api/`
+4. Run `pytest tests/api/ -v`
+5. Report coverage if available, include VERDICT
+
+**Input:** "Full validation on multi-language monorepo"
+**Approach:**
+1. Scan root for `package.json`, `pyproject.toml`, `go.mod`
+2. Run TypeScript checks: `npm run typecheck && npm run lint`
+3. Run Python checks: `ruff check . && pytest`
+4. Run Go checks: `go vet ./... && go test ./...`
+5. Aggregate results across all stacks, single VERDICT
+
+## Distinguishing Failures
+
+### New vs Pre-Existing Failures
+
+Not all failures are caused by recent changes. Use baseline comparison:
+
+```bash
+# 1. Stash current changes
+git stash push -m "validator-baseline-check"
+
+# 2. Run tests on clean baseline
+npm test 2>&1 | tee /tmp/baseline-results.txt
+
+# 3. Restore changes
+git stash pop
+
+# 4. Run tests again
+npm test 2>&1 | tee /tmp/current-results.txt
+
+# 5. Compare results
+```
+
+### Reporting Distinction
+
+| Failure Type | Report As | Action Required |
+|--------------|-----------|-----------------|
+| New failure (only in current) | **NEW FAILURE** | Must fix before merge |
+| Pre-existing (in baseline too) | **PRE-EXISTING** | Note but don't block |
+| Flaky (intermittent) | **FLAKY** | Re-run to confirm |
+
+Example report section:
+```
+### Test Failures
+
+**NEW FAILURES (2):**
+- src/auth/login.test.ts: "should validate token" - TypeError
+- src/auth/session.test.ts: "should expire" - assertion failed
+
+**PRE-EXISTING (1):**
+- src/legacy/old.test.ts: "deprecated feature" - skipped in baseline too
+
+VERDICT: FAIL - 2 new test failures must be fixed
+```
+
+## Handling Edge Cases
+
+### Slow Test Suites
+
+When full test suite takes >2 minutes:
+
+```bash
+# Jest: Run only tests related to changed files
+npx jest --findRelatedTests src/auth/login.ts src/auth/session.ts
+
+# Jest: Fail fast on first error
+npx jest --bail
+
+# Pytest: Stop on first failure
+pytest -x tests/
+
+# Pytest: Run specific markers
+pytest -m "not slow" tests/
+```
+
+Report when using partial runs:
+```
+### Tests (jest - related only)
+**Status:** PASS
+**Note:** Ran 12/147 tests (related to changed files)
+Full suite recommended before merge.
+```
+
+### Flaky Tests
+
+When a test fails inconsistently:
+
+1. **Re-run once** to confirm flakiness
+2. **Report as flaky** if results differ
+3. **Do not block** on known flaky tests
+
+```bash
+# Re-run failed tests only
+npx jest --onlyFailures
+
+# Pytest re-run plugin
+pytest --lf  # last failed
+```
+
+Report format:
+```
+### Flaky Test Detected
+**Test:** src/api/timeout.test.ts
+**Behavior:** Failed on run 1, passed on run 2
+**Recommendation:** Mark as flaky or fix root cause
+```
+
+### No Test Configuration
+
+When project lacks test setup:
+
+| Situation | Action |
+|-----------|--------|
+| No test script in package.json | Report "No test configuration found" |
+| No pytest/test directory | Check for alternative (`tests/`, `test/`, `__tests__/`) |
+| Tests exist but no runner | Suggest appropriate runner based on file patterns |
+
+Report format:
+```
+### Tests
+**Status:** SKIPPED
+**Reason:** No test configuration found
+**Found:** 15 files matching `*.test.ts` in src/
+**Recommendation:** Add test script to package.json
+
+VERDICT: PASS (with caveat - no tests configured)
+```
+
 ## Validation Priority
 
 1. **Type/Compile errors** - Code won't run
