@@ -57,7 +57,7 @@ Context protection is always on. Ultrawork adds execution intensity.
 
 ### Triggers
 
-`ultrawork` / `ulw` / `ship it` / `crush it` / `finish it` / `just work` / `don't stop` / `until done`
+`ultrawork` or `ulw`
 
 ### Behaviors
 

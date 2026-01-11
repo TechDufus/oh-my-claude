@@ -1,6 +1,6 @@
 {
   "name": "oh-my-claude",
-  "version": "0.0.35",
+  "version": "0.0.36",
   "description": "Add 'ultrawork' to any prompt for maximum parallel execution.",
   "author": {
     "name": "TechDufus",

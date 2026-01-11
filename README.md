@@ -17,7 +17,6 @@ Just add a trigger word anywhere in your prompt:
 ```
 fix all the type errors, ultrawork
 ulw refactor the entire auth system
-implement user analytics with tests, just get it done
 ```
 
 <p align="center">
@@ -116,12 +115,6 @@ Required for hooks to activate.
 | **ultradebug** | Systematic debugging with evidence-based diagnosis |
 | **analyze** | Deep analysis with parallel context gathering |
 | **search for** | Multiple parallel search agents |
-
-### Natural Language Triggers
-
-These phrases also activate ultrawork mode:
-- `just work`, `don't stop`, `until done`
-- `keep going`, `finish everything`, `relentless`, `get it done`
 
 ---
 

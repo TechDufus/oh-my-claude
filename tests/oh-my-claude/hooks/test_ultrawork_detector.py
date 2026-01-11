@@ -87,27 +87,6 @@ class TestUltraworkPatterns:
         [
             "ultrawork",
             "ulw",
-            "just work",
-            "dont stop",
-            "until done",
-            "keep going",
-            "finish everything",
-            "relentless",
-            "get it done",
-            "make it happen",
-            "no excuses",
-            "full send",
-            "go all in",
-            "complete everything",
-            "finish it",
-            "see it through",
-            "dont give up",
-            "ship it",
-            "crush it",
-            "nail it",
-            "lets go",
-            "do it all",
-            "handle everything",
         ],
     )
     def test_ultrawork_triggers(self, trigger):
@@ -118,18 +97,20 @@ class TestUltraworkPatterns:
         """Ultrawork patterns should be case insensitive."""
         assert PATTERNS.match("ultrawork", "ULTRAWORK") is not None
         assert PATTERNS.match("ultrawork", "ULW") is not None
-        assert PATTERNS.match("ultrawork", "Ship It") is not None
+        assert PATTERNS.match("ultrawork", "Ultrawork") is not None
 
     def test_ultrawork_in_sentence(self):
         """Ultrawork triggers should match within sentences."""
         assert PATTERNS.match("ultrawork", "Please ultrawork this task") is not None
         assert PATTERNS.match("ultrawork", "fix all bugs ulw") is not None
-        assert PATTERNS.match("ultrawork", "just ship it now") is not None
+        assert PATTERNS.match("ultrawork", "ulw fix this") is not None
 
     def test_non_ultrawork_no_match(self):
         """Non-trigger text should not match ultrawork."""
         assert PATTERNS.match("ultrawork", "please help me") is None
         assert PATTERNS.match("ultrawork", "analyze this code") is None
+        assert PATTERNS.match("ultrawork", "ship it") is None  # No longer a trigger
+        assert PATTERNS.match("ultrawork", "just work") is None  # No longer a trigger
 
 
 class TestSearchPatterns:
@@ -244,24 +225,27 @@ class TestPatternNonOverlap:
 
     def test_ultrawork_doesnt_match_analyze(self):
         """Ultrawork pattern shouldn't match analyze triggers."""
-        # "analyze" shouldn't trigger ultrawork
         assert PATTERNS.match("ultrawork", "analyze this") is None
 
     def test_search_doesnt_match_ultrawork(self):
         """Search pattern shouldn't match ultrawork triggers."""
         assert PATTERNS.match("search", "ultrawork") is None
-        assert PATTERNS.match("search", "ship it") is None
+        assert PATTERNS.match("search", "ulw") is None
 
     def test_specific_mode_detection(self):
         """Each mode should detect its own triggers correctly."""
         test_cases = [
             ("ultrawork", "ulw fix bugs", True),
+            ("ultrawork", "ultrawork fix bugs", True),
             ("search", "ulw fix bugs", False),
             ("analyze", "ulw fix bugs", False),
             ("search", "search for the config", True),
             ("ultrawork", "search for the config", False),
             ("analyze", "analyze the codebase", True),
             ("ultrawork", "analyze the codebase", False),
+            # Former triggers that should no longer match
+            ("ultrawork", "ship it", False),
+            ("ultrawork", "just work on this", False),
         ]
         for pattern_name, text, should_match in test_cases:
             match = PATTERNS.match(pattern_name, text)

@@ -32,13 +32,10 @@ from hook_utils import (
 
 PATTERNS = RegexCache()
 
-# Ultrawork mode triggers
+# Ultrawork mode triggers - simplified to just ultrawork/ulw for clarity
 PATTERNS.add(
     "ultrawork",
-    r"(ultrawork|ulw|just work|dont stop|until done|keep going|finish everything|"
-    r"relentless|get it done|make it happen|no excuses|full send|go all in|"
-    r"complete everything|finish it|see it through|dont give up|ship it|crush it|"
-    r"nail it|lets go|do it all|handle everything)",
+    r"\b(ultrawork|ulw)\b",
     re.IGNORECASE,
 )
 
