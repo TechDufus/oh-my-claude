@@ -113,6 +113,41 @@ SAFE_PATTERN_NAMES = [
 ]
 
 
+def is_plugin_internal_script(command: str) -> bool:
+    """
+    Check if command runs a script from within the plugin directory.
+
+    This auto-approves plugin's own scripts regardless of version,
+    preventing re-prompts when plugin version changes.
+
+    Args:
+        command: The bash command to check.
+
+    Returns:
+        True if command references a script within CLAUDE_PLUGIN_ROOT.
+    """
+    plugin_root = os.environ.get("CLAUDE_PLUGIN_ROOT", "")
+    log_debug(f"CLAUDE_PLUGIN_ROOT='{plugin_root}'")
+    log_debug(f"command='{command[:200]}'")
+
+    # Check if the command contains the plugin root path
+    if plugin_root and plugin_root in command:
+        log_debug(f"command references plugin path: {plugin_root}")
+        return True
+
+    # Fallback: check for oh-my-claude skill path pattern (handles cache paths)
+    # This works even when CLAUDE_PLUGIN_ROOT isn't set
+    # Pattern: .claude/plugins/cache/oh-my-claude/oh-my-claude/*/skills/
+    if "oh-my-claude" in command and "/skills/" in command:
+        log_debug("command matches oh-my-claude skill pattern")
+        return True
+
+    if not plugin_root:
+        log_debug("CLAUDE_PLUGIN_ROOT not set and no fallback match")
+
+    return False
+
+
 def is_safe_command(command: str) -> tuple[bool, str | None]:
     """
     Check if a command matches any safe pattern.
@@ -124,6 +159,11 @@ def is_safe_command(command: str) -> tuple[bool, str | None]:
         Tuple of (is_safe, pattern_name_if_matched).
     """
     command = command.strip()
+
+    # First check: plugin internal scripts (version-agnostic)
+    if is_plugin_internal_script(command):
+        return True, "plugin_internal_script"
+
     for pattern_name in SAFE_PATTERN_NAMES:
         if SAFE_PATTERNS.match(pattern_name, command):
             log_debug(f"command matched safe pattern: {pattern_name}")

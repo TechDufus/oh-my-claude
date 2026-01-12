@@ -1,8 +1,10 @@
 """Tests for safe_permissions.py PermissionRequest hook."""
 
+import os
+
 import pytest
 
-from safe_permissions import is_safe_command
+from safe_permissions import is_plugin_internal_script, is_safe_command
 
 
 class TestNodeJsCommands:
@@ -384,3 +386,86 @@ class TestEdgeCases:
         """Chained commands should not be auto-approved."""
         is_safe, _ = is_safe_command("npm test && rm -rf /")
         assert is_safe is True  # Matches npm test, but user should review chains
+
+
+class TestPluginInternalScripts:
+    """Tests for plugin internal script auto-approval."""
+
+    def test_plugin_script_approved_when_env_set(self, monkeypatch):
+        """Scripts from CLAUDE_PLUGIN_ROOT should be auto-approved."""
+        plugin_root = "/Users/test/.claude/plugins/cache/oh-my-claude/oh-my-claude/0.2.0"
+        monkeypatch.setenv("CLAUDE_PLUGIN_ROOT", plugin_root)
+
+        script_path = f"{plugin_root}/skills/git-commit-validator/scripts/git-commit-helper.sh"
+        command = f'{script_path} "feat: test commit"'
+
+        result = is_plugin_internal_script(command)
+        assert result is True
+
+    def test_plugin_script_not_approved_without_env(self, monkeypatch):
+        """Without CLAUDE_PLUGIN_ROOT, plugin scripts are not auto-approved."""
+        monkeypatch.delenv("CLAUDE_PLUGIN_ROOT", raising=False)
+
+        command = "/some/path/to/script.sh"
+        result = is_plugin_internal_script(command)
+        assert result is False
+
+    def test_non_plugin_script_not_approved(self, monkeypatch):
+        """Scripts outside plugin root should not be auto-approved."""
+        plugin_root = "/Users/test/.claude/plugins/cache/oh-my-claude/oh-my-claude/0.2.0"
+        monkeypatch.setenv("CLAUDE_PLUGIN_ROOT", plugin_root)
+
+        command = "/Users/test/malicious/script.sh"
+        result = is_plugin_internal_script(command)
+        assert result is False
+
+    def test_plugin_script_integration_with_is_safe_command(self, monkeypatch):
+        """Plugin scripts should be caught by is_safe_command."""
+        plugin_root = "/Users/test/.claude/plugins/cache/oh-my-claude/oh-my-claude/0.2.0"
+        monkeypatch.setenv("CLAUDE_PLUGIN_ROOT", plugin_root)
+
+        script_path = f"{plugin_root}/skills/git-commit-validator/scripts/git-commit-helper.sh"
+        command = f'{script_path} "feat: test commit"'
+
+        is_safe, pattern = is_safe_command(command)
+        assert is_safe is True
+        assert pattern == "plugin_internal_script"
+
+    def test_plugin_script_different_versions(self, monkeypatch):
+        """Plugin scripts work regardless of version in path."""
+        # Test with version 0.1.0
+        plugin_root = "/Users/test/.claude/plugins/cache/oh-my-claude/oh-my-claude/0.1.0"
+        monkeypatch.setenv("CLAUDE_PLUGIN_ROOT", plugin_root)
+
+        command = f"{plugin_root}/scripts/helper.sh arg1 arg2"
+        is_safe, pattern = is_safe_command(command)
+        assert is_safe is True
+        assert pattern == "plugin_internal_script"
+
+        # Test with version 1.0.0
+        plugin_root = "/Users/test/.claude/plugins/cache/oh-my-claude/oh-my-claude/1.0.0"
+        monkeypatch.setenv("CLAUDE_PLUGIN_ROOT", plugin_root)
+
+        command = f"{plugin_root}/scripts/helper.sh arg1 arg2"
+        is_safe, pattern = is_safe_command(command)
+        assert is_safe is True
+        assert pattern == "plugin_internal_script"
+
+    def test_plugin_script_fallback_pattern(self, monkeypatch):
+        """Plugin scripts match via fallback pattern when CLAUDE_PLUGIN_ROOT unset."""
+        monkeypatch.delenv("CLAUDE_PLUGIN_ROOT", raising=False)
+
+        # Cached plugin skill script should match fallback pattern
+        command = "/Users/test/.claude/plugins/cache/oh-my-claude/oh-my-claude/0.2.0/skills/git-commit-validator/scripts/git-commit-helper.sh 'test'"
+        is_safe, pattern = is_safe_command(command)
+        assert is_safe is True
+        assert pattern == "plugin_internal_script"
+
+    def test_fallback_pattern_requires_skills_path(self, monkeypatch):
+        """Fallback pattern requires /skills/ in path for security."""
+        monkeypatch.delenv("CLAUDE_PLUGIN_ROOT", raising=False)
+
+        # Just oh-my-claude in path isn't enough
+        command = "/tmp/oh-my-claude/malicious.sh"
+        is_safe, _ = is_safe_command(command)
+        assert is_safe is False
