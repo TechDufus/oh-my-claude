@@ -11,6 +11,7 @@ PermissionRequest hook that auto-approves:
 - Lint commands (npm run lint, ruff, go vet, cargo check)
 - Type check commands (npm run typecheck, mypy, tsc)
 - Readonly git commands (status, diff, log, branch)
+- Read/Glob/Grep operations within the project directory
 
 All other commands defer to default behavior ("ask").
 
@@ -148,6 +149,75 @@ def is_plugin_internal_script(command: str) -> bool:
     return False
 
 
+def is_path_in_project(path: str) -> bool:
+    """
+    Check if a path is within the current working directory.
+
+    Args:
+        path: The file path to check.
+
+    Returns:
+        True if path is within cwd or is a relative path.
+    """
+    if not path:
+        return False
+
+    cwd = os.getcwd()
+    log_debug(f"cwd={cwd}, path={path}")
+
+    # Relative paths are always considered safe (they're relative to cwd)
+    if not os.path.isabs(path):
+        log_debug("relative path - safe")
+        return True
+
+    # Resolve to absolute and check if within cwd
+    try:
+        resolved = os.path.realpath(path)
+        cwd_resolved = os.path.realpath(cwd)
+        is_within = resolved.startswith(cwd_resolved + os.sep) or resolved == cwd_resolved
+        log_debug(f"resolved={resolved}, is_within_cwd={is_within}")
+        return is_within
+    except (OSError, ValueError) as e:
+        log_debug(f"path resolution error: {e}")
+        return False
+
+
+def is_safe_read_tool(tool_name: str, tool_input: dict | str) -> tuple[bool, str | None]:
+    """
+    Check if a Read/Glob/Grep operation is safe to auto-approve.
+
+    Auto-approves operations within the project directory.
+
+    Args:
+        tool_name: The tool being used (Read, Glob, Grep).
+        tool_input: The tool's input parameters.
+
+    Returns:
+        Tuple of (is_safe, reason_if_safe).
+    """
+    if tool_name not in ("Read", "Glob", "Grep"):
+        return False, None
+
+    # Extract path from tool_input
+    if isinstance(tool_input, str):
+        path = tool_input
+    elif isinstance(tool_input, dict):
+        # Read uses file_path, Glob/Grep use path
+        path = tool_input.get("file_path") or tool_input.get("path") or ""
+    else:
+        path = ""
+
+    # If no path specified, Glob/Grep default to cwd which is safe
+    if not path and tool_name in ("Glob", "Grep"):
+        log_debug(f"{tool_name} with no path defaults to cwd - safe")
+        return True, f"{tool_name}_project_dir"
+
+    if is_path_in_project(path):
+        return True, f"{tool_name}_project_dir"
+
+    return False, None
+
+
 def is_safe_command(command: str) -> tuple[bool, str | None]:
     """
     Check if a command matches any safe pattern.
@@ -188,15 +258,28 @@ def main() -> None:
         output_empty()
         return
 
-    # Only handle Bash tool
     tool_name = data.get("tool_name", "")
+    tool_input = data.get("tool_input", {})
+
+    # Handle Read/Glob/Grep tools - auto-approve within project directory
+    if tool_name in ("Read", "Glob", "Grep"):
+        log_debug(f"checking {tool_name} tool for project path")
+        is_safe, reason = is_safe_read_tool(tool_name, tool_input)
+        if is_safe:
+            log_debug(f"auto-approving {tool_name} (reason: {reason})")
+            output_permission("allow", f"Auto-approved: {reason}")
+        else:
+            log_debug(f"{tool_name} path outside project, deferring to user")
+            output_empty()
+        return
+
+    # Handle Bash tool
     if tool_name != "Bash":
-        log_debug(f"tool is {tool_name}, not Bash - passing through")
+        log_debug(f"tool is {tool_name}, not handled - passing through")
         output_empty()
         return
 
     # Get the command
-    tool_input = data.get("tool_input", {})
     if isinstance(tool_input, str):
         # Sometimes tool_input is just the command string
         command = tool_input
