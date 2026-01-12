@@ -225,17 +225,17 @@ def output_block(hook_event: str, reason: str, context: str) -> None:
     print(json.dumps(response))
 
 
-def output_permission(behavior: str, message: str | None = None) -> None:
+def output_permission(decision: str, reason: str | None = None) -> None:
     """
     Output permission decision for PermissionRequest hooks.
 
     Args:
-        behavior: One of "allow", "deny", or "ask".
-        message: Optional message explaining the decision.
+        decision: One of "allow", "deny", or "ask".
+        reason: Optional reason explaining the decision.
     """
-    response: dict[str, Any] = {"behavior": behavior}
-    if message:
-        response["message"] = message
+    response: dict[str, Any] = {"permissionDecision": decision}
+    if reason:
+        response["reason"] = reason
     print(json.dumps(response))
 
 
