@@ -30,6 +30,16 @@
             "timeout": 5
           }
         ]
+      },
+      {
+        "matcher": ".*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "uv run --script ${CLAUDE_PLUGIN_ROOT}/hooks/openkanban_status.py",
+            "timeout": 2
+          }
+        ]
       }
     ],
     "PermissionRequest": [
@@ -52,6 +62,16 @@
             "timeout": 5
           }
         ]
+      },
+      {
+        "matcher": ".*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "uv run --script ${CLAUDE_PLUGIN_ROOT}/hooks/openkanban_status.py",
+            "timeout": 2
+          }
+        ]
       }
     ],
     "SessionStart": [
@@ -62,6 +82,11 @@
             "type": "command",
             "command": "uv run --script ${CLAUDE_PLUGIN_ROOT}/hooks/context_guardian.py",
             "timeout": 5
+          },
+          {
+            "type": "command",
+            "command": "uv run --script ${CLAUDE_PLUGIN_ROOT}/hooks/openkanban_status.py",
+            "timeout": 2
           }
         ]
       }
@@ -74,6 +99,11 @@
             "type": "command",
             "command": "uv run --script ${CLAUDE_PLUGIN_ROOT}/hooks/ultrawork_detector.py",
             "timeout": 5
+          },
+          {
+            "type": "command",
+            "command": "uv run --script ${CLAUDE_PLUGIN_ROOT}/hooks/openkanban_status.py",
+            "timeout": 2
           }
         ]
       }
@@ -86,6 +116,11 @@
             "type": "command",
             "command": "uv run --script ${CLAUDE_PLUGIN_ROOT}/hooks/todo_enforcer.py",
             "timeout": 10
+          },
+          {
+            "type": "command",
+            "command": "uv run --script ${CLAUDE_PLUGIN_ROOT}/hooks/openkanban_status.py",
+            "timeout": 2
           }
         ]
       }

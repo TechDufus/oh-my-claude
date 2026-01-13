@@ -38,6 +38,7 @@ Claude will parallelize everything, delegate file reads to subagents, track prog
 - [What Ultrawork Actually Does](#what-ultrawork-actually-does)
 - [The Agent Team](#the-agent-team)
 - [All Components](#all-components)
+- [Integrations](#integrations)
 - [For LLM Agents](#for-llm-agents)
 - [Philosophy](#philosophy)
 - [Contributing](#contributing)
@@ -185,6 +186,24 @@ Subagent context is **isolated** from your main context. When a librarian reads 
 |-------|---------|
 | **git-commit-validator** | Auto-invoked on commit requests |
 | **pr-creation** | Auto-invoked on PR creation requests |
+
+---
+
+## Integrations
+
+### OpenKanban
+
+**[OpenKanban](https://github.com/TechDufus/openkanban)** is a TUI kanban board for orchestrating AI coding agents. When you run Claude Code in an OpenKanban-managed terminal, oh-my-claude automatically reports live status updates.
+
+| Status | When |
+|--------|------|
+| `idle` | Session started, ready for input |
+| `working` | Processing prompt or executing tools |
+| `waiting` | Awaiting user permission |
+
+**How it works:** OpenKanban sets `OPENKANBAN_SESSION` env var when spawning agent terminals. oh-my-claude detects this and writes status to `~/.cache/openkanban-status/{session}.status`. Zero overhead when not in OpenKanban — the hook exits immediately if the env var isn't set.
+
+**No configuration required.** If you have both tools installed, they just work together.
 
 ---
 
