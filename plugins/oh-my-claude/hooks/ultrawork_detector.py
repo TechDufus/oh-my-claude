@@ -230,12 +230,15 @@ Pass `model="inherit"` or omit the model parameter entirely - both work.
 |-----------|-------|---------|-----------|
 | Find files/definitions | scout | haiku | **inherits your model** |
 | Read/summarize files | librarian | sonnet | **inherits your model** |
+| Analyze PDFs/images/diagrams | looker | sonnet | **inherits your model** |
 | Git recon (tags, commits, branches) | scout | haiku | **inherits your model** |
 | Git analysis (diffs, changelogs) | librarian | sonnet | **inherits your model** |
 | Plan complex work | architect | opus | **inherits your model** |
+| Review plans critically | critic | opus | **inherits your model** |
 | Implement code changes | worker | opus | **inherits your model** |
 | Write documentation | scribe | opus | **inherits your model** |
 | Run tests/linters | validator | haiku | **inherits your model** |
+| Diagnose failures (2+ attempts) | debugger | opus | **inherits your model** |
 
 ### CRITICAL: Model Inheritance
 Agents inherit your session model automatically when you omit the model parameter,
@@ -250,8 +253,13 @@ This maximizes intelligence relative to what the user is paying for.
 
 ### Parallel Patterns
 - **Research:** scout + librarian (parallel) -> you synthesize
-- **Multi-file impl:** architect plans -> multiple workers (parallel)
+- **Multi-file impl:** architect plans -> critic reviews -> multiple workers (parallel)
 - **Single task:** worker alone (if well-defined)
+
+### Escalation Patterns
+- **Complex plans:** architect -> critic (review BEFORE execution)
+- **Failed 2+ times:** debugger (diagnose root cause, then retry with guidance)
+- **Visual content:** looker (PDFs, images, diagrams)
 
 ## Execution Rules
 1. PARALLELIZE EVERYTHING - Launch ALL independent Task subagents in ONE message. Sequential is failure.

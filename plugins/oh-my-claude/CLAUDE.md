@@ -56,10 +56,13 @@ All agents use `model: inherit` - same model as your session.
 |-------|-----|------|
 | **scout** | FIND | "Where is X?", locate files/definitions, git recon (tags, branches, commit lists) |
 | **librarian** | READ | Files >100 lines, summarize, extract, git analysis (diffs, changelogs) |
+| **looker** | SEE | PDFs, images, screenshots, diagrams - visual content analysis |
 | **architect** | PLAN | Complex tasks needing decomposition |
+| **critic** | REVIEW | Review plans critically BEFORE execution |
 | **worker** | BUILD | Single focused implementation task |
 | **scribe** | WRITE | Documentation, READMEs, comments |
 | **validator** | CHECK | Tests, linters, verification |
+| **debugger** | DIAGNOSE | Failure escalation - call after 2+ failed attempts |
 | **orchestrator** | COORDINATE | Complex multi-agent work, cannot implement directly |
 
 Usage: `Task(subagent_type="oh-my-claude:scout", prompt="Find auth files")`
