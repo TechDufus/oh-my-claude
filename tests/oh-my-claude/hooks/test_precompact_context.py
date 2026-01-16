@@ -32,8 +32,8 @@ def run_hook(input_data: dict) -> dict:
 
 
 def get_context(output: dict) -> str:
-    """Extract additionalContext from hook output."""
-    return output.get("hookSpecificOutput", {}).get("additionalContext", "")
+    """Extract systemMessage from hook output."""
+    return output.get("systemMessage", "")
 
 
 class TestGetGitState:
@@ -103,7 +103,7 @@ class TestFormatContext:
             todos=[],
             timestamp="2024-01-01T00:00:00Z"
         )
-        assert "**Mode:** ultrawork" in context
+        assert "Mode: ultrawork" in context
 
     def test_format_context_handles_empty_todos(self):
         """Empty todos render gracefully."""
@@ -141,7 +141,7 @@ class TestFormatContext:
             todos=[],
             timestamp="2024-01-01T00:00:00Z"
         )
-        assert "**Branch:** feature-test" in context
+        assert "Branch: feature-test" in context
 
     def test_format_context_shows_uncommitted_changes(self):
         """Formatted context shows uncommitted changes status."""
@@ -153,7 +153,7 @@ class TestFormatContext:
             todos=[],
             timestamp="2024-01-01T00:00:00Z"
         )
-        assert "**Uncommitted Changes:** Yes" in context
+        assert "Uncommitted Changes: Yes" in context
 
     def test_format_context_shows_todos(self):
         """Formatted context includes todos when present."""
@@ -190,8 +190,8 @@ class TestHookIntegration:
 
         # Should contain key sections
         assert "## Session State Preserved" in context
-        assert "**Mode:**" in context
-        assert "**Branch:**" in context
+        assert "Mode:" in context
+        assert "Branch:" in context
         assert "### Recent Files Modified" in context
         assert "### Active Todos" in context
 

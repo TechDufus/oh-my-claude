@@ -21,11 +21,12 @@ import sys
 
 sys.path.insert(0, str(Path(__file__).parent))
 
+import json
+
 from hook_utils import (
     get_nested,
     hook_main,
     log_debug,
-    output_context,
     output_empty,
     parse_hook_input,
     read_stdin_safe,
@@ -130,10 +131,10 @@ def format_context(
     return f"""<context-preservation timestamp="{timestamp}">
 ## Session State Preserved
 
-**Mode:** {mode}
-**Branch:** {git_state.get('branch', 'unknown')}
-**Uncommitted Changes:** {'Yes' if git_state.get('uncommitted_changes') else 'No'}
-**Staged Files:** {staged_str}
+Mode: {mode}
+Branch: {git_state.get('branch', 'unknown')}
+Uncommitted Changes: {'Yes' if git_state.get('uncommitted_changes') else 'No'}
+Staged Files: {staged_str}
 
 ### Recent Files Modified
 {files_str}
@@ -143,6 +144,18 @@ def format_context(
 </context-preservation>
 
 IMPORTANT: This context was preserved before compaction. Resume work from this state."""
+
+
+def output_system_message(message: str) -> None:
+    """
+    Output a system message for PreCompact hook.
+
+    PreCompact hooks should use systemMessage at the top level,
+    not hookSpecificOutput (which only supports PreToolUse,
+    UserPromptSubmit, and PostToolUse).
+    """
+    response = {"systemMessage": message}
+    print(json.dumps(response))
 
 
 @hook_main("PreCompact")
@@ -166,7 +179,7 @@ def main() -> None:
 
     context = format_context(mode, git_state, recent_files, todos, timestamp)
     log_debug(f"preserving context: mode={mode}, branch={git_state.get('branch')}")
-    output_context("PreCompact", context)
+    output_system_message(context)
 
 
 if __name__ == "__main__":
