@@ -7,7 +7,6 @@ allowed-tools:
   - Bash(git add:*)
   - Bash(git commit:*)
   - Bash(git log:*)
-  - Bash(${CLAUDE_PLUGIN_ROOT}/skills/git-commit-validator/scripts/:*)
   - Read
   - Grep
 ---
@@ -114,23 +113,17 @@ Based on the diff, determine:
 
 **When in doubt, write more.** A detailed commit message is a gift to future developers (including yourself).
 
-### Step 4: Validate Message
+### Step 4: Validation (Automatic)
 
-**Run the validation script before committing:**
+**Validation runs automatically** when you execute `git commit`. The `commit_quality_enforcer` hook intercepts the command and validates:
 
-```bash
-${CLAUDE_PLUGIN_ROOT}/skills/git-commit-validator/scripts/git-commit-helper.sh "your commit message here"
-```
-
-- If the script returns **non-zero**, the message is invalid
-- Fix the message according to the script output and retry validation
-- Do NOT proceed to commit with an invalid message
-
-The script validates:
 1. **Subject line <= 50 chars**
 2. **Body lines <= 72 chars** (if body present)
-3. **Format check** - Must match conventional commit format
+3. **Format check** - Must match conventional commit format: `<type>[scope]: <description>`
 4. **No AI attribution** - Rejects "generated with", "co-authored-by.*claude", "ai-generated"
+5. **Body quality** - Requires appropriate detail based on diff size
+
+If validation fails, the commit is blocked with a clear error message. Fix the issues and retry.
 
 ### Step 5: Commit
 
