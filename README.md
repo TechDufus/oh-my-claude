@@ -137,23 +137,27 @@ The hook intercepts your prompt, detects the keyword, and injects execution dire
 
 ## The Agent Team
 
-Seven specialized subagents, each optimized for a specific role:
+Ten specialized subagents, all using `model: inherit` (same model as your session):
 
-| Agent | Model | What It Does |
-|-------|-------|--------------|
-| **scout** | haiku | Fast recon — finds files, locates definitions, checks existence |
-| **librarian** | sonnet | Smart reading — summarizes large files, extracts relevant sections |
-| **architect** | opus | Planning — decomposes complex tasks, identifies parallelization |
-| **worker** | opus | Implementation — executes ONE specific task completely |
-| **scribe** | opus | Documentation — writes clear docs for code, APIs, systems |
-| **validator** | haiku | QA — runs tests, linters, type checks, reports pass/fail |
-| **orchestrator** | opus | Coordination — delegates to agents, cannot implement directly |
+| Agent | What It Does |
+|-------|--------------|
+| **scout** | Fast recon — finds files, locates definitions, git tag/branch lists |
+| **librarian** | Smart reading — summarizes large files, git diffs and changelogs |
+| **looker** | Visual analysis — PDFs, images, screenshots, diagrams |
+| **architect** | Planning — decomposes complex tasks, identifies parallelization |
+| **critic** | Plan review — finds flaws and edge cases BEFORE execution |
+| **debugger** | Failure escalation — call after 2+ failed attempts |
+| **worker** | Implementation — executes ONE specific task completely |
+| **scribe** | Documentation — writes clear docs for code, APIs, systems |
+| **validator** | QA — runs tests, linters, type checks, reports pass/fail |
+| **orchestrator** | Coordination — delegates to agents, cannot implement directly |
 
 ### Usage
 
 ```
 Task(subagent_type="oh-my-claude:scout", prompt="Find all auth-related files")
 Task(subagent_type="oh-my-claude:librarian", prompt="Summarize src/auth/service.ts")
+Task(subagent_type="oh-my-claude:critic", prompt="Review this implementation plan for flaws")
 Task(subagent_type="oh-my-claude:worker", prompt="Add password reset endpoint")
 ```
 
@@ -171,8 +175,12 @@ Subagent context is **isolated** from your main context. When a librarian reads 
 |------|------|------|
 | **context-guardian** | Session start | Injects context protection rules |
 | **ultrawork-detector** | Prompt submit | Detects keywords, injects execution directives |
+| **context-protector** | Pre tool use | Blocks large file reads, forces librarian delegation |
+| **safe-permissions** | Permission request | Auto-approves safe commands (tests, linters, readonly) |
 | **todo-enforcer** | Stop | Prevents stopping with incomplete todos |
 | **context-monitor** | Post tool use | Warns at high context usage |
+| **subagent-quality-validator** | Subagent stop | Validates subagent outputs before completion |
+| **precompact-context** | Pre compact | Preserves session state before compaction |
 
 ### Commands
 
@@ -184,8 +192,14 @@ Subagent context is **isolated** from your main context. When a librarian reads 
 
 | Skill | Trigger |
 |-------|---------|
-| **git-commit-validator** | Auto-invoked on commit requests |
-| **pr-creation** | Auto-invoked on PR creation requests |
+| **git-commit-validator** | Commit requests — "commit", "ship it", "push this" |
+| **pr-creation** | PR requests — "create PR", "open PR", "ready for review" |
+| **plan** | `/plan <topic>` — Structured planning with draft management |
+| **worktree** | `/worktree` — Git worktree automation for isolated development |
+| **init-deep** | `/init-deep` — Initialize nested CLAUDE.md structure |
+| **ralph-loop** | `/ralph-loop <task>` — Autonomous iteration until completion |
+| **cancel-ralph** | `/cancel-ralph` — Stop an active Ralph Loop |
+| **ralph-plan** | `/ralph-plan <topic>` — Plan then execute via Ralph Loop |
 
 ---
 
