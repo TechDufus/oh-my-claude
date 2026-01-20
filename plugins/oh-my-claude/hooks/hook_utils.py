@@ -239,6 +239,44 @@ def output_permission(decision: str, reason: str | None = None) -> None:
     print(json.dumps(response))
 
 
+def output_subagent_decision(decision: str, reason: str | None = None) -> None:
+    """
+    Output decision for SubagentStop hooks.
+
+    Args:
+        decision: One of "block" or "approve".
+        reason: When blocking, explains why the subagent should continue.
+                Required when decision is "block".
+    """
+    response: dict[str, Any] = {"decision": decision}
+    if reason:
+        response["reason"] = reason
+    print(json.dumps(response))
+
+
+def output_pretooluse_modify(updated_input: dict[str, Any], reason: str | None = None) -> None:
+    """
+    Output modified tool input for PreToolUse hooks.
+
+    Allows transparent modification of tool parameters before execution.
+    The tool will run with the updated input instead of the original.
+    Requires Claude Code v2.0.10+.
+
+    Args:
+        updated_input: Modified tool input parameters to use instead of original.
+        reason: Optional reason explaining why the input was modified.
+    """
+    hook_output: dict[str, Any] = {
+        "hookEventName": "PreToolUse",
+        "permissionDecision": "allow",
+        "updatedInput": updated_input,
+    }
+    if reason:
+        hook_output["permissionDecisionReason"] = reason
+    response = {"hookSpecificOutput": hook_output}
+    print(json.dumps(response))
+
+
 # =============================================================================
 # Exception wrapper decorator
 # =============================================================================

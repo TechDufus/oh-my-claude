@@ -163,6 +163,18 @@
           }
         ]
       }
+    ],
+    "SubagentStop": [
+      {
+        "matcher": ".*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "uv run --script ${CLAUDE_PLUGIN_ROOT}/hooks/subagent_quality_validator.py",
+            "timeout": 5
+          }
+        ]
+      }
     ]
   }
 }

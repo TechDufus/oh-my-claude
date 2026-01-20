@@ -11,9 +11,11 @@ Captures:
 - Current mode (ultrawork/normal)
 - Git state (branch, uncommitted changes)
 - Recent files modified
+- Semantic patterns (problems, solutions, decisions, key files)
 """
 
 import os
+import re
 import subprocess
 from datetime import datetime, timezone
 from pathlib import Path
@@ -107,12 +109,120 @@ def detect_mode(data: dict) -> str:
     return "normal"
 
 
+# Regex patterns for semantic extraction
+PROBLEM_PATTERN = re.compile(
+    r'\b(error|bug|issue|failed|broken|failing|crash|exception|problem)\b',
+    re.IGNORECASE
+)
+SOLUTION_PATTERN = re.compile(
+    r'\b(fix|fixed|solved|resolved|works|working|solution|workaround)\b',
+    re.IGNORECASE
+)
+DECISION_PATTERN = re.compile(
+    r'\b(decided|chose|chosen|will use|approach|going with|settled on|opted for)\b',
+    re.IGNORECASE
+)
+FILE_PATH_PATTERN = re.compile(
+    r'(?:^|[\s`"\'])([/~]?(?:[\w.-]+/)+[\w.-]+\.\w+)(?:[\s`"\']|$|:|\))',
+    re.MULTILINE
+)
+
+
+def extract_patterns(transcript: list) -> dict:
+    """
+    Extract semantic patterns from recent transcript messages.
+
+    Identifies:
+    - Problems discussed (errors, bugs, issues)
+    - Solutions found (fixes, resolutions)
+    - Decisions made (choices, approaches)
+    - Key files mentioned (file paths)
+
+    Args:
+        transcript: List of message dicts with 'content' or 'text' fields
+
+    Returns:
+        Dict with lists: problems, solutions, decisions, key_files
+    """
+    patterns = {
+        "problems": [],
+        "solutions": [],
+        "decisions": [],
+        "key_files": set()  # Use set to avoid duplicates
+    }
+
+    if not transcript:
+        return {**patterns, "key_files": []}
+
+    # Limit to last 20 messages to avoid slow processing
+    recent_messages = transcript[-20:] if len(transcript) > 20 else transcript
+
+    for msg in recent_messages:
+        # Get message content - try common field names
+        content = ""
+        if isinstance(msg, dict):
+            content = msg.get("content", "") or msg.get("text", "") or ""
+        elif isinstance(msg, str):
+            content = msg
+
+        if not content or not isinstance(content, str):
+            continue
+
+        # Extract problems - get surrounding context (up to 80 chars)
+        for match in PROBLEM_PATTERN.finditer(content):
+            start = max(0, match.start() - 30)
+            end = min(len(content), match.end() + 50)
+            snippet = content[start:end].strip()
+            # Clean up multiline and limit length
+            snippet = " ".join(snippet.split())[:80]
+            if snippet and snippet not in patterns["problems"]:
+                patterns["problems"].append(snippet)
+
+        # Extract solutions
+        for match in SOLUTION_PATTERN.finditer(content):
+            start = max(0, match.start() - 30)
+            end = min(len(content), match.end() + 50)
+            snippet = content[start:end].strip()
+            snippet = " ".join(snippet.split())[:80]
+            if snippet and snippet not in patterns["solutions"]:
+                patterns["solutions"].append(snippet)
+
+        # Extract decisions
+        for match in DECISION_PATTERN.finditer(content):
+            start = max(0, match.start() - 20)
+            end = min(len(content), match.end() + 60)
+            snippet = content[start:end].strip()
+            snippet = " ".join(snippet.split())[:80]
+            if snippet and snippet not in patterns["decisions"]:
+                patterns["decisions"].append(snippet)
+
+        # Extract file paths
+        for match in FILE_PATH_PATTERN.finditer(content):
+            path = match.group(1)
+            # Filter out obvious non-files and common false positives
+            if (path and
+                not path.startswith("http") and
+                not path.endswith("/") and
+                len(path) > 5 and
+                not path.startswith("...")):
+                patterns["key_files"].add(path)
+
+    # Limit results to avoid bloat, convert set to list
+    return {
+        "problems": patterns["problems"][:5],
+        "solutions": patterns["solutions"][:5],
+        "decisions": patterns["decisions"][:5],
+        "key_files": list(patterns["key_files"])[:10]
+    }
+
+
 def format_context(
     mode: str,
     git_state: dict,
     recent_files: list[str],
     todos: list[dict],
-    timestamp: str
+    timestamp: str,
+    patterns: dict | None = None
 ) -> str:
     """Format preserved context for injection."""
     files_str = "\n".join(f"  - {f}" for f in recent_files) if recent_files else "  (none)"
@@ -128,6 +238,30 @@ def format_context(
 
     staged_str = ", ".join(git_state.get("staged_files", [])[:5]) or "(none)"
 
+    # Format patterns section
+    patterns_str = ""
+    if patterns:
+        problems_list = patterns.get("problems", [])
+        solutions_list = patterns.get("solutions", [])
+        decisions_list = patterns.get("decisions", [])
+        key_files_list = patterns.get("key_files", [])
+
+        # Only include section if we have any patterns
+        if any([problems_list, solutions_list, decisions_list, key_files_list]):
+            patterns_str = "\n### Patterns Detected\n"
+            patterns_str += "- Problems: " + (
+                ", ".join(f'"{p}"' for p in problems_list) if problems_list else "(none)"
+            ) + "\n"
+            patterns_str += "- Solutions: " + (
+                ", ".join(f'"{s}"' for s in solutions_list) if solutions_list else "(none)"
+            ) + "\n"
+            patterns_str += "- Decisions: " + (
+                ", ".join(f'"{d}"' for d in decisions_list) if decisions_list else "(none)"
+            ) + "\n"
+            patterns_str += "- Key Files: " + (
+                ", ".join(key_files_list) if key_files_list else "(none)"
+            ) + "\n"
+
     return f"""<context-preservation timestamp="{timestamp}">
 ## Session State Preserved
 
@@ -140,7 +274,7 @@ Staged Files: {staged_str}
 {files_str}
 
 ### Active Todos
-{todo_str}
+{todo_str}{patterns_str}
 </context-preservation>
 
 IMPORTANT: This context was preserved before compaction. Resume work from this state."""
@@ -175,10 +309,14 @@ def main() -> None:
     recent_files = get_recent_files(cwd)
     todos = get_nested(data, "todos", default=[])
 
+    # Extract semantic patterns from transcript
+    transcript = get_nested(data, "transcript", default=[])
+    patterns = extract_patterns(transcript)
+
     timestamp = datetime.now(timezone.utc).isoformat()
 
-    context = format_context(mode, git_state, recent_files, todos, timestamp)
-    log_debug(f"preserving context: mode={mode}, branch={git_state.get('branch')}")
+    context = format_context(mode, git_state, recent_files, todos, timestamp, patterns)
+    log_debug(f"preserving context: mode={mode}, branch={git_state.get('branch')}, patterns={len(patterns.get('problems', []))}p/{len(patterns.get('solutions', []))}s/{len(patterns.get('decisions', []))}d")
     output_system_message(context)
 
 
