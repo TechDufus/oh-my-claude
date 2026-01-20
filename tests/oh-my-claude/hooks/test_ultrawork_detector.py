@@ -144,37 +144,6 @@ class TestUltraresearchPatterns:
         assert PATTERNS.match("ultraresearch", "look up") is None
 
 
-class TestUltrathinkPatterns:
-    """Tests for ultrathink mode trigger patterns."""
-
-    @pytest.mark.parametrize(
-        "trigger",
-        [
-            "ultrathink",
-            "ult",
-        ],
-    )
-    def test_ultrathink_triggers(self, trigger):
-        """Each ultrathink trigger should match."""
-        assert PATTERNS.match("ultrathink", trigger) is not None
-
-    def test_ultrathink_case_insensitive(self):
-        """Ultrathink patterns should be case insensitive."""
-        assert PATTERNS.match("ultrathink", "ULTRATHINK") is not None
-        assert PATTERNS.match("ultrathink", "ULT") is not None
-        assert PATTERNS.match("ultrathink", "Ultrathink") is not None
-
-    def test_ultrathink_in_sentence(self):
-        """Ultrathink triggers should match within sentences."""
-        assert PATTERNS.match("ultrathink", "ultrathink about this problem") is not None
-        assert PATTERNS.match("ultrathink", "ult before implementing") is not None
-
-    def test_non_ultrathink_no_match(self):
-        """Non-trigger text should not match ultrathink."""
-        assert PATTERNS.match("ultrathink", "think about it") is None
-        assert PATTERNS.match("ultrathink", "deep analysis") is None
-
-
 class TestUltradebugPatterns:
     """Tests for ultradebug mode trigger patterns."""
 
@@ -212,7 +181,6 @@ class TestPatternNonOverlap:
     def test_ultrawork_doesnt_match_others(self):
         """Ultrawork pattern shouldn't match other ultra triggers."""
         assert PATTERNS.match("ultrawork", "ultraresearch") is None
-        assert PATTERNS.match("ultrawork", "ultrathink") is None
         assert PATTERNS.match("ultrawork", "ultradebug") is None
 
     def test_ultraresearch_doesnt_match_others(self):
@@ -226,11 +194,8 @@ class TestPatternNonOverlap:
             ("ultrawork", "ulw fix bugs", True),
             ("ultrawork", "ultrawork fix bugs", True),
             ("ultraresearch", "ulw fix bugs", False),
-            ("ultrathink", "ulw fix bugs", False),
             ("ultraresearch", "ulr best practices", True),
             ("ultrawork", "ulr best practices", False),
-            ("ultrathink", "ult before coding", True),
-            ("ultrawork", "ult before coding", False),
             ("ultradebug", "uld the issue", True),
             ("ultrawork", "uld the issue", False),
         ]

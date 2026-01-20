@@ -113,7 +113,6 @@ Required for hooks to activate.
 |---------|----------|--------|
 | **ultrawork** | `ulw` | Maximum parallel execution — won't stop until done |
 | **ultraresearch** | `ulr` | Exhaust online sources — parallel WebSearch, cross-reference, cite everything |
-| **ultrathink** | `ult` | Extended reasoning before action — consider 3+ approaches |
 | **ultradebug** | `uld` | Systematic 7-step debugging with evidence-based diagnosis |
 
 ---

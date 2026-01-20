@@ -46,13 +46,6 @@ PATTERNS.add(
     re.IGNORECASE,
 )
 
-# Ultrathink mode triggers
-PATTERNS.add(
-    "ultrathink",
-    r"\b(ultrathink|ult)\b",
-    re.IGNORECASE,
-)
-
 # Ultradebug mode triggers
 PATTERNS.add(
     "ultradebug",
@@ -379,68 +372,97 @@ Execute relentlessly until complete."""
         context = """[ULTRARESEARCH MODE ACTIVE]
 
 MAXIMIZE RESEARCH. Exhaust every available source before synthesizing.
+This is not casual browsing. This is systematic intelligence gathering.
 
 ## Research Protocol
-1. IDENTIFY SOURCES - Determine all relevant search angles
-2. PARALLEL SEARCH - Launch multiple WebSearch queries simultaneously
-3. DEEP FETCH - WebFetch the most promising results
+1. IDENTIFY ANGLES - Determine 3-5 distinct search perspectives
+2. PARALLEL SEARCH - Launch ALL WebSearch queries in ONE message
+3. DEEP FETCH - WebFetch promising results (minimum 3-5 sources)
 4. CROSS-REFERENCE - Verify claims across multiple sources
-5. SYNTHESIZE - Combine findings into actionable intelligence
+5. SYNTHESIZE - Combine findings with citations
 
-## Search Strategy
-Launch 3-5 WebSearch queries IN PARALLEL covering:
-- Official documentation
-- GitHub repositories/issues
-- Blog posts and tutorials
-- Stack Overflow / community discussions
-- Recent news/updates (include current year in queries)
+## CRITICAL: Parallelization
 
-## Fetch Strategy
-For each search result category, WebFetch at least:
-- 1 official source (docs, specs)
-- 1-2 community sources (blogs, tutorials)
-- 1 code example (GitHub, gists)
+You MUST launch multiple WebSearch calls in a SINGLE message.
+
+```
+# CORRECT - All searches in one message
+WebSearch("topic official documentation 2024")
+WebSearch("topic github examples")
+WebSearch("topic best practices blog")
+WebSearch("topic common problems stackoverflow")
+
+# WRONG - Sequential searches
+WebSearch("topic") ... wait ... WebSearch("another angle")
+```
+
+Sequential searches = research failure. Parallel = thorough coverage.
+
+## Search Strategy Matrix
+
+| Angle | Query Pattern | Why |
+|-------|--------------|-----|
+| Official | "{topic} official documentation" | Authoritative source |
+| Code | "{topic} github example implementation" | Working code |
+| Community | "{topic} best practices blog 2024" | Real-world usage |
+| Problems | "{topic} common issues stackoverflow" | Pitfalls to avoid |
+| Recent | "{topic} latest updates news 2024" | Current state |
+
+Always include current year for time-sensitive topics.
+
+## Fetch Depth Requirements
+
+After searching, WebFetch at minimum:
+- 2+ official sources (docs, specs, RFCs)
+- 2+ community sources (blogs, tutorials)
+- 1+ code examples (GitHub, gists)
+- 1+ problem discussions (issues, SO answers)
+
+Do NOT stop at first result. Depth beats speed.
 
 ## Quality Standards
-- Cite EVERY claim with source URL
+- Cite EVERY claim with `[source](url)`
 - Prefer official docs over blog posts
 - Note publication dates for time-sensitive info
-- Flag conflicting information across sources
-- Distinguish facts from opinions
+- Flag conflicting information explicitly
+- Distinguish facts vs opinions vs speculation
 
-## Output Requirements
-- Summary of key findings first
-- Detailed breakdown by topic
-- Source list at end with URLs
-- Explicit confidence levels for uncertain claims
+## Anti-Patterns (NEVER DO)
+- Single search query then synthesize - TOO SHALLOW
+- Trusting first result without verification - CONFIRMATION BIAS
+- Ignoring contradictory information - CHERRY PICKING
+- Presenting uncertain claims as facts - MISINFORMATION
+- Skipping official docs for blogs - UNRELIABLE
+- Omitting sources from output - UNVERIFIABLE
 
-## Parallel Execution
-You MUST launch multiple WebSearch calls in a SINGLE message.
-Sequential searches = failure. Maximize parallel queries."""
+## Output Format
 
-        output_context("UserPromptSubmit", context)
-        output_empty()
+```markdown
+## Summary
+{3-5 bullet points of key findings}
 
-    # ==========================================================================
-    # ULTRATHINK MODE - Extended reasoning before action
-    # ==========================================================================
-    if PATTERNS.match("ultrathink", prompt):
-        context = """[ULTRATHINK MODE ACTIVE]
+## Detailed Findings
 
-Extended reasoning before any action.
+### {Topic 1}
+{Content with inline citations [source](url)}
 
-## Thinking Protocol
-1. Gather context via scout + librarian
-2. Consider 3+ approaches before committing to one
-3. List pros/cons of each approach
-4. Identify edge cases and potential failure modes
-5. Validate ALL assumptions by reading code
+### {Topic 2}
+{Content with inline citations}
 
-## Requirements
-- No implementation until analysis is complete
-- Document reasoning in detail
-- Challenge your own assumptions
-- Consider maintainability and future implications"""
+## Conflicts/Uncertainties
+{Any contradictions found across sources}
+
+## Sources
+- [Source Title](url) - {brief description}
+- [Source Title](url) - {brief description}
+```
+
+## Completion Criteria
+- [ ] Minimum 4 WebSearch queries launched in parallel
+- [ ] Minimum 5 sources WebFetched and analyzed
+- [ ] All claims have citations
+- [ ] Conflicting information acknowledged
+- [ ] Sources section with all URLs"""
 
         output_context("UserPromptSubmit", context)
         output_empty()
@@ -452,23 +474,148 @@ Extended reasoning before any action.
         context = """[ULTRADEBUG MODE ACTIVE]
 
 Systematic debugging with evidence-based diagnosis.
+This is forensic investigation, not trial-and-error guessing.
 
 ## Debug Protocol
-1. REPRODUCE - Understand the exact failure condition
-2. ISOLATE - Narrow down to the smallest failing case
-3. TRACE - Follow execution path via scout + librarian
-4. HYPOTHESIZE - Form 2-3 theories about root cause
-5. VERIFY - Test each hypothesis with evidence
-6. FIX - Apply minimal fix to address root cause
-7. VALIDATE - Confirm fix works and no regression
 
-## Evidence Requirements
-- Every hypothesis must have supporting evidence (file:line)
-- Check recent changes (git log, git diff)
-- Verify fix with tests
+1. **REPRODUCE** - Understand exact failure (error message, conditions, frequency)
+2. **ISOLATE** - Narrow to smallest failing case
+3. **TRACE** - Follow execution path via scout + librarian
+4. **HYPOTHESIZE** - Form 3+ theories ranked by likelihood
+5. **VERIFY** - Test EACH hypothesis with evidence before fixing
+6. **FIX** - Apply MINIMAL fix addressing ROOT CAUSE
+7. **VALIDATE** - Confirm fix works AND no regression
 
-## Parallel Investigation
-- Launch multiple agents: one for failing code path, one for similar code that works"""
+## CRITICAL: Evidence-Based Diagnosis
+
+You MUST have evidence before attempting fixes.
+
+| Action | Required Evidence |
+|--------|-------------------|
+| Claim root cause | File:line reference + explanation |
+| Propose fix | Hypothesis verified by code reading |
+| Apply fix | Understanding of WHY it works |
+| Mark resolved | Tests passing + manual verification |
+
+No guessing. No "try this and see." Evidence first.
+
+## Hypothesis Tracking
+
+Track ALL hypotheses with likelihood and evidence:
+
+```markdown
+## Hypotheses (Ranked)
+
+### H1: {Most likely cause} [LIKELIHOOD: High]
+- **Evidence for**: {What supports this}
+- **Evidence against**: {What contradicts}
+- **Test**: {How to verify}
+- **Status**: {Untested/Verified/Disproven}
+
+### H2: {Second theory} [LIKELIHOOD: Medium]
+...
+
+### H3: {Long shot} [LIKELIHOOD: Low]
+...
+```
+
+Do NOT fix based on H1 until you've considered H2 and H3.
+
+## Investigation Strategy
+
+Launch parallel investigations:
+
+```
+# CORRECT - Parallel investigation
+scout: "Find all usages of {failing function}"
+librarian: "Read the error handling in {module}"
+scout: "Check git log for recent changes to {file}"
+
+# WRONG - Sequential guessing
+"Let me try adding a null check..." → fails → "Maybe it's async..." → fails
+```
+
+## Git Forensics
+
+Always check recent changes:
+- `git log -10 --oneline {file}` - Recent commits
+- `git diff HEAD~5 {file}` - Recent changes
+- `git blame {file}` - Who changed what
+
+Recent changes are statistically likely to contain bugs.
+
+## Anti-Patterns (NEVER DO)
+- Add try/catch without understanding cause - HIDING not fixing
+- Fix symptoms instead of root cause - WILL RECUR
+- Assume first hypothesis is correct - CONFIRMATION BIAS
+- Skip reproduction step - CAN'T VERIFY FIX
+- Make multiple changes at once - CAN'T ISOLATE
+- Ignore "it works on my machine" - ENVIRONMENT MATTERS
+- Give up after 2 attempts - USE DEBUGGER AGENT
+
+## Escalation Path
+
+If stuck after 2+ failed fix attempts, delegate to debugger agent:
+
+```
+Task(subagent_type="oh-my-claude:debugger", prompt="
+PROBLEM: {exact error and conditions}
+
+ATTEMPTED FIXES:
+1. {What you tried} - {Why it failed}
+2. {What you tried} - {Why it failed}
+
+HYPOTHESES TESTED:
+- H1: {hypothesis} - {result}
+- H2: {hypothesis} - {result}
+
+REQUEST: Deep analysis of root cause
+")
+```
+
+Debugger agent provides strategic diagnosis, not more guessing.
+
+## Output Format
+
+```markdown
+## Bug Report
+
+### Symptoms
+- Error: {exact error message}
+- Conditions: {when it occurs}
+- Frequency: {always/sometimes/rare}
+
+### Reproduction
+{Minimal steps to reproduce}
+
+### Investigation
+
+#### Hypotheses
+{Ranked list with evidence}
+
+#### Evidence Gathered
+- {file:line}: {what you found}
+- {git diff}: {relevant change}
+
+### Root Cause
+{Confirmed cause with evidence}
+
+### Fix Applied
+{Minimal change with rationale}
+
+### Verification
+- [ ] Error no longer occurs
+- [ ] Related functionality works
+- [ ] Tests pass
+- [ ] No regression in related areas
+```
+
+## Completion Criteria
+- [ ] Root cause identified with evidence (not guessed)
+- [ ] Fix addresses root cause (not symptoms)
+- [ ] Hypothesis that led to fix is documented
+- [ ] Tests pass after fix
+- [ ] No related regressions"""
 
         output_context("UserPromptSubmit", context)
         output_empty()

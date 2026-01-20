@@ -136,7 +136,6 @@ Source: {agent-name or "user"}
 | Keyword | Shortcut | Effect |
 |---------|----------|--------|
 | **ultraresearch** | `ulr` | Maximum online research — parallel WebSearch, cross-reference sources |
-| **ultrathink** | `ult` | Extended reasoning before action — consider 3+ approaches |
 | **ultradebug** | `uld` | Systematic 7-step debugging with evidence |
 
 ## Commands
