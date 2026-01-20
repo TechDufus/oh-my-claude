@@ -8,14 +8,20 @@ Claude Code plugin providing ultrawork mode, context protection, and specialized
 ├── .claude-plugin/marketplace.json    # Marketplace registry (version x2)
 ├── .github/workflows/validate-plugin.yml
 ├── PLUGIN-STRUCTURE.md               # Detailed architecture guide
+├── tests/oh-my-claude/hooks/         # Hook unit tests
+│   └── CLAUDE.md                     # Testing conventions
 └── plugins/oh-my-claude/             # The actual plugin
     ├── .claude-plugin/plugin.json    # Plugin metadata (version x1)
-    ├── agents/                       # 6 agents (auto-discovered)
-    ├── hooks/                        # Python hooks with inline uv deps
+    ├── agents/                       # 10 specialized agents
+    │   └── CLAUDE.md                 # Agent authoring guide
+    ├── hooks/                        # Python hooks (PEP 723)
+    │   └── CLAUDE.md                 # Hook development patterns
     ├── commands/                     # /prime (auto-discovered)
-    ├── skills/                       # git-commit-validator (in plugin.json)
-    └── CLAUDE.md                     # Plugin instructions for Claude
+    ├── skills/                       # Skills (in plugin.json)
+    └── CLAUDE.md                     # Plugin runtime instructions
 ```
+
+Nested CLAUDE.md files load automatically when working in those directories.
 
 ## Development Workflow
 
@@ -45,15 +51,8 @@ GitHub Actions validates: JSON syntax, version sync across files, no `../` paths
 
 ## Hook Development
 
-Python with inline uv dependencies (PEP 723):
-```python
-#!/usr/bin/env -S uv run --script
-# /// script
-# requires-python = ">=3.11"
-# dependencies = ["some-package"]
-# ///
-```
-Read JSON from stdin, output JSON to stdout.
+See `plugins/oh-my-claude/hooks/CLAUDE.md` for patterns and templates.
+Key: PEP 723 inline deps, JSON stdin/stdout, `@hook_main` decorator.
 
 ## Rules
 
