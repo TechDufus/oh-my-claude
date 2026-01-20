@@ -1,6 +1,6 @@
 {
   "name": "oh-my-claude",
-  "version": "0.3.2",
+  "version": "0.4.2",
   "description": "Add 'ultrawork' to any prompt for maximum parallel execution.",
   "author": {
     "name": "TechDufus",
@@ -12,12 +12,18 @@
     "ultrawork",
     "parallel",
     "subagents",
-    "workflow"
+    "workflow",
+    "ralph-loop",
+    "context7"
   ],
   "skills": [
     "./skills/git-commit-validator",
     "./skills/pr-creation",
     "./skills/plan",
-    "./skills/worktree"
+    "./skills/worktree",
+    "./skills/init-deep",
+    "./skills/ralph-loop",
+    "./skills/cancel-ralph",
+    "./skills/ralph-plan"
   ]
 }

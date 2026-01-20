@@ -85,6 +85,11 @@
           },
           {
             "type": "command",
+            "command": "uv run --script ${CLAUDE_PLUGIN_ROOT}/hooks/claudemd_health.py",
+            "timeout": 5
+          },
+          {
+            "type": "command",
             "command": "uv run --script ${CLAUDE_PLUGIN_ROOT}/hooks/openkanban_status.py",
             "timeout": 2
           }
@@ -112,6 +117,11 @@
       {
         "matcher": ".*",
         "hooks": [
+          {
+            "type": "command",
+            "command": "uv run --script ${CLAUDE_PLUGIN_ROOT}/hooks/ralph_loop.py",
+            "timeout": 10
+          },
           {
             "type": "command",
             "command": "uv run --script ${CLAUDE_PLUGIN_ROOT}/hooks/todo_enforcer.py",

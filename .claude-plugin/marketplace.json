@@ -6,14 +6,14 @@
   },
   "metadata": {
     "description": "Ultrawork mode for maximum parallel execution with intelligent subagent use",
-    "version": "0.3.2"
+    "version": "0.4.2"
   },
   "plugins": [
     {
       "name": "oh-my-claude",
       "source": "./plugins/oh-my-claude",
       "description": "Add 'ultrawork' to any prompt for maximum parallel execution.",
-      "version": "0.3.2",
+      "version": "0.4.2",
       "author": {
         "name": "TechDufus"
       },
@@ -26,14 +26,20 @@
         "subagents",
         "workflow",
         "hooks",
-        "automation"
+        "automation",
+        "ralph-loop",
+        "context7"
       ],
       "category": "productivity",
       "skills": [
         "./skills/git-commit-validator",
         "./skills/pr-creation",
         "./skills/plan",
-        "./skills/worktree"
+        "./skills/worktree",
+        "./skills/init-deep",
+        "./skills/ralph-loop",
+        "./skills/cancel-ralph",
+        "./skills/ralph-plan"
       ]
     }
   ]
