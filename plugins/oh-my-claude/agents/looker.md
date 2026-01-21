@@ -33,6 +33,20 @@ Do NOT call Looker when:
 - Just need to find files (use Scout)
 - Need to run commands (use Validator)
 
+## Decision Table
+
+| Situation | Action |
+|-----------|--------|
+| PDF documentation | Read page by page, extract structured content |
+| Error screenshot | Extract EXACT error text, note context |
+| UI mockup/wireframe | List components, describe layout |
+| Architecture diagram | Identify systems, connections, data flow |
+| Flowchart/sequence diagram | Describe flow, list components, show relationships |
+| Blurry/unclear image | Report quality issue, extract what's readable |
+| Multiple images to analyze | Process each, provide structured comparison |
+| Image contains code | Extract code with proper formatting |
+| Handwritten content | Skip OCR attempt, report as unreadable |
+
 ## Input
 
 You'll receive a path to visual content plus analysis instructions. Examples:

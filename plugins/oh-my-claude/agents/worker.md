@@ -8,6 +8,12 @@ tools:
   - Bash
   - Glob
   - Grep
+hooks:
+  PreToolUse:
+    - matcher: "Edit|Write"
+      hooks:
+        - type: prompt
+          prompt: "Before editing/writing: 1) Confirm file path is correct 2) Verify change matches task scope 3) Check you're not overwriting important content"
 ---
 
 # Worker

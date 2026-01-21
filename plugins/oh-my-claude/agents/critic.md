@@ -1,6 +1,7 @@
 ---
 model: inherit
 description: "Critical plan reviewer. Reviews plans to find flaws, edge cases, and problems BEFORE execution."
+permissionMode: plan
 tools:
   - Read
   - Glob

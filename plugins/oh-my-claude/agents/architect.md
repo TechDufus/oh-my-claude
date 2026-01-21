@@ -1,6 +1,7 @@
 ---
 model: inherit
 description: "Task decomposition and planning agent. Breaks down complex tasks, identifies parallelization opportunities, plans execution strategy."
+permissionMode: plan
 tools:
   - Glob
   - Grep
