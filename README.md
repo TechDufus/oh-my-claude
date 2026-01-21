@@ -20,7 +20,7 @@ ultraresearch best practices for API design
 ```
 
 <p align="center">
-  <a href="https://github.com/user-attachments/assets/a9f7f8ff-b0e7-4ea3-a7df-74969beb19fb"><img src="https://github.com/user-attachments/assets/a9f7f8ff-b0e7-4ea3-a7df-74969beb19fb" alt="Demo GIF"></a>
+  <a href="https://github.com/user-attachments/assets/0d1e3ccf-fdd6-4623-b17d-4ad33d198ee9"><img src="https://github.com/user-attachments/assets/0d1e3ccf-fdd6-4623-b17d-4ad33d198ee9" alt="Demo GIF"></a>
 </p>
 
 
