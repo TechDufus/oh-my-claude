@@ -196,9 +196,7 @@ Subagent context is **isolated** from your main context. When a librarian reads 
 | **plan** | `/plan <topic>` — Structured planning with draft management |
 | **worktree** | `/worktree` — Git worktree automation for isolated development |
 | **init-deep** | `/init-deep` — Initialize nested CLAUDE.md structure |
-| **ralph-loop** | `/ralph-loop <task>` — Autonomous iteration until completion |
-| **cancel-ralph** | `/cancel-ralph` — Stop an active Ralph Loop |
-| **ralph-plan** | `/ralph-plan <topic>` — Plan then execute via Ralph Loop |
+| **ralph-plan** | `/ralph-plan <topic>` — Structured PRD generation with interview and research |
 
 ---
 

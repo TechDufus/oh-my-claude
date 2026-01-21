@@ -1,6 +1,6 @@
 ---
 name: ralph-plan
-description: "Plan-then-execute workflow combining structured planning with autonomous Ralph Loop execution. Triggers on: '/ralph-plan <topic>', 'plan and execute', 'plan then execute', 'smart ralph'. Creates plan via interview and research, requires explicit user approval, then executes via Ralph Loop."
+description: "Structured PRD generation with interview, research, and approval workflow. Triggers on: '/ralph-plan <topic>', 'create prd', 'generate prd', 'plan this'. Creates comprehensive Product Requirements Document via interview and research."
 allowed-tools:
   - Read
   - Write
@@ -15,23 +15,24 @@ allowed-tools:
 
 # Ralph Plan Skill
 
-Structured planning with autonomous execution. Plan first, approve, then let Ralph handle it.
+Structured PRD generation. Interview, research, plan, approve.
 
 ## What is Ralph Plan?
 
-Ralph Plan combines the deliberate planning of `/plan` with the autonomous execution of `/ralph-loop`:
+Ralph Plan creates comprehensive Product Requirements Documents through a deliberate process:
 
-1. **Plan Phase** - Interview, research, create structured plan
-2. **Approval Gate** - User reviews and approves the plan
-3. **Execute Phase** - Ralph Loop executes the approved plan autonomously
+1. **Interview Phase** - Understand requirements through focused questions
+2. **Research Phase** - Analyze codebase via scout/librarian
+3. **Planning Phase** - Generate structured plan with clear steps
+4. **Approval Gate** - User reviews, modifies, and approves the final PRD
 
-This prevents the "ready, fire, aim" problem where autonomous execution starts without clear direction.
+The result is a battle-tested plan ready for implementation by any method the user chooses.
 
 ## When This Skill Activates
 
 | Category | Trigger Phrases |
 |----------|-----------------|
-| **Start planning** | `/ralph-plan <topic>`, `plan and execute`, `plan then execute`, `smart ralph` |
+| **Start planning** | `/ralph-plan <topic>`, `create prd`, `generate prd`, `plan this` |
 | **Check status** | `ralph-plan status` |
 | **Resume** | `resume ralph-plan` |
 
@@ -41,7 +42,7 @@ This prevents the "ready, fire, aim" problem where autonomous execution starts w
 
 ### Phase 1: Planning
 
-Create a structured plan before any execution begins.
+Create a structured plan through interview and research.
 
 #### Step 1: Initialize Draft
 
@@ -53,7 +54,6 @@ Create draft at `.claude/plans/drafts/{topic-slug}.md` with template:
 ## Status
 Phase: Interview
 Started: {timestamp}
-Target: Ralph Plan Execution
 
 ## Requirements
 - [to be captured from interview]
@@ -140,7 +140,7 @@ Transform draft into structured plan with these sections:
 
 ### Phase 2: Approval Gate
 
-**CRITICAL: Execution MUST NOT begin without explicit user approval.**
+**User must review and approve the plan before finalization.**
 
 #### Present the Plan
 
@@ -153,111 +153,43 @@ Display the complete plan to the user with:
 
 ---
 
-**Ready to execute this plan?**
+**Approve this PRD?**
 
 Reply with:
-- "execute", "run it", "looks good", "approved" - to begin execution
+- "approved", "looks good", "finalize" - to save the final PRD
 - "change step N", "add criterion", etc. - to modify the plan
-- "cancel", "stop" - to abort without executing
+- "cancel", "stop" - to abort (draft preserved)
 ```
 
 #### Handle User Response
 
 | User Says | Action |
 |-----------|--------|
-| "execute", "run it", "looks good", "approved", "go", "do it" | Proceed to Phase 3 |
+| "approved", "looks good", "finalize", "ship it" | Finalize PRD (move to final location) |
 | "change step 3", "modify...", "add...", "remove..." | Update plan, re-present |
-| "cancel", "stop", "abort", "nevermind" | Abort without executing, keep draft |
+| "cancel", "stop", "abort", "nevermind" | Keep draft, do not finalize |
 | Asks a question | Answer, then re-prompt for approval |
 
-**Do NOT interpret ambiguous responses as approval.** If unclear, ask: "Should I execute this plan?"
+**Do NOT interpret ambiguous responses as approval.** If unclear, ask: "Should I finalize this PRD?"
 
----
+#### On Approval
 
-### Phase 3: Execution
+1. Move plan from draft to final location:
+   ```
+   .claude/plans/drafts/{topic-slug}.md  -->  .claude/plans/{topic-slug}.md
+   ```
 
-Once approved, transition to Ralph Loop execution.
+2. Delete the draft file
 
-#### Step 1: Finalize Plan
+3. Report completion:
+   ```
+   PRD finalized at .claude/plans/{topic-slug}.md
 
-Move plan from draft to final location:
-
-```
-.claude/plans/drafts/{topic-slug}.md  -->  .claude/plans/{topic-slug}.md
-```
-
-#### Step 2: Create Ralph State
-
-Create Ralph Loop state files in `.claude/ralph/`:
-
-**`.claude/ralph/config.json`:**
-```json
-{
-  "prompt": "Execute plan: {topic}",
-  "planPath": ".claude/plans/{topic-slug}.md",
-  "maxIterations": 20,
-  "completionPromise": "DONE",
-  "startedAt": "<ISO timestamp>",
-  "ultraworkEnabled": true,
-  "sessionId": "<session ID>",
-  "mode": "ralph-plan"
-}
-```
-
-**`.claude/ralph/state.json`:**
-```json
-{
-  "iteration": 1,
-  "status": "active",
-  "lastUpdated": "<ISO timestamp>",
-  "completedTasks": [],
-  "currentTask": null,
-  "blockers": [],
-  "acceptanceCriteria": {
-    "total": 0,
-    "passed": 0,
-    "items": []
-  }
-}
-```
-
-**`.claude/ralph/prompt.txt`:**
-```markdown
-## Ralph Loop: Executing Plan
-
-**Plan File:** .claude/plans/{topic-slug}.md
-
-Read the plan file and execute it step by step.
-
-### Execution Protocol
-1. Read `.claude/plans/{topic-slug}.md` for the full plan
-2. Convert "Implementation Steps" to TodoWrite items
-3. Execute each step in order
-4. After each step, verify against "Acceptance Criteria"
-5. Respect all "Must NOT" constraints
-6. When ALL acceptance criteria pass, output <promise>DONE</promise>
-
-### Recovery (if resuming)
-- Check git log for completed work
-- Check TodoWrite for remaining items
-- Continue from where you left off
-
-### Constraints from Plan
-[Extract "Must NOT" section from plan and list here]
-
-ultrawork
-```
-
-#### Step 3: Begin Execution
-
-Ralph Loop hook takes over. Each iteration:
-
-1. Read plan from `.claude/plans/{topic-slug}.md`
-2. Check current TodoWrite status
-3. Execute next incomplete step
-4. Update state.json with progress
-5. Check acceptance criteria
-6. Continue until all criteria pass
+   Next steps:
+   - Review the plan at your convenience
+   - Implement manually, or use your preferred automation
+   - Reference the acceptance criteria to track progress
+   ```
 
 ---
 
@@ -270,88 +202,124 @@ Ralph Plan Status
 =================
 
 **Plan:** {topic}
-**Phase:** Planning | Awaiting Approval | Executing | Complete
+**Phase:** Interview | Research | Draft Complete | Awaiting Approval | Finalized
 
---- Plan Status ---
-Location: .claude/plans/{topic-slug}.md
-Steps: {total} ({completed} complete)
+--- Plan Location ---
+Draft: .claude/plans/drafts/{topic-slug}.md
+Final: .claude/plans/{topic-slug}.md (if finalized)
 
---- Execution Status ---
-Iteration: {n}/{max}
-Status: {active|complete|blocked|paused}
-Last Updated: {timestamp}
-
---- Acceptance Criteria ---
-[ ] Criterion 1
-[x] Criterion 2
-[ ] Criterion 3
-
-Progress: {passed}/{total} criteria met
+--- Plan Contents ---
+Steps: {total}
+Acceptance Criteria: {total}
+Files Affected: {count}
 ```
 
 ---
 
 ## Examples
 
-### Example 1: Feature Implementation
+### Example 1: Feature Implementation PRD
 
 ```
 /ralph-plan implement user authentication with JWT
 ```
 
-**Planning Phase:**
-- Interview: scope, token expiration, refresh tokens needed?
-- Research: find existing auth patterns, user model
-- Plan: 6 implementation steps, 4 acceptance criteria
+**Interview Phase:**
+- Q: "What problem does this solve?"
+- A: "Users need to log in securely"
+- Q: "What's the scope?"
+- A: "Basic login/logout with token refresh"
+- Q: "Any constraints?"
+- A: "Must use existing user model, no OAuth"
+
+**Research Phase:**
+- Scout finds: `src/models/User.ts`, `src/routes/index.ts`
+- Librarian summarizes: Uses Express, no existing auth middleware
+
+**Plan Generated:**
+- 6 implementation steps
+- 4 files to modify
+- 4 acceptance criteria
 
 **Approval:**
 ```
-Plan ready. Includes: JWT middleware, login/logout routes,
-token refresh, password hashing. 6 steps, estimated 4 files.
+Plan ready for review.
 
-Execute this plan? (execute/modify/cancel)
+Includes: JWT middleware, login/logout routes, token refresh, password hashing.
+6 steps, 4 files affected.
+
+Approve this PRD? (approved/modify/cancel)
 ```
 
-**Execution:**
-- Ralph Loop creates all auth components
-- Validates each criterion
-- Outputs `<promise>DONE</promise>`
+User: "approved"
+
+**Output:**
+```
+PRD finalized at .claude/plans/user-authentication-jwt.md
+```
 
 ---
 
-### Example 2: Refactoring
+### Example 2: Refactoring PRD with Modifications
 
 ```
 /ralph-plan refactor the API to use dependency injection
 ```
 
-**Planning Phase:**
-- Interview: which services? testing implications?
-- Research: current service instantiation patterns
-- Plan: 12 steps across core services
+**Interview Phase:**
+- Q: "Which services should use DI?"
+- A: "All services in src/services/"
+- Q: "Testing implications?"
+- A: "Should make mocking easier"
 
-**Approval:** User says "change step 5 to use factory pattern"
+**Research Phase:**
+- Scout finds: 8 service files, current instantiation patterns
+- Librarian summarizes: Direct instantiation, no DI container
 
-**Updated Plan:** Step 5 modified, re-presented for approval
+**Plan Generated:**
+- 12 implementation steps
+- Container setup, service refactoring
 
-**Execution:** Proceeds with updated plan
+**Approval:** User says "change step 5 to use factory pattern instead"
+
+**Updated Plan:** Step 5 modified, re-presented
+
+**Second Approval:** User says "looks good"
+
+**Output:**
+```
+PRD finalized at .claude/plans/api-dependency-injection.md
+```
 
 ---
 
-### Example 3: Test Coverage
+### Example 3: Test Coverage PRD
 
 ```
-/ralph-plan add comprehensive test coverage to src/services/
+create prd for adding test coverage to src/services/
 ```
 
-**Planning Phase:**
-- Interview: unit tests only? integration? coverage target?
-- Research: existing test patterns, what's untested
-- Plan: test file for each service, mocking strategy
+**Interview Phase:**
+- Q: "Unit tests only, or integration too?"
+- A: "Both"
+- Q: "Coverage target?"
+- A: "80% minimum"
+
+**Research Phase:**
+- Scout finds: 6 service files, existing test patterns
+- Librarian summarizes: Jest setup exists, 2 services have tests
+
+**Plan Generated:**
+- Test file for each untested service
+- Integration test suite
+- Coverage configuration
 
 **Approval:** User approves
 
-**Execution:** Creates tests, runs them, verifies coverage
+**Output:**
+```
+PRD finalized at .claude/plans/service-test-coverage.md
+```
 
 ---
 
@@ -387,21 +355,8 @@ Execute this plan? (execute/modify/cancel)
 
 ### User Cancels at Approval Gate
 
-1. Do NOT create Ralph state files
-2. Keep plan at draft location
-3. Report: "Execution cancelled. Plan saved at `.claude/plans/drafts/{topic-slug}.md`"
-
-### Execution Blocked
-
-1. Update state: `status = "blocked"`
-2. Document blocker in state.json
-3. Report: "Execution blocked: {reason}. Plan preserved for retry."
-
-### Max Iterations Without Completion
-
-1. Report progress made
-2. Show remaining acceptance criteria
-3. Ask: "Continue with more iterations?"
+1. Keep plan at draft location
+2. Report: "PRD not finalized. Draft preserved at `.claude/plans/drafts/{topic-slug}.md`"
 
 ---
 
@@ -410,21 +365,19 @@ Execute this plan? (execute/modify/cancel)
 ### MUST DO
 
 - Complete full planning phase before approval gate
-- Display complete plan to user before execution
-- Wait for explicit approval ("execute", "approved", etc.)
+- Display complete plan to user before finalization
+- Wait for explicit approval ("approved", "looks good", etc.)
 - Move plan from drafts/ to final location on approval
-- Create all Ralph state files before execution begins
-- Track acceptance criteria during execution
-- Output `<promise>DONE</promise>` only when ALL criteria pass
+- Delete draft after successful finalization
 
 ### MUST NOT
 
-- Begin execution without explicit user approval
+- Finalize PRD without explicit user approval
 - Interpret silence or ambiguous responses as approval
-- Skip the planning phase
-- Execute with incomplete or vague plans
-- Delete plan files without confirmation
-- Violate "Must NOT" constraints from the plan
+- Skip the interview or research phases
+- Finalize with incomplete or vague plans
+- Delete draft files without confirmation
+- Proceed to any implementation/execution
 
 ### SHOULD DO
 
@@ -432,7 +385,7 @@ Execute this plan? (execute/modify/cancel)
 - Research codebase before finalizing plan
 - Break complex plans into clear steps
 - Include testable acceptance criteria
-- Preserve state for resumability
+- Preserve drafts for resumability
 
 ---
 
@@ -440,21 +393,13 @@ Execute this plan? (execute/modify/cancel)
 
 ### Relationship to /plan
 
-Ralph Plan uses the same planning methodology as `/plan`:
+Ralph Plan uses an enhanced version of the `/plan` methodology:
 - Same draft structure
 - Same interview approach
 - Same research phase
 - Same final plan format
 
-The difference: Ralph Plan continues to execution after approval.
-
-### Relationship to /ralph-loop
-
-Ralph Plan creates standard Ralph Loop state files with one addition:
-- `config.json` includes `planPath` pointing to the plan
-- `prompt.txt` contains plan-aware execution instructions
-
-The Ralph Loop hook handles iteration as normal.
+The difference: Ralph Plan has a formal approval gate and structured workflow.
 
 ### State Files Location
 
@@ -462,10 +407,6 @@ The Ralph Loop hook handles iteration as normal.
 .claude/
   plans/
     drafts/
-      {topic-slug}.md      # During planning
-    {topic-slug}.md        # After approval
-  ralph/
-    config.json            # Ralph config with planPath
-    state.json             # Iteration state
-    prompt.txt             # Plan-aware prompt
+      {topic-slug}.md      # During planning (before approval)
+    {topic-slug}.md        # After approval (final PRD)
 ```
