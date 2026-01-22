@@ -31,3 +31,6 @@ demo/*.gif
 # Auto Claude data directory
 .auto-claude/
 .claude/
+
+# Ralph loop working directory
+.ralph/
