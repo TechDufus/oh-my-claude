@@ -3,7 +3,7 @@
 import pytest
 
 # Import the module to test its patterns and functions
-from ultrawork_detector import PATTERNS, detect_validation
+from ultrawork_detector import PATTERNS, detect_validation, is_trivial_request
 
 
 class TestDetectValidation:
@@ -205,3 +205,146 @@ class TestPatternNonOverlap:
                 assert match is not None, f"{pattern_name} should match '{text}'"
             else:
                 assert match is None, f"{pattern_name} should NOT match '{text}'"
+
+
+class TestIsTrivialRequest:
+    """Tests for is_trivial_request function.
+
+    The new conservative approach:
+    - Returns True ONLY if prompt starts with trivial pattern AND has NO action verbs
+    - We'd rather overwork than underwork
+    """
+
+    @pytest.mark.parametrize(
+        "prompt",
+        [
+            # Simple questions matching TRIVIAL_PATTERNS without action verbs
+            "what is this?",
+            "what does this mean?",
+            "what are the options?",
+            "what was the error?",
+            "what were the results?",
+            "how do I use this?",
+            "how do I run it?",
+            "explain the architecture",
+            "explain this code",
+            "show me the errors",
+            "show me the config",
+            "where is the config?",
+            "where are the tests?",
+            "where do I start?",
+            "where does this go?",
+        ],
+    )
+    def test_trivial_requests_match(self, prompt):
+        """Simple questions without action verbs should return True."""
+        assert is_trivial_request(prompt) is True, f"Should be trivial: '{prompt}'"
+
+    @pytest.mark.parametrize(
+        "prompt",
+        [
+            # Questions with action verbs - NOT trivial
+            "what is broken and fix it",
+            "what needs to be implemented?",
+            "what should I refactor?",
+            "explain and then update the code",
+            "show me what to fix",
+            "where is the bug I need to fix?",
+            # Prompts starting with action verbs - NOT trivial
+            "fix the bug",
+            "implement the feature",
+            "refactor this module",
+            "update all the imports",
+            "change the database schema",
+            "modify the configuration",
+            "rewrite the parser",
+            "create a new class",
+            "add validation to the form",
+            "build the component",
+            "write unit tests",
+            "develop the API",
+            "make a new service",
+            "configure the CI pipeline",
+            "integrate the payment system",
+            "migrate to the new API",
+            "set up the database",
+            # Questions that don't match trivial patterns
+            "why does this fail?",
+            "how does this work?",  # "how does" not "how do I"
+            "when should I use this?",
+            "who wrote this?",
+            "which file handles auth?",
+            "can you explain this?",
+            "is this correct?",
+            "does this make sense?",
+            "list the files",
+            "run the tests",
+        ],
+    )
+    def test_non_trivial_requests(self, prompt):
+        """Prompts with action verbs or non-trivial patterns should return False."""
+        assert is_trivial_request(prompt) is False, f"Should NOT be trivial: '{prompt}'"
+
+    def test_empty_string(self):
+        """Empty string should return False."""
+        assert is_trivial_request("") is False
+
+    def test_whitespace_only(self):
+        """Whitespace-only string should return False."""
+        assert is_trivial_request("   ") is False
+
+    @pytest.mark.parametrize(
+        "prompt",
+        [
+            "ulw what is this?",
+            "ultrawork what is this?",
+            "ulw explain the code",
+            "ultrawork show me the errors",
+        ],
+    )
+    def test_ultrawork_prefix_stripped(self, prompt):
+        """Ultrawork prefix should be stripped before matching."""
+        assert is_trivial_request(prompt) is True, f"Should be trivial after prefix strip: '{prompt}'"
+
+    @pytest.mark.parametrize(
+        "prompt",
+        [
+            "ulw implement the feature",
+            "ultrawork fix all the bugs",
+            "ulw refactor the entire system",
+            "ultrawork create a new service",
+            "ulw what is broken and fix it",  # Has "fix" action verb
+        ],
+    )
+    def test_ultrawork_prefix_with_action_verb(self, prompt):
+        """Prompts with action verbs should return False even with ultrawork prefix."""
+        assert is_trivial_request(prompt) is False, f"Should NOT be trivial: '{prompt}'"
+
+    @pytest.mark.parametrize(
+        "prompt",
+        [
+            "WHAT is this?",
+            "What Is This?",
+            "Explain the architecture",
+            "EXPLAIN THE ARCHITECTURE",
+            "SHOW ME the errors",
+            "WHERE is the config?",
+        ],
+    )
+    def test_case_insensitivity(self, prompt):
+        """Matching should be case insensitive."""
+        assert is_trivial_request(prompt) is True, f"Should be trivial (case insensitive): '{prompt}'"
+
+    @pytest.mark.parametrize(
+        "prompt",
+        [
+            "IMPLEMENT the feature",
+            "FIX all the bugs",
+            "Refactor The Module",
+            "CREATE A NEW CLASS",
+            "What is broken and FIX it",
+        ],
+    )
+    def test_case_insensitivity_action_verbs(self, prompt):
+        """Action verb detection should also be case insensitive."""
+        assert is_trivial_request(prompt) is False, f"Should NOT be trivial: '{prompt}'"

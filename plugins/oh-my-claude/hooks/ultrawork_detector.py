@@ -53,30 +53,45 @@ PATTERNS.add(
     re.IGNORECASE,
 )
 
-# Trivial request patterns - simple tasks that don't need full orchestration
+# Trivial request patterns - simple questions that don't need heavy orchestration
+# These still GET ultrawork, just with a note to act directly
 TRIVIAL_PATTERNS = [
-    r"^fix (the )?typo",
-    r"^change .* to .*",
-    r"^what (is|does|are)",
-    r"^show me",
-    r"^list\b",
-    r"^how do I",
+    r"^what (is|does|are|was|were)\b",
+    r"^how do I\b",
     r"^explain\b",
-    r"^run (the )?(tests?|build|lint)",
+    r"^show me\b",
+    r"^where (is|are|do|does)\b",
+]
+
+# Action verbs that indicate real work (NOT trivial even if starts with question word)
+ACTION_VERBS = [
+    r"\b(fix|implement|refactor|update|change|modify|rewrite|create|add|build|write|develop|make|configure|integrate|migrate|set up)\b",
 ]
 
 
 def is_trivial_request(prompt: str) -> bool:
-    """Check if prompt matches trivial patterns.
+    """Check if prompt is a simple question without action verbs.
 
-    Strips the ultrawork/ulw keyword prefix before matching.
+    Returns True ONLY if:
+    - Matches a trivial pattern (question word at start)
+    - AND has NO action verbs anywhere in the prompt
+
+    This is very conservative - we'd rather overwork than underwork.
     """
     prompt_lower = prompt.lower().strip()
-    # Strip the ultrawork/ulw prefix to match the actual request
+    # Strip the ultrawork/ulw prefix
     prompt_lower = re.sub(r"^(ultrawork|ulw)\s+", "", prompt_lower)
+
+    # If ANY action verb exists, NOT trivial
+    for pattern in ACTION_VERBS:
+        if re.search(pattern, prompt_lower, re.IGNORECASE):
+            return False
+
+    # Check if it starts with a trivial pattern
     for pattern in TRIVIAL_PATTERNS:
         if re.match(pattern, prompt_lower, re.IGNORECASE):
             return True
+
     return False
 
 
@@ -124,22 +139,24 @@ def main() -> None:
     # This adds: relentless execution, zero tolerance, mandatory parallelization
     # ==========================================================================
     if PATTERNS.match("ultrawork", prompt):
-        # Check if this is a trivial request
+        # Check if this is a trivial request (simple question without action verbs)
+        # Still inject ultrawork, but add a note that direct action is fine
         trivial_note = ""
         if is_trivial_request(prompt):
-            trivial_note = """## TRIVIAL TASK DETECTED
+            log_debug("trivial request detected, adding light-touch note")
+            trivial_note = """## SIMPLE TASK DETECTED
 
-This appears to be a simple task (typo fix, quick question, simple command).
+This appears to be a simple question or command.
 Ultrawork mode acknowledged, but full orchestration overhead is unnecessary.
-**Direct action is fine** - skip heavy delegation for this one.
+**Direct action is fine** - answer directly without heavy delegation.
 
 ---
 
 """
 
-        context = f"""{trivial_note}[ULTRAWORK MODE ACTIVE]
+        context = f"""[ULTRAWORK MODE ACTIVE]
 
-This is RELENTLESS MODE. You will work until COMPLETE, not until tired.
+{trivial_note}This is RELENTLESS MODE. You will work until COMPLETE, not until tired.
 You will find problems before the user does. You will not cut corners.
 Every task spawns consideration of the next task. Momentum is everything.
 
@@ -260,6 +277,7 @@ This maximizes intelligence relative to what the user is paying for.
 3. NEVER STOP - Stopping requires passing the MANDATORY STOPPING CHECKLIST. Partial completion = failure. "Good enough" = failure. Only DONE is acceptable.
 4. NO QUESTIONS - Make reasonable decisions. Document them. Keep moving.
 5. DELEGATE EVERYTHING - You plan, agents implement. Direct implementation = failure.
+6. PROGRESS VISIBILITY - Update todo status BEFORE launching agents. For complex delegations, briefly state what agent is doing (e.g., "Launching architect to plan auth changes").
 
 ## AUTONOMOUS EXECUTION (NO UNNECESSARY QUESTIONS)
 
