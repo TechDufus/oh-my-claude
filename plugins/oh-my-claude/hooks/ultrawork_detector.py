@@ -179,6 +179,30 @@ Why: Need to understand auth architecture before implementing changes
 Expected: List of file paths with line references to auth logic
 ```
 
+Example (documentation):
+```
+Agent: oh-my-claude:scribe
+Task: Write API documentation for the auth module
+Why: Documentation requires understanding implementation patterns
+Expected: Complete API docs with usage examples
+```
+
+Example (visual analysis):
+```
+Agent: oh-my-claude:looker
+Task: Analyze the architecture diagram in docs/
+Why: Need to understand system component relationships
+Expected: Text description of components and data flows
+```
+
+Example (plan review):
+```
+Agent: oh-my-claude:critic
+Task: Review the proposed database migration plan
+Why: Catch issues before irreversible changes
+Expected: APPROVED or NEEDS REVISION with specific concerns
+```
+
 ### Delegation Prompt Structure
 Every worker prompt MUST include:
 1. TASK: Atomic goal (one sentence)
@@ -249,6 +273,7 @@ Pass `model="inherit"` or omit the model parameter entirely - both work.
 | Write documentation | scribe | opus | **inherits your model** |
 | Run tests/linters | validator | haiku | **inherits your model** |
 | Diagnose failures (2+ attempts) | debugger | opus | **inherits your model** |
+| Coordinate multi-agent work | orchestrator | opus | **inherits your model** |
 
 ### CRITICAL: Model Inheritance
 Agents inherit your session model automatically when you omit the model parameter,
@@ -265,6 +290,10 @@ This maximizes intelligence relative to what the user is paying for.
 - **Research:** scout + librarian (parallel) -> you synthesize
 - **Multi-file impl:** architect plans -> critic reviews -> multiple workers (parallel)
 - **Single task:** worker alone (if well-defined)
+- **Documentation:** librarian reads -> scribe documents
+- **Visual analysis:** looker analyzes PDFs/images -> you interpret
+- **Quality gate:** worker implements -> validator checks
+- **Failure recovery:** debugger diagnoses -> worker retries with guidance
 
 ### Escalation Patterns
 - **Complex plans:** architect -> critic (review BEFORE execution)

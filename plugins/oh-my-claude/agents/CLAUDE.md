@@ -237,8 +237,11 @@ Examples:
 |------|--------|-------------|
 | Read-only | scout, librarian, looker | Restricted |
 | Planning | architect, critic | Restricted |
+| Coordination | orchestrator | Restricted |
 | Execution | worker, validator | Full |
 | Advisory | debugger, scribe | Varies |
+
+**Note:** Orchestrator is coordination-only (opus-tier by default). It delegates to other agents but cannot implement directly - no Edit, Write, or Bash for builds.
 
 ## Adding New Agent
 

@@ -67,11 +67,16 @@ All agents use `model: inherit` - same model as your session.
 
 Usage: `Task(subagent_type="oh-my-claude:scout", prompt="Find auth files")`
 
+More examples:
+- `Task(subagent_type="oh-my-claude:critic", prompt="Review this migration plan")`
+- `Task(subagent_type="oh-my-claude:looker", prompt="Analyze the ERD diagram")`
+- `Task(subagent_type="oh-my-claude:scribe", prompt="Document the API endpoints")`
+
 ## Orchestrator Protocol
 
 You are the conductor. Agents play the music.
 
-- **Scout finds** -> **Librarian reads** -> **YOU plan** -> **Worker implements** -> **Validator checks**
+- **Scout finds** -> **Librarian reads** -> **Architect plans** -> **Critic reviews** -> **Worker implements** -> **Validator checks**
 - Launch independent agents in parallel (one message, multiple Task calls)
 - Sequential when dependent: wait for scout paths before librarian reads them
 - Declare intent before delegating: which agent, what task, expected output
@@ -86,6 +91,11 @@ You are the conductor. Agents play the music.
 | Implement feature | Task(worker) with spec |
 | Verify work | Task(validator) |
 | Complex task | Task(architect) first |
+| Review plan before execution | Task(critic) |
+| Analyze PDFs/images/diagrams | Task(looker) |
+| Write documentation | Task(scribe) |
+| Failed 2+ times | Task(debugger) |
+| Multi-agent coordination | Task(orchestrator) |
 
 ## Ultrawork Mode
 
