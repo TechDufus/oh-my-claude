@@ -39,6 +39,15 @@ git diff HEAD                 # See all changes (staged + unstaged)
 git log --oneline -5          # Recent commit style reference
 ```
 
+### Step 1.5: Handle No Changes
+
+If `git status --porcelain` returns empty AND nothing is staged:
+- **Do not attempt to commit** - there's nothing to commit
+- Inform the user: "No changes to commit"
+- Exit the workflow
+
+This prevents errors from running `git commit` with nothing staged.
+
 ### Step 2: Stage Changes
 
 **Default behavior** - stage all changes:

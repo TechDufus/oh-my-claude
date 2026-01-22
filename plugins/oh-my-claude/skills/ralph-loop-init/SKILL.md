@@ -278,27 +278,29 @@ If any gate fails, fix the issue before committing.
 
 When you complete a story:
 
-1. **Stage changes:**
+1. **Check for changes and commit if needed:**
    ```bash
-   git add -A
+   git status --porcelain
    ```
 
-2. **Commit with story reference:**
-   ```bash
-   git commit -m "feat(ralph): {story-title}
+   If there ARE changes:
+   - Stage changes: `git add -A`
+   - Commit with a conventional commit message describing your implementation
+   - The `commit_quality_enforcer` hook validates format automatically
+   - If commit is rejected, read the error, fix the message, retry (max 3 attempts)
+   - After 3 failures, log the error to progress.txt and exit
 
-   Story-Id: {story-id}"
-   ```
+   If there are NO changes, proceed directly to step 2.
 
-3. **Update prd.json:**
+2. **Update prd.json:**
    - Set `passes: true` for the completed story
 
-4. **Append to progress.txt:**
+3. **Append to progress.txt:**
    ```
    [{timestamp}] Completed: {story-id} - {story-title}
    ```
 
-5. **Exit immediately** - Do not start another story
+4. **Exit immediately** - Do not start another story
 
 ## Guardrails
 
