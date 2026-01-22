@@ -30,3 +30,4 @@ demo/*.gif
 
 # Auto Claude data directory
 .auto-claude/
+.claude/
