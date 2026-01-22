@@ -20,8 +20,8 @@ from hook_utils import (
     RegexCache,
     hook_main,
     log_debug,
-    output_block,
     output_empty,
+    output_stop_block,
     parse_hook_input,
     read_stdin_safe,
 )
@@ -177,7 +177,7 @@ def should_check_plans() -> bool:
 
 def do_output_block(reason: str, context: str) -> None:
     """Output a block decision for Stop hook."""
-    output_block("Stop", reason, context)
+    output_stop_block(reason, context)
 
 
 @hook_main("Stop")

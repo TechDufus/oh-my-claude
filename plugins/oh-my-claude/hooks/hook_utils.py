@@ -225,6 +225,26 @@ def output_block(hook_event: str, reason: str, context: str) -> None:
     print(json.dumps(response))
 
 
+def output_stop_block(reason: str, context: str | None = None) -> None:
+    """
+    Output blocking response for Stop hooks.
+
+    Stop hooks are lifecycle hooks that use top-level fields,
+    not hookSpecificOutput. Setting continue=False prevents
+    Claude from stopping.
+
+    Args:
+        reason: Why the stop is being blocked.
+        context: Optional additional context (concatenated into stopReason).
+    """
+    stop_reason = f"{reason}\n\n{context}" if context else reason
+    response = {
+        "continue": False,
+        "stopReason": stop_reason,
+    }
+    print(json.dumps(response))
+
+
 def output_permission(decision: str, reason: str | None = None) -> None:
     """
     Output permission decision for PermissionRequest hooks.

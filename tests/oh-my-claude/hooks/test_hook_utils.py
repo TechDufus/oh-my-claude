@@ -12,6 +12,7 @@ from hook_utils import (
     get_nested,
     output_block,
     output_context,
+    output_stop_block,
     parse_hook_input,
 )
 
@@ -283,3 +284,33 @@ class TestOutputBlock:
         captured = capsys.readouterr()
         result = json.loads(captured.out)
         assert result["hookSpecificOutput"]["blocked"] is True
+
+
+class TestOutputStopBlock:
+    """Tests for output_stop_block function."""
+
+    def test_output_format(self, capsys):
+        """output_stop_block should produce correct JSON format."""
+        output_stop_block("Task incomplete", "Please complete todos first")
+        captured = capsys.readouterr()
+        result = json.loads(captured.out)
+
+        assert result == {
+            "continue": False,
+            "stopReason": "Task incomplete\n\nPlease complete todos first",
+        }
+
+    def test_without_context(self, capsys):
+        """output_stop_block should work without context."""
+        output_stop_block("reason only")
+        captured = capsys.readouterr()
+        result = json.loads(captured.out)
+        assert result["continue"] is False
+        assert result["stopReason"] == "reason only"
+
+    def test_no_hook_specific_output(self, capsys):
+        """Stop hooks must NOT use hookSpecificOutput."""
+        output_stop_block("test", "context")
+        captured = capsys.readouterr()
+        result = json.loads(captured.out)
+        assert "hookSpecificOutput" not in result
