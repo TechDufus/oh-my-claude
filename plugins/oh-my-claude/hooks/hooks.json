@@ -64,6 +64,16 @@
         ]
       },
       {
+        "matcher": "ExitPlanMode",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "uv run --script ${CLAUDE_PLUGIN_ROOT}/hooks/plan_approved.py",
+            "timeout": 5
+          }
+        ]
+      },
+      {
         "matcher": ".*",
         "hooks": [
           {

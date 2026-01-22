@@ -14,7 +14,7 @@ When a new session starts, this hook:
 3. Deletes marker (single-use)
 
 Claude Code auto-injects the approved plan content, so the marker is just
-a signal that triggers execution mode, not storage for the plan path.
+a signal that triggers execution mode.
 """
 
 from __future__ import annotations
@@ -70,16 +70,19 @@ When ALL plan items are done:
 
 def check_plan_execution() -> bool:
     """Check for approved plan marker. Returns True if marker exists."""
+    log_debug("=== check_plan_execution ENTRY ===")
     marker_path = Path.home() / ".claude" / "plans" / ".plan_approved"
+    log_debug(f"Marker path: {marker_path}")
+    log_debug(f"Marker exists: {marker_path.exists()}")
 
     if not marker_path.exists():
         log_debug("No plan marker found")
         return False
 
+    # Consume the marker (single-use)
     try:
-        # Consume the marker (single-use)
         marker_path.unlink()
-        log_debug("Consumed plan marker")
+        log_debug("Consumed plan marker successfully")
         return True
     except OSError as e:
         log_debug(f"Error deleting marker: {e}")
