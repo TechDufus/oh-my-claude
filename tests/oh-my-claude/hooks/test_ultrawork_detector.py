@@ -1,9 +1,50 @@
 """Tests for ultrawork_detector.py."""
 
+import json
+import subprocess
+import sys
+from pathlib import Path
+
 import pytest
 
 # Import the module to test its patterns and functions
-from ultrawork_detector import PATTERNS, detect_validation, is_trivial_request
+from ultrawork_detector import (
+    MARKER_PATH,
+    PATTERNS,
+    PLAN_EXECUTION_CONTEXT,
+    check_plan_execution,
+    detect_validation,
+    is_trivial_request,
+)
+
+HOOK_PATH = Path(__file__).parent.parent.parent.parent / "plugins/oh-my-claude/hooks/ultrawork_detector.py"
+
+
+def run_hook(input_data: dict, marker_dir: Path) -> dict:
+    """Run the hook with given input and return parsed output."""
+    env = {
+        "HOME": str(marker_dir),
+        "PATH": "/usr/bin:/bin",
+    }
+    result = subprocess.run(
+        [sys.executable, str(HOOK_PATH)],
+        input=json.dumps(input_data),
+        capture_output=True,
+        text=True,
+        env=env,
+    )
+    if result.returncode != 0:
+        pytest.fail(f"Hook failed: {result.stderr}")
+
+    if not result.stdout.strip():
+        return {}
+
+    return json.loads(result.stdout)
+
+
+def get_context(output: dict) -> str:
+    """Extract additionalContext from hook output."""
+    return output.get("hookSpecificOutput", {}).get("additionalContext", "")
 
 
 class TestDetectValidation:
@@ -348,3 +389,128 @@ class TestIsTrivialRequest:
     def test_case_insensitivity_action_verbs(self, prompt):
         """Action verb detection should also be case insensitive."""
         assert is_trivial_request(prompt) is False, f"Should NOT be trivial: '{prompt}'"
+
+
+# =============================================================================
+# Plan Execution Marker Tests (moved from session_start.py)
+# =============================================================================
+
+@pytest.fixture
+def marker_home(tmp_path):
+    """Create a temporary home directory for marker file tests."""
+    claude_dir = tmp_path / ".claude" / "plans"
+    claude_dir.mkdir(parents=True)
+    return tmp_path
+
+
+@pytest.fixture
+def marker_home_with_marker(marker_home):
+    """Create marker home with .plan_approved marker file."""
+    marker_path = marker_home / ".claude" / "plans" / ".plan_approved"
+    marker_path.touch()
+    return marker_home
+
+
+class TestPlanExecutionMarker:
+    """Tests for plan execution marker detection in UserPromptSubmit hook."""
+
+    def test_marker_detected_injects_plan_context(self, marker_home_with_marker):
+        """When marker exists, should inject PLAN_EXECUTION_CONTEXT."""
+        output = run_hook({"prompt": "implement the plan"}, marker_home_with_marker)
+        context = get_context(output)
+        assert "ULTRAWORK MODE ACTIVE" in context
+        assert "PLAN EXECUTION" in context
+        assert "Create todos" in context
+
+    def test_marker_consumed_after_detection(self, marker_home_with_marker):
+        """Marker should be deleted after successful injection."""
+        marker_path = marker_home_with_marker / ".claude" / "plans" / ".plan_approved"
+        assert marker_path.exists(), "Marker should exist before hook runs"
+
+        run_hook({"prompt": "start"}, marker_home_with_marker)
+
+        assert not marker_path.exists(), "Marker should be consumed (deleted)"
+
+    def test_marker_priority_over_ultrawork_keyword(self, marker_home_with_marker):
+        """Marker should take priority over ultrawork keyword."""
+        # When marker exists AND prompt has "ultrawork", should inject PLAN_EXECUTION context
+        output = run_hook({"prompt": "ultrawork fix bugs"}, marker_home_with_marker)
+        context = get_context(output)
+        # Should get PLAN_EXECUTION context, not generic ULTRAWORK context
+        assert "PLAN EXECUTION" in context
+        # Plan execution context includes ULTRAWORK header but has different content
+        assert "Create todos" in context
+
+    def test_no_marker_normal_ultrawork_behavior(self, marker_home):
+        """Without marker, ultrawork keyword should inject generic ultrawork context."""
+        output = run_hook({"prompt": "ultrawork fix bugs"}, marker_home)
+        context = get_context(output)
+        assert "ULTRAWORK MODE ACTIVE" in context
+        # Should get generic ultrawork content (not plan execution)
+        assert "MANDATORY CERTAINTY PROTOCOL" in context
+        assert "PLAN EXECUTION" not in context
+
+    def test_no_marker_no_keyword_passthrough(self, marker_home):
+        """Without marker and no keyword, should pass through without context."""
+        output = run_hook({"prompt": "just a normal message"}, marker_home)
+        context = get_context(output)
+        assert context == "", "Should return empty when no marker and no keyword"
+
+    def test_context_includes_execution_protocol(self, marker_home_with_marker):
+        """Injected context should include execution protocol."""
+        output = run_hook({"prompt": "go"}, marker_home_with_marker)
+        context = get_context(output)
+        assert "Create todos" in context
+        assert "Execute in order" in context
+        assert "Verify each step" in context
+
+    def test_context_includes_compliance_rules(self, marker_home_with_marker):
+        """Injected context should include plan compliance rules."""
+        output = run_hook({"prompt": "go"}, marker_home_with_marker)
+        context = get_context(output)
+        assert "Allowed" in context
+        assert "NOT Allowed" in context
+
+    def test_second_run_returns_normal(self, marker_home_with_marker):
+        """Second run after marker consumed should behave normally."""
+        # First run consumes marker
+        run_hook({"prompt": "first"}, marker_home_with_marker)
+
+        # Second run should NOT inject plan execution context
+        output = run_hook({"prompt": "second"}, marker_home_with_marker)
+        context = get_context(output)
+        # No marker means no plan execution context
+        assert "PLAN EXECUTION" not in context
+
+
+class TestCheckPlanExecutionFunction:
+    """Unit tests for check_plan_execution function directly."""
+
+    def test_returns_false_when_marker_missing(self, marker_home, monkeypatch):
+        """check_plan_execution should return False when marker doesn't exist."""
+        # Monkeypatch MARKER_PATH to use temp dir
+        monkeypatch.setattr(
+            "ultrawork_detector.MARKER_PATH",
+            marker_home / ".claude" / "plans" / ".plan_approved"
+        )
+        assert check_plan_execution() is False
+
+    def test_returns_true_and_deletes_marker(self, marker_home_with_marker, monkeypatch):
+        """check_plan_execution should return True and delete marker when it exists."""
+        marker_path = marker_home_with_marker / ".claude" / "plans" / ".plan_approved"
+        monkeypatch.setattr("ultrawork_detector.MARKER_PATH", marker_path)
+
+        assert marker_path.exists(), "Marker should exist before check"
+        result = check_plan_execution()
+        assert result is True, "Should return True when marker exists"
+        assert not marker_path.exists(), "Marker should be deleted after check"
+
+    def test_idempotent_after_consumption(self, marker_home_with_marker, monkeypatch):
+        """check_plan_execution should return False after marker is consumed."""
+        marker_path = marker_home_with_marker / ".claude" / "plans" / ".plan_approved"
+        monkeypatch.setattr("ultrawork_detector.MARKER_PATH", marker_path)
+
+        # First call consumes marker
+        assert check_plan_execution() is True
+        # Second call returns False
+        assert check_plan_execution() is False

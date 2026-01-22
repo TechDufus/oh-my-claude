@@ -24,6 +24,11 @@ from hook_utils import (
 )
 
 # =============================================================================
+# Plan execution marker path
+# =============================================================================
+MARKER_PATH = Path.home() / ".claude" / "plans" / ".plan_approved"
+
+# =============================================================================
 # Pre-compiled regex patterns (module-level cache)
 # =============================================================================
 # Patterns simplified to reduce ReDoS risk:
@@ -153,6 +158,61 @@ When plan is approved and execution begins:
 | "Should be straightforward" | Investigate until certain |
 """
 
+# =============================================================================
+# PLAN EXECUTION CONTEXT - Injected when plan marker is found
+# =============================================================================
+PLAN_EXECUTION_CONTEXT = """[ULTRAWORK MODE ACTIVE - PLAN EXECUTION]
+
+You have an APPROVED PLAN to execute. The plan content is already in your context.
+
+## EXECUTION PROTOCOL
+
+1. **Create todos** - Convert plan checkboxes to TodoWrite items
+2. **Execute in order** - Follow the plan's execution order exactly
+3. **Verify each step** - Run validator after each significant change
+4. **Do NOT deviate** - The plan was researched and approved. Follow it.
+
+## PLAN COMPLIANCE
+
+| Allowed | NOT Allowed |
+|---------|-------------|
+| Following plan steps exactly | Adding features not in plan |
+| Minor implementation details | Changing architecture decisions |
+| Bug fixes discovered during work | Scope expansion |
+| Asking about ambiguous plan items | Ignoring plan requirements |
+
+If you discover the plan has a flaw:
+1. STOP implementation
+2. Explain the issue to the user
+3. Get approval before changing approach
+
+## COMPLETION
+
+When ALL plan items are done:
+1. Run full validation (tests, lints, type checks)
+2. Summarize what was implemented
+3. Note any deviations from plan (with reasons)
+"""
+
+
+def check_plan_execution() -> bool:
+    """Check for approved plan marker. Consumes marker if found."""
+    log_debug("=== check_plan_execution in UserPromptSubmit ===")
+    log_debug(f"Marker path: {MARKER_PATH}")
+    log_debug(f"Marker exists: {MARKER_PATH.exists()}")
+
+    if not MARKER_PATH.exists():
+        log_debug("No plan marker found")
+        return False
+
+    try:
+        MARKER_PATH.unlink()
+        log_debug("Consumed plan marker successfully")
+        return True
+    except OSError as e:
+        log_debug(f"Error deleting marker: {e}")
+        return False
+
 
 def is_trivial_request(prompt: str) -> bool:
     """Check if prompt is a simple question without action verbs.
@@ -211,6 +271,16 @@ def main() -> None:
     prompt = data.get("prompt", "")
     cwd = data.get("cwd", ".")
     permission_mode = data.get("permission_mode", "")
+
+    # ==========================================================================
+    # PLAN EXECUTION - Check marker FIRST (catches /clear scenarios)
+    # This takes priority over all other modes
+    # ==========================================================================
+    if check_plan_execution():
+        log_debug("Plan marker found, injecting plan execution context")
+        output_context("UserPromptSubmit", PLAN_EXECUTION_CONTEXT)
+        output_empty()
+        return  # Early return - don't also inject ultrawork
 
     # ==========================================================================
     # ULTRAPLAN MODE - Auto-inject when in native plan mode
