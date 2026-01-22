@@ -296,8 +296,8 @@ class TestOutputStopBlock:
         result = json.loads(captured.out)
 
         assert result == {
-            "continue": False,
-            "stopReason": "Task incomplete\n\nPlease complete todos first",
+            "decision": "block",
+            "reason": "Task incomplete\n\nPlease complete todos first",
         }
 
     def test_without_context(self, capsys):
@@ -305,8 +305,8 @@ class TestOutputStopBlock:
         output_stop_block("reason only")
         captured = capsys.readouterr()
         result = json.loads(captured.out)
-        assert result["continue"] is False
-        assert result["stopReason"] == "reason only"
+        assert result["decision"] == "block"
+        assert result["reason"] == "reason only"
 
     def test_no_hook_specific_output(self, capsys):
         """Stop hooks must NOT use hookSpecificOutput."""
@@ -314,3 +314,10 @@ class TestOutputStopBlock:
         captured = capsys.readouterr()
         result = json.loads(captured.out)
         assert "hookSpecificOutput" not in result
+
+    def test_no_continue_field(self, capsys):
+        """Stop hooks must NOT use continue field (wrong schema)."""
+        output_stop_block("test", "context")
+        captured = capsys.readouterr()
+        result = json.loads(captured.out)
+        assert "continue" not in result

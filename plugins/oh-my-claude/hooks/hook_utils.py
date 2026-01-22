@@ -229,18 +229,17 @@ def output_stop_block(reason: str, context: str | None = None) -> None:
     """
     Output blocking response for Stop hooks.
 
-    Stop hooks are lifecycle hooks that use top-level fields,
-    not hookSpecificOutput. Setting continue=False prevents
-    Claude from stopping.
+    Stop hooks use 'decision: block' to prevent Claude from stopping.
+    The reason field tells Claude why it must continue working.
 
     Args:
         reason: Why the stop is being blocked.
-        context: Optional additional context (concatenated into stopReason).
+        context: Optional additional context (appended to reason).
     """
     stop_reason = f"{reason}\n\n{context}" if context else reason
     response = {
-        "continue": False,
-        "stopReason": stop_reason,
+        "decision": "block",
+        "reason": stop_reason,
     }
     print(json.dumps(response))
 

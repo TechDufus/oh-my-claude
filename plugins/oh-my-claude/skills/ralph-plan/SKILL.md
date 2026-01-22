@@ -144,33 +144,36 @@ Transform draft into structured plan with these sections:
 
 #### Present the Plan
 
-Display the complete plan to the user with:
+1. Display the complete plan summary to the user
+2. Use `AskUserQuestion` tool for approval:
 
+```json
+{
+  "questions": [{
+    "question": "How would you like to proceed with this PRD?",
+    "header": "PRD Status",
+    "options": [
+      {"label": "Approve", "description": "Finalize and save the PRD"},
+      {"label": "Request Changes", "description": "Modify specific sections"},
+      {"label": "Cancel", "description": "Abort and keep draft"}
+    ],
+    "multiSelect": false
+  }]
+}
 ```
-## Plan Ready for Review
 
-[Full plan content]
-
----
-
-**Approve this PRD?**
-
-Reply with:
-- "approved", "looks good", "finalize" - to save the final PRD
-- "change step N", "add criterion", etc. - to modify the plan
-- "cancel", "stop" - to abort (draft preserved)
-```
+**CRITICAL**: You MUST use the `AskUserQuestion` tool for approval. Do NOT output text prompts asking the user to "reply with" something.
 
 #### Handle User Response
 
-| User Says | Action |
-|-----------|--------|
-| "approved", "looks good", "finalize", "ship it" | Finalize PRD (move to final location) |
-| "change step 3", "modify...", "add...", "remove..." | Update plan, re-present |
-| "cancel", "stop", "abort", "nevermind" | Keep draft, do not finalize |
-| Asks a question | Answer, then re-prompt for approval |
+| User Response | Action |
+|---------------|--------|
+| "Approve" | Finalize PRD (move to final location) |
+| "Request Changes" | Ask what to change, update plan, re-present with `AskUserQuestion` |
+| "Cancel" | Keep draft, do not finalize |
+| "Other" (custom text) | Interpret and act accordingly, then re-prompt if needed |
 
-**Do NOT interpret ambiguous responses as approval.** If unclear, ask: "Should I finalize this PRD?"
+**Do NOT interpret ambiguous responses as approval.** If unclear, re-prompt with `AskUserQuestion`.
 
 #### On Approval
 
@@ -242,16 +245,9 @@ Files Affected: {count}
 - 4 acceptance criteria
 
 **Approval:**
-```
-Plan ready for review.
 
-Includes: JWT middleware, login/logout routes, token refresh, password hashing.
-6 steps, 4 files affected.
-
-Approve this PRD? (approved/modify/cancel)
-```
-
-User: "approved"
+Plan presented to user with `AskUserQuestion` tool.
+User selects: "Approve"
 
 **Output:**
 ```
@@ -280,11 +276,11 @@ PRD finalized at .claude/plans/user-authentication-jwt.md
 - 12 implementation steps
 - Container setup, service refactoring
 
-**Approval:** User says "change step 5 to use factory pattern instead"
+**Approval:** User selects "Request Changes" via `AskUserQuestion`, specifies "change step 5 to use factory pattern"
 
-**Updated Plan:** Step 5 modified, re-presented
+**Updated Plan:** Step 5 modified, re-presented with `AskUserQuestion`
 
-**Second Approval:** User says "looks good"
+**Second Approval:** User selects "Approve"
 
 **Output:**
 ```
@@ -366,13 +362,15 @@ PRD finalized at .claude/plans/service-test-coverage.md
 
 - Complete full planning phase before approval gate
 - Display complete plan to user before finalization
-- Wait for explicit approval ("approved", "looks good", etc.)
+- Use `AskUserQuestion` tool for approval (NEVER use text prompts)
+- Wait for explicit approval via tool response
 - Move plan from drafts/ to final location on approval
 - Delete draft after successful finalization
 
 ### MUST NOT
 
 - Finalize PRD without explicit user approval
+- Use text prompts for approval (ALWAYS use `AskUserQuestion` tool)
 - Interpret silence or ambiguous responses as approval
 - Skip the interview or research phases
 - Finalize with incomplete or vague plans
