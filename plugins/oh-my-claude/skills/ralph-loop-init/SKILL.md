@@ -1,6 +1,6 @@
 ---
 name: ralph-loop-init
-description: "Transform approved plans into ralph loop infrastructure. Triggers on: '/ralph-loop-init', '/ralph-init', 'setup ralph loop', 'generate ralph loop'. Creates .ralph/ directory with prd.json, loop.sh, CLAUDE.md, and supporting files."
+description: "Transform approved plans into ralph loop infrastructure. Triggers on: '/ralph-loop-init', '/ralph-init', 'setup ralph loop', 'generate ralph loop'. Creates .ralph/ directory with prd.json, loop.py, CLAUDE.md, and supporting files."
 allowed-tools:
   - Read
   - Write
@@ -21,7 +21,7 @@ Transform approved plans into executable ralph loop infrastructure.
 Ralph Loop is an autonomous execution system that runs Claude (or compatible tools) in a loop to complete multi-step implementation work. It transforms a PRD into:
 
 1. **prd.json** - Machine-readable stories with progress tracking
-2. **loop.sh** - Shell script that orchestrates iterations
+2. **loop.py** - Python UV script that orchestrates iterations with rich output
 3. **CLAUDE.md** - Per-iteration instructions for the AI
 4. **progress.txt** - Human-readable execution log
 5. **guardrails.md** - Quality gates and constraints
@@ -313,115 +313,172 @@ See `.ralph/guardrails.md` for constraints and boundaries.
 - Trust the loop script to handle the next iteration
 ```
 
-#### File 4: loop.sh
+#### File 4: loop.py
 
-```bash
-#!/usr/bin/env bash
-set -euo pipefail
+```python
+#!/usr/bin/env -S uv run --script
+# /// script
+# requires-python = ">=3.11"
+# dependencies = ["rich"]
+# ///
+"""
+Ralph Loop Runner
 
-# Ralph Loop Runner
-# Executes AI iterations until all stories complete
+Executes AI iterations until all stories complete.
+Uses rich for beautiful terminal output with progress tracking.
+"""
 
-TOOL="${TOOL:-claude}"
-MAX_ITERATIONS="${MAX_ITERATIONS:-10}"
-RALPH_DIR=".ralph"
-PRD_FILE="$RALPH_DIR/prd.json"
-PROGRESS_FILE="$RALPH_DIR/progress.txt"
+import json
+import os
+import subprocess
+import sys
+from pathlib import Path
 
-# Verify ralph directory exists
-if [ ! -d "$RALPH_DIR" ]; then
-    echo "Error: $RALPH_DIR directory not found"
-    echo "Run ralph-loop-init first"
-    exit 1
-fi
+from rich.console import Console
+from rich.panel import Panel
 
-# Verify prd.json exists
-if [ ! -f "$PRD_FILE" ]; then
-    echo "Error: $PRD_FILE not found"
-    exit 1
-fi
+console = Console()
 
-# Function to count incomplete stories
-count_incomplete() {
-    if command -v jq &> /dev/null; then
-        jq '[.stories[] | select(.passes == false)] | length' "$PRD_FILE"
-    else
-        grep -c '"passes": false' "$PRD_FILE" || echo "0"
-    fi
-}
+RALPH_DIR = Path(".ralph")
+PRD_FILE = RALPH_DIR / "prd.json"
+PROGRESS_FILE = RALPH_DIR / "progress.txt"
 
-# Function to show progress
-show_progress() {
-    if command -v jq &> /dev/null; then
-        local total=$(jq '.stories | length' "$PRD_FILE")
-        local complete=$(jq '[.stories[] | select(.passes == true)] | length' "$PRD_FILE")
-        echo "Progress: $complete/$total stories complete"
-    else
-        echo "Progress: check $PRD_FILE for details"
-    fi
-}
 
-echo "==================================="
-echo "Ralph Loop Runner"
-echo "==================================="
-echo "Tool: $TOOL"
-echo "Max iterations: $MAX_ITERATIONS"
-show_progress
-echo "==================================="
-echo ""
+def load_prd() -> dict:
+    """Load and return the PRD JSON."""
+    with open(PRD_FILE) as f:
+        return json.load(f)
 
-iteration=0
-while [ $iteration -lt $MAX_ITERATIONS ]; do
-    iteration=$((iteration + 1))
 
-    # Check if all stories complete
-    incomplete=$(count_incomplete)
-    if [ "$incomplete" -eq 0 ]; then
-        echo ""
-        echo "==================================="
-        echo "All stories complete!"
-        echo "==================================="
-        show_progress
-        exit 0
-    fi
+def count_stories(prd: dict) -> tuple[int, int]:
+    """Return (complete, total) story counts."""
+    stories = prd["stories"]
+    complete = sum(1 for s in stories if s["passes"])
+    return complete, len(stories)
 
-    echo "--- Iteration $iteration/$MAX_ITERATIONS ---"
-    echo "Remaining stories: $incomplete"
-    echo ""
 
-    # Run the AI tool
-    case "$TOOL" in
-        claude)
-            claude --print "Execute ralph loop iteration per .ralph/CLAUDE.md"
-            ;;
-        amp)
-            amp --print "Execute ralph loop iteration per .ralph/CLAUDE.md"
-            ;;
-        codex)
-            codex "Execute ralph loop iteration per .ralph/CLAUDE.md"
-            ;;
-        *)
-            echo "Unknown tool: $TOOL"
-            echo "Supported: claude, amp, codex"
-            exit 1
-            ;;
-    esac
+def get_next_story(prd: dict) -> dict | None:
+    """Get the next incomplete story by priority."""
+    incomplete = [s for s in prd["stories"] if not s["passes"]]
+    return min(incomplete, key=lambda s: s["priority"]) if incomplete else None
 
-    echo ""
-    show_progress
-    echo ""
-done
 
-echo ""
-echo "==================================="
-echo "Max iterations reached ($MAX_ITERATIONS)"
-echo "==================================="
-show_progress
-incomplete=$(count_incomplete)
-if [ "$incomplete" -gt 0 ]; then
-    echo "Warning: $incomplete stories still incomplete"
-    exit 1
-fi
+def run_claude() -> int:
+    """Run claude and return exit code."""
+    result = subprocess.run([
+        "claude",
+        "--dangerously-skip-permissions",
+        "--print",
+        "Execute ralph loop iteration per .ralph/CLAUDE.md"
+    ])
+    return result.returncode
+
+
+def show_header(max_iterations: int, complete: int, total: int):
+    """Display the header panel with autonomous mode warning."""
+    console.print(Panel.fit(
+        f"[bold cyan]Ralph Loop Runner[/]\n\n"
+        f"[bold yellow]⚠️  AUTONOMOUS MODE ENABLED[/]\n"
+        f"[dim]Commands execute without approval[/]\n\n"
+        f"[dim]Max:[/] [yellow]{max_iterations}[/]  "
+        f"[dim]Progress:[/] [green]{complete}[/]/[cyan]{total}[/]",
+        border_style="blue",
+        title="🔄 ralph",
+        title_align="left"
+    ))
+
+
+def show_iteration(iteration: int, max_iterations: int, story: dict, remaining: int):
+    """Display iteration info."""
+    console.print()
+    console.rule(f"[bold]Iteration {iteration}/{max_iterations}[/]", style="dim")
+    console.print(f"[cyan]Next:[/] {story['id']} - {story['title']}")
+    console.print(f"[dim]Remaining:[/] {remaining} stories")
+    console.print()
+
+
+def show_progress_bar(complete: int, total: int):
+    """Display a simple progress indicator."""
+    pct = (complete / total * 100) if total > 0 else 0
+    filled = int(pct / 5)
+    bar = "█" * filled + "░" * (20 - filled)
+    console.print(f"[cyan]Progress:[/] [{bar}] {complete}/{total} ({pct:.0f}%)")
+
+
+def show_completion():
+    """Display completion panel."""
+    console.print()
+    console.print(Panel.fit(
+        "[bold green]✓ All stories complete![/]",
+        border_style="green"
+    ))
+
+
+def show_max_reached(max_iterations: int, incomplete: int):
+    """Display max iterations panel."""
+    console.print()
+    console.print(Panel.fit(
+        f"[bold yellow]Max iterations reached ({max_iterations})[/]\n"
+        f"[red]{incomplete} stories still incomplete[/]",
+        border_style="yellow"
+    ))
+
+
+def main():
+    max_iterations = int(os.environ.get("MAX_ITERATIONS", "10"))
+
+    # Verify ralph directory
+    if not RALPH_DIR.exists():
+        console.print("[red]Error:[/] .ralph directory not found")
+        console.print("[dim]Run /ralph-loop-init first[/]")
+        sys.exit(1)
+
+    if not PRD_FILE.exists():
+        console.print(f"[red]Error:[/] {PRD_FILE} not found")
+        sys.exit(1)
+
+    # Load PRD and show header
+    prd = load_prd()
+    complete, total = count_stories(prd)
+    show_header(max_iterations, complete, total)
+
+    # Main loop
+    for iteration in range(1, max_iterations + 1):
+        prd = load_prd()  # Reload each iteration
+        complete, total = count_stories(prd)
+        incomplete = total - complete
+
+        if incomplete == 0:
+            show_completion()
+            sys.exit(0)
+
+        next_story = get_next_story(prd)
+        show_iteration(iteration, max_iterations, next_story, incomplete)
+
+        # Run claude with visible output
+        with console.status("[bold green]Starting claude...[/]", spinner="dots"):
+            pass  # Brief status then let subprocess take over
+
+        exit_code = run_claude()
+
+        if exit_code != 0:
+            console.print(f"[yellow]Warning:[/] claude exited with code {exit_code}")
+
+        # Show updated progress
+        prd = load_prd()
+        complete, total = count_stories(prd)
+        show_progress_bar(complete, total)
+
+    # Max iterations reached
+    prd = load_prd()
+    complete, total = count_stories(prd)
+    incomplete = total - complete
+    show_max_reached(max_iterations, incomplete)
+    sys.exit(1 if incomplete > 0 else 0)
+
+
+if __name__ == "__main__":
+    main()
 ```
 
 #### File 5: guardrails.md
@@ -475,7 +532,7 @@ If the loop fails:
 1. Check progress.txt for last successful story
 2. Check git log for committed work
 3. Review prd.json for story states
-4. Resume with: `./loop.sh`
+4. Resume with: `uv run .ralph/loop.py`
 
 ## Manual Override
 
@@ -483,7 +540,7 @@ To skip a problematic story:
 ```bash
 # Edit prd.json, set passes: true for the story
 # Add note to progress.txt explaining skip
-# Run loop.sh to continue
+# Run: uv run .ralph/loop.py
 ```
 ```
 
@@ -503,18 +560,19 @@ Files created:
   - prd.json      ({N} stories extracted)
   - progress.txt  (execution log)
   - CLAUDE.md     (per-iteration instructions)
-  - loop.sh       (loop runner script)
+  - loop.py       (Python UV script with rich output)
   - guardrails.md (constraints)
 
 Quality gates detected:
   - {list of detected gates}
 
-To start the loop:
-  chmod +x .ralph/loop.sh
-  .ralph/loop.sh
+⚠️  AUTONOMOUS MODE
+    This loop runs with --dangerously-skip-permissions
+    Claude will execute commands without prompting for approval
+    Review .ralph/guardrails.md before starting
 
-Or with a different tool:
-  TOOL=amp .ralph/loop.sh
+To start the loop:
+  uv run .ralph/loop.py
 
 Plan source: {plan_path}
 ```
@@ -540,7 +598,7 @@ Files created:
   - prd.json      (6 stories extracted)
   - progress.txt  (execution log)
   - CLAUDE.md     (per-iteration instructions)
-  - loop.sh       (loop runner script)
+  - loop.py       (Python UV script with rich output)
   - guardrails.md (constraints)
 
 Quality gates detected:
@@ -548,9 +606,13 @@ Quality gates detected:
   - npm run lint
   - npx tsc --noEmit
 
+⚠️  AUTONOMOUS MODE
+    This loop runs with --dangerously-skip-permissions
+    Claude will execute commands without prompting for approval
+    Review .ralph/guardrails.md before starting
+
 To start the loop:
-  chmod +x .ralph/loop.sh
-  .ralph/loop.sh
+  uv run .ralph/loop.py
 
 Plan source: .claude/plans/user-authentication.md
 ```
@@ -675,8 +737,7 @@ Proceeding with generation...
 - Read and validate the plan before generating files
 - Extract ALL implementation steps as stories
 - Detect quality gates from project configuration
-- Generate ALL 5 files (prd.json, progress.txt, CLAUDE.md, loop.sh, guardrails.md)
-- Make loop.sh executable
+- Generate ALL 5 files (prd.json, progress.txt, CLAUDE.md, loop.py, guardrails.md)
 - Report completion with next steps
 - Handle existing .ralph/ gracefully
 
@@ -697,4 +758,4 @@ Proceeding with generation...
 - Provide clear error messages with recovery steps
 - Detect as many quality gates as possible
 - Format generated files for readability
-- Include comments in loop.sh for clarity
+- Include docstrings in loop.py for clarity
