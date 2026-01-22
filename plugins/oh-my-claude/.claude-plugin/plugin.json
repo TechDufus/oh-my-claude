@@ -1,6 +1,6 @@
 {
   "name": "oh-my-claude",
-  "version": "0.4.7",
+  "version": "0.4.8",
   "description": "Add 'ultrawork' to any prompt for maximum parallel execution.",
   "author": {
     "name": "TechDufus",
@@ -21,6 +21,7 @@
     "./skills/plan",
     "./skills/worktree",
     "./skills/init-deep",
-    "./skills/ralph-plan"
+    "./skills/ralph-plan",
+    "./skills/ralph-loop-init"
   ]
 }
