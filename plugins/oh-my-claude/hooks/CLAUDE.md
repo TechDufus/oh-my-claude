@@ -64,6 +64,25 @@ if __name__ == "__main__":
 | Output | JSON to stdout | `output_empty()`, `output_context()`, `output_block()` |
 | Debug | stderr | `log_debug()` (only when `HOOK_DEBUG=1`) |
 
+### Available Input Fields
+
+Hook input JSON includes (varies by hook type):
+
+| Field | Description |
+|-------|-------------|
+| `prompt` | User's message (UserPromptSubmit) |
+| `cwd` | Current working directory |
+| `permission_mode` | "plan" when in plan mode, empty otherwise |
+| `tool_name` | Tool being used (PreToolUse, PostToolUse) |
+| `tool_input` | Tool parameters (PreToolUse, PostToolUse) |
+
+Example: Detecting plan mode
+```python
+permission_mode = data.get("permission_mode", "")
+if permission_mode == "plan":
+    # Handle plan mode differently
+```
+
 ## Output Functions
 
 | Function | When | Effect |

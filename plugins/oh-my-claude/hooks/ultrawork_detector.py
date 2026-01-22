@@ -68,6 +68,91 @@ ACTION_VERBS = [
     r"\b(fix|implement|refactor|update|change|modify|rewrite|create|add|build|write|develop|make|configure|integrate|migrate|set up)\b",
 ]
 
+# =============================================================================
+# ULTRAPLAN CONTEXT - Planning-focused guidance for plan mode
+# =============================================================================
+ULTRAPLAN_CONTEXT = """[ULTRAPLAN MODE ACTIVE]
+
+This is STRATEGIC PLANNING MODE. You will research thoroughly BEFORE designing.
+
+## RESEARCH PROTOCOL (MANDATORY)
+
+Before proposing ANY implementation approach:
+
+| Step | Agent | Purpose |
+|------|-------|---------|
+| 1. Explore | scout | Find ALL relevant files, patterns, precedents |
+| 2. Read | librarian | Understand existing architecture, constraints |
+| 3. Map | scout | Identify dependencies, integration points |
+| 4. Analyze | YOU | Synthesize findings into design options |
+
+You MAY NOT write a plan until ALL research steps are complete.
+
+## MULTI-PERSPECTIVE ANALYSIS
+
+For each significant decision, consider AT LEAST 2 approaches:
+
+| Lens | Questions |
+|------|-----------|
+| Simplicity | What's the minimal change that works? |
+| Performance | What are the scaling implications? |
+| Maintainability | How will this affect future changes? |
+| Consistency | Does this match existing patterns? |
+
+Document tradeoffs explicitly. Don't just pick one approach - explain WHY.
+
+## CRITIC REVIEW (MANDATORY)
+
+You MAY NOT call ExitPlanMode until critic agent has reviewed your plan.
+
+```
+Task(subagent_type="oh-my-claude:critic", prompt=\"\"\"
+Review this plan for: {your plan summary}
+
+Check for:
+- Missing edge cases
+- Integration risks
+- Scope creep potential
+- Unclear requirements
+
+Respond with APPROVED or NEEDS_REVISION with specific concerns.
+\"\"\")
+```
+
+If critic returns NEEDS_REVISION:
+1. Address ALL specific concerns
+2. Re-submit to critic
+3. Repeat until APPROVED
+
+## PLAN FILE REQUIREMENTS
+
+Your plan MUST include:
+- [ ] Files to modify (exact paths, with line numbers where relevant)
+- [ ] Design decisions with rationale (why this approach over alternatives)
+- [ ] Known risks and mitigations
+- [ ] Verification strategy (how to test the changes)
+- [ ] Execution order (what depends on what)
+
+Write plan to: `.claude/plans/{descriptive-name}.md`
+
+## SEAMLESS HANDOFF
+
+When plan is approved and execution begins:
+- Ultra Work mode activates automatically in the new session
+- Your plan becomes the execution spec
+- Implementation follows your researched design
+
+## ANTI-PATTERNS
+
+| Don't | Do Instead |
+|-------|------------|
+| Start planning without research | Scout + librarian first |
+| Skip critic review | Mandatory before ExitPlanMode |
+| Vague file references ("somewhere in src") | Exact paths with line numbers |
+| Single approach without alternatives | Compare 2+ approaches |
+| "Should be straightforward" | Investigate until certain |
+"""
+
 
 def is_trivial_request(prompt: str) -> bool:
     """Check if prompt is a simple question without action verbs.
@@ -125,6 +210,16 @@ def main() -> None:
 
     prompt = data.get("prompt", "")
     cwd = data.get("cwd", ".")
+    permission_mode = data.get("permission_mode", "")
+
+    # ==========================================================================
+    # ULTRAPLAN MODE - Auto-inject when in native plan mode
+    # No keyword needed - detected from permission_mode
+    # ==========================================================================
+    if permission_mode == "plan":
+        log_debug("plan mode detected via permission_mode, injecting ultraplan")
+        output_context("UserPromptSubmit", ULTRAPLAN_CONTEXT)
+        output_empty()
 
     # Detect validation commands with graceful degradation
     try:

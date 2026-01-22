@@ -141,6 +141,28 @@ Source: {agent-name or "user"}
 - Include notepad wisdom in agent delegations
 - Agents should append findings, not overwrite
 
+## Ultra Plan Mode
+
+Auto-activates when entering native plan mode (no keyword needed).
+
+### What It Does
+
+| Phase | Behavior |
+|-------|----------|
+| Research | Mandatory scout + librarian before designing |
+| Analysis | Must consider 2+ approaches with tradeoffs |
+| Review | Critic agent MUST approve before ExitPlanMode |
+| Handoff | Plan path saved for execution session |
+
+### Plan→Execution Transition
+
+When you approve a plan (ExitPlanMode):
+1. Hook saves plan file path to marker
+2. Next session auto-injects ultrawork + plan reference
+3. Claude reads plan and creates todos from it
+
+This enables seamless planning→implementation workflow across sessions.
+
 ## Other Keywords
 
 | Keyword | Shortcut | Effect |

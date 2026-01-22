@@ -90,6 +90,11 @@
           },
           {
             "type": "command",
+            "command": "uv run --script ${CLAUDE_PLUGIN_ROOT}/hooks/session_start.py",
+            "timeout": 5
+          },
+          {
+            "type": "command",
             "command": "uv run --script ${CLAUDE_PLUGIN_ROOT}/hooks/openkanban_status.py",
             "timeout": 2
           }
@@ -131,6 +136,16 @@
       }
     ],
     "PostToolUse": [
+      {
+        "matcher": "ExitPlanMode",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "uv run --script ${CLAUDE_PLUGIN_ROOT}/hooks/plan_approved.py",
+            "timeout": 5
+          }
+        ]
+      },
       {
         "matcher": ".*",
         "hooks": [
