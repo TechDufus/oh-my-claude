@@ -63,3 +63,28 @@ Key: PEP 723 inline deps, JSON stdin/stdout, `@hook_main` decorator.
 5. Skills must be explicitly listed in plugin.json
 
 See `/PLUGIN-STRUCTURE.md` for complete guide.
+
+## Claude Code Update Sources
+
+Official sources for researching Claude Code features and release notes.
+
+### Primary (Most Stable)
+| Source | URL |
+|--------|-----|
+| GitHub Releases | https://github.com/anthropics/claude-code/releases |
+| CHANGELOG.md | https://github.com/anthropics/claude-code/blob/main/CHANGELOG.md |
+
+### Documentation
+| Doc | URL |
+|-----|-----|
+| Claude Code Docs | https://docs.anthropic.com/en/docs/claude-code/overview |
+| Hooks Reference | https://docs.anthropic.com/en/docs/claude-code/hooks |
+| Agent SDK | https://docs.anthropic.com/en/docs/claude-code/sdk |
+
+### Announcements
+| Source | URL |
+|--------|-----|
+| Anthropic News | https://www.anthropic.com/news |
+| Engineering Blog | https://www.anthropic.com/engineering |
+| Discord | https://discord.gg/anthropic |
+| @AnthropicAI | https://x.com/AnthropicAI |
