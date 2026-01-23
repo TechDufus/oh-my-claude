@@ -58,6 +58,7 @@ def analyze_transcript(transcript: list[dict[str, Any]], max_entries: int = 1000
         "last_assistant_message": "",
         "validation_ran": False,
         "last_todo_write": None,
+        "last_task_list": None,  # Track TaskList tool results
     }
 
     for i, entry in enumerate(transcript):
@@ -79,6 +80,12 @@ def analyze_transcript(transcript: list[dict[str, Any]], max_entries: int = 1000
             todos = entry.get("todos")
             if todos is not None:
                 result["last_todo_write"] = todos
+
+        # Track TaskList results (complete state snapshot)
+        if entry_type == "tool_result" and entry.get("tool") == "TaskList":
+            tasks = entry.get("tasks")
+            if tasks is not None:
+                result["last_task_list"] = tasks
 
         # Check for validation triggers
         if not result["validation_ran"]:
@@ -122,6 +129,25 @@ def count_todos_by_status(todos: list[dict[str, Any]] | None) -> tuple[int, int]
     incomplete = sum(1 for t in todos if t.get("status") in ("pending", "in_progress"))
     completed = sum(1 for t in todos if t.get("status") == "completed")
     return incomplete, completed
+
+
+def count_tasks_by_status(task_list: list[dict[str, Any]] | None) -> tuple[int, int]:
+    """
+    Count incomplete (pending/in_progress) and completed tasks.
+
+    Returns:
+        Tuple of (incomplete_count, completed_count).
+    """
+    if not task_list:
+        return 0, 0
+    incomplete = sum(1 for t in task_list if t.get("status") in ("pending", "in_progress"))
+    completed = sum(1 for t in task_list if t.get("status") == "completed")
+    return incomplete, completed
+
+
+def should_use_task_system() -> bool:
+    """Check if Task system is enabled (default: True)."""
+    return os.environ.get("OMC_USE_TASK_SYSTEM", "1").lower() not in ("0", "false", "no")
 
 
 def has_uncommitted_changes(cwd: str) -> bool:
@@ -197,25 +223,37 @@ def main() -> None:
     transcript = data.get("transcript") or []
     analysis = analyze_transcript(transcript)
 
-    # Check for incomplete todos - first from .todos field
-    incomplete_todos = get_incomplete_todos_from_todos(data)
-    completed_todos = get_completed_todos_from_todos(data)
+    # 2-level detection: Task system preferred, TodoWrite fallback
+    if should_use_task_system():
+        task_incomplete, task_completed = count_tasks_by_status(analysis["last_task_list"])
+    else:
+        task_incomplete, task_completed = 0, 0
 
-    # Fall back to transcript if no .todos field
-    if incomplete_todos == 0 and completed_todos == 0:
-        transcript_incomplete, transcript_completed = count_todos_by_status(
-            analysis["last_todo_write"]
-        )
-        incomplete_todos = transcript_incomplete
-        completed_todos = transcript_completed
+    # Fall back to TodoWrite if no Task data
+    if task_incomplete == 0 and task_completed == 0:
+        # First try .todos field from hook input
+        todo_incomplete = get_incomplete_todos_from_todos(data)
+        todo_completed = get_completed_todos_from_todos(data)
+
+        # Then try transcript if no .todos field
+        if todo_incomplete == 0 and todo_completed == 0:
+            todo_incomplete, todo_completed = count_todos_by_status(
+                analysis["last_todo_write"]
+            )
+
+        incomplete_todos = todo_incomplete
+        completed_todos = todo_completed
+    else:
+        incomplete_todos = task_incomplete
+        completed_todos = task_completed
 
     # Collect all issues that should prevent stopping
     cwd = data.get("cwd") or "."
     issues: list[str] = []
 
-    # Check 1: Incomplete todos
+    # Check 1: Incomplete tasks/todos
     if incomplete_todos > 0:
-        issues.append(f"Incomplete todos: {incomplete_todos} remaining")
+        issues.append(f"Open tasks: {incomplete_todos} remaining")
 
     # Check 2: Active plan drafts (if enabled)
     if should_check_plans():
@@ -238,7 +276,7 @@ The following issues prevent stopping:
 
 ## Rules
 - You CANNOT stop until ALL issues are resolved
-- For incomplete todos: Review your TodoWrite list and continue working
+- For open tasks: Use TaskList to verify all tasks completed, then continue working
 - For active plans: Complete or archive the plan drafts
 - For uncommitted changes: Commit or stash the changes
 - Do NOT ask for permission - just continue working

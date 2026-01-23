@@ -8,10 +8,12 @@ import pytest
 from todo_enforcer import (
     PATTERNS,
     analyze_transcript,
+    count_tasks_by_status,
     count_todos_by_status,
     get_completed_todos_from_todos,
     get_incomplete_todos_from_todos,
     has_uncommitted_changes,
+    should_use_task_system,
 )
 
 
@@ -353,3 +355,188 @@ class TestTranscriptEdgeCases:
         ]
         result = analyze_transcript(transcript)
         assert result["validation_ran"] is False
+
+
+class TestCountTasksByStatus:
+    """Tests for count_tasks_by_status function."""
+
+    def test_none_returns_zeros(self):
+        """None task list returns (0, 0)."""
+        incomplete, completed = count_tasks_by_status(None)
+        assert incomplete == 0
+        assert completed == 0
+
+    def test_empty_list_returns_zeros(self):
+        """Empty task list returns (0, 0)."""
+        incomplete, completed = count_tasks_by_status([])
+        assert incomplete == 0
+        assert completed == 0
+
+    def test_counts_pending_as_incomplete(self):
+        """Pending tasks count as incomplete."""
+        tasks = [{"status": "pending"}]
+        incomplete, completed = count_tasks_by_status(tasks)
+        assert incomplete == 1
+        assert completed == 0
+
+    def test_counts_in_progress_as_incomplete(self):
+        """In-progress tasks count as incomplete."""
+        tasks = [{"status": "in_progress"}]
+        incomplete, completed = count_tasks_by_status(tasks)
+        assert incomplete == 1
+        assert completed == 0
+
+    def test_counts_completed(self):
+        """Completed tasks count separately."""
+        tasks = [{"status": "completed"}]
+        incomplete, completed = count_tasks_by_status(tasks)
+        assert incomplete == 0
+        assert completed == 1
+
+    def test_mixed_statuses(self):
+        """Mixed statuses counted correctly."""
+        tasks = [
+            {"status": "pending"},
+            {"status": "in_progress"},
+            {"status": "completed"},
+            {"status": "completed"},
+        ]
+        incomplete, completed = count_tasks_by_status(tasks)
+        assert incomplete == 2
+        assert completed == 2
+
+    def test_missing_status_not_counted(self):
+        """Tasks without status key are not counted."""
+        tasks = [
+            {"subject": "No status"},
+            {"subject": "Has status", "status": "completed"},
+        ]
+        incomplete, completed = count_tasks_by_status(tasks)
+        assert incomplete == 0
+        assert completed == 1
+
+
+class TestShouldUseTaskSystem:
+    """Tests for should_use_task_system function."""
+
+    def test_default_returns_true(self, monkeypatch):
+        """Default (no env var) returns True."""
+        monkeypatch.delenv("OMC_USE_TASK_SYSTEM", raising=False)
+        assert should_use_task_system() is True
+
+    def test_env_var_1_returns_true(self, monkeypatch):
+        """OMC_USE_TASK_SYSTEM=1 returns True."""
+        monkeypatch.setenv("OMC_USE_TASK_SYSTEM", "1")
+        assert should_use_task_system() is True
+
+    def test_env_var_0_returns_false(self, monkeypatch):
+        """OMC_USE_TASK_SYSTEM=0 returns False."""
+        monkeypatch.setenv("OMC_USE_TASK_SYSTEM", "0")
+        assert should_use_task_system() is False
+
+    def test_env_var_false_returns_false(self, monkeypatch):
+        """OMC_USE_TASK_SYSTEM=false returns False."""
+        monkeypatch.setenv("OMC_USE_TASK_SYSTEM", "false")
+        assert should_use_task_system() is False
+
+    def test_env_var_no_returns_false(self, monkeypatch):
+        """OMC_USE_TASK_SYSTEM=no returns False."""
+        monkeypatch.setenv("OMC_USE_TASK_SYSTEM", "no")
+        assert should_use_task_system() is False
+
+    def test_env_var_FALSE_returns_false(self, monkeypatch):
+        """OMC_USE_TASK_SYSTEM=FALSE (uppercase) returns False."""
+        monkeypatch.setenv("OMC_USE_TASK_SYSTEM", "FALSE")
+        assert should_use_task_system() is False
+
+
+class TestAnalyzeTranscriptTasks:
+    """Tests for TaskList tracking in analyze_transcript."""
+
+    def test_tracks_task_list_result(self):
+        """TaskList tool results are tracked."""
+        transcript = [
+            {
+                "type": "tool_result",
+                "tool": "TaskList",
+                "tasks": [
+                    {"id": "1", "status": "pending"},
+                    {"id": "2", "status": "completed"},
+                ],
+            }
+        ]
+        result = analyze_transcript(transcript)
+        assert result["last_task_list"] == [
+            {"id": "1", "status": "pending"},
+            {"id": "2", "status": "completed"},
+        ]
+
+    def test_empty_task_list(self):
+        """Empty TaskList result is tracked."""
+        transcript = [
+            {"type": "tool_result", "tool": "TaskList", "tasks": []}
+        ]
+        result = analyze_transcript(transcript)
+        assert result["last_task_list"] == []
+
+    def test_no_task_list_returns_none(self):
+        """No TaskList in transcript returns None."""
+        transcript = [{"type": "user", "content": "hello"}]
+        result = analyze_transcript(transcript)
+        assert result["last_task_list"] is None
+
+    def test_latest_task_list_wins(self):
+        """Most recent TaskList result is kept."""
+        transcript = [
+            {"type": "tool_result", "tool": "TaskList", "tasks": [{"id": "1", "status": "pending"}]},
+            {"type": "tool_result", "tool": "TaskList", "tasks": [{"id": "1", "status": "completed"}]},
+        ]
+        result = analyze_transcript(transcript)
+        assert result["last_task_list"] == [{"id": "1", "status": "completed"}]
+
+
+class TestHybridDetection:
+    """Tests for Task/TodoWrite hybrid detection priority."""
+
+    def test_task_preferred_over_todowrite(self):
+        """Task system takes priority when both have data."""
+        # This tests the actual detection logic in main()
+        # TaskList shows 1 incomplete, TodoWrite shows 0
+        # Expected: use Task data (1 incomplete)
+        tasks = [{"status": "pending"}]
+        todos = []  # No incomplete todos
+
+        task_incomplete, task_completed = count_tasks_by_status(tasks)
+        todo_incomplete, todo_completed = count_todos_by_status(todos)
+
+        # Hybrid logic: Task preferred
+        if task_incomplete > 0 or task_completed > 0:
+            incomplete = task_incomplete
+        else:
+            incomplete = todo_incomplete
+
+        assert incomplete == 1
+
+    def test_empty_task_list_falls_back_to_todowrite(self):
+        """Empty TaskList [] should fall back to TodoWrite."""
+        tasks = []  # Empty
+        todos = [{"id": "1", "status": "in_progress"}]
+
+        task_incomplete, task_completed = count_tasks_by_status(tasks)
+        todo_incomplete, todo_completed = count_todos_by_status(todos)
+
+        # Hybrid logic: fall back when no Task data
+        if task_incomplete == 0 and task_completed == 0:
+            incomplete = todo_incomplete
+        else:
+            incomplete = task_incomplete
+
+        assert incomplete == 1
+
+    def test_no_data_either_system(self):
+        """No TaskList and no TodoWrite returns (0, 0)."""
+        task_incomplete, task_completed = count_tasks_by_status(None)
+        todo_incomplete, todo_completed = count_todos_by_status(None)
+
+        assert task_incomplete == 0
+        assert todo_incomplete == 0

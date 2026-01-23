@@ -428,7 +428,7 @@ class TestPlanExecutionMarker:
         context = get_context(output)
         assert "ULTRAWORK MODE ACTIVE" in context
         assert "PLAN EXECUTION" in context
-        assert "Create todos" in context
+        assert "Create tasks" in context
 
     def test_marker_consumed_after_detection(self, marker_home_with_marker):
         """Marker should be deleted after successful injection."""
@@ -450,7 +450,7 @@ class TestPlanExecutionMarker:
         # Should get PLAN_EXECUTION context, not generic ULTRAWORK context
         assert "PLAN EXECUTION" in context
         # Plan execution context includes ULTRAWORK header but has different content
-        assert "Create todos" in context
+        assert "Create tasks" in context
 
     def test_no_marker_normal_ultrawork_behavior(self, marker_home):
         """Without marker, ultrawork keyword should inject generic ultrawork context."""
@@ -480,7 +480,7 @@ class TestPlanExecutionMarker:
             marker_home_with_marker,
         )
         context = get_context(output)
-        assert "Create todos" in context
+        assert "Create tasks" in context
         assert "Execute in order" in context
         assert "Verify each step" in context
 

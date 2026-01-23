@@ -121,7 +121,7 @@ Context protection is always on. Ultrawork adds execution intensity.
 | Aspect | Default | Ultrawork |
 |--------|---------|-----------|
 | Parallelization | When sensible | AGGRESSIVE |
-| TodoWrite | When helpful | MANDATORY (3+ todos) |
+| Task Tracking | When helpful | MANDATORY (3+ tasks via TaskCreate) |
 | Stopping | After milestones | NEVER until ALL complete |
 | Questions | When unclear | NEVER - decide and document |
 | Validation | When appropriate | REQUIRED before stopping |
