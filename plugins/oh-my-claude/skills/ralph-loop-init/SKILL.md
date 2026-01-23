@@ -321,25 +321,29 @@ See `.ralph/guardrails.md` for constraints and boundaries.
 #!/usr/bin/env -S uv run --script
 # /// script
 # requires-python = ">=3.11"
-# dependencies = ["rich"]
+# dependencies = ["rich>=13.0.0"]
 # ///
 """
 Ralph Loop Runner
 
 Executes AI iterations until all stories complete.
-Uses rich for beautiful terminal output with progress tracking.
+Uses rich Live display for Docker-style in-place updates.
 """
 
 import json
 import os
 import subprocess
 import sys
+import time
+from datetime import datetime
 from pathlib import Path
 
-from rich.console import Console
+from rich.console import Console, Group
+from rich.live import Live
 from rich.panel import Panel
-
-console = Console()
+from rich.progress import BarColumn, Progress, SpinnerColumn, TextColumn
+from rich.table import Table
+from rich.text import Text
 
 RALPH_DIR = Path(".ralph")
 PRD_FILE = RALPH_DIR / "prd.json"
@@ -352,81 +356,125 @@ def load_prd() -> dict:
         return json.load(f)
 
 
-def count_stories(prd: dict) -> tuple[int, int]:
-    """Return (complete, total) story counts."""
-    stories = prd["stories"]
-    complete = sum(1 for s in stories if s["passes"])
-    return complete, len(stories)
-
-
 def get_next_story(prd: dict) -> dict | None:
     """Get the next incomplete story by priority."""
     incomplete = [s for s in prd["stories"] if not s["passes"]]
     return min(incomplete, key=lambda s: s["priority"]) if incomplete else None
 
 
+def format_duration(seconds: float) -> str:
+    """Format seconds as human-readable duration."""
+    if seconds < 60:
+        return f"{seconds:.0f}s"
+    elif seconds < 3600:
+        return f"{int(seconds // 60)}m {int(seconds % 60)}s"
+    else:
+        return f"{int(seconds // 3600)}h {int((seconds % 3600) // 60)}m"
+
+
 def run_claude() -> int:
     """Run claude and return exit code."""
-    result = subprocess.run([
-        "claude",
-        "--dangerously-skip-permissions",
-        "--print",
-        "Execute ralph loop iteration per .ralph/CLAUDE.md"
-    ])
+    result = subprocess.run(
+        ["claude", "--dangerously-skip-permissions", "--print",
+         "Execute ralph loop iteration per .ralph/CLAUDE.md"],
+        capture_output=False
+    )
     return result.returncode
 
 
-def show_header(max_iterations: int, complete: int, total: int):
-    """Display the header panel with autonomous mode warning."""
-    console.print(Panel.fit(
-        f"[bold cyan]Ralph Loop Runner[/]\n\n"
-        f"[bold yellow]⚠️  AUTONOMOUS MODE ENABLED[/]\n"
-        f"[dim]Commands execute without approval[/]\n\n"
-        f"[dim]Max:[/] [yellow]{max_iterations}[/]  "
-        f"[dim]Progress:[/] [green]{complete}[/]/[cyan]{total}[/]",
-        border_style="blue",
-        title="🔄 ralph",
-        title_align="left"
-    ))
-
-
-def show_iteration(iteration: int, max_iterations: int, story: dict, remaining: int):
-    """Display iteration info."""
-    console.print()
-    console.rule(f"[bold]Iteration {iteration}/{max_iterations}[/]", style="dim")
-    console.print(f"[cyan]Next:[/] {story['id']} - {story['title']}")
-    console.print(f"[dim]Remaining:[/] {remaining} stories")
-    console.print()
-
-
-def show_progress_bar(complete: int, total: int):
-    """Display a simple progress indicator."""
+def build_dashboard(
+    prd: dict,
+    iteration: int,
+    max_iterations: int,
+    elapsed: float,
+    status: str = "working",
+    current_story: dict | None = None,
+) -> Group:
+    """Build the complete dashboard display."""
+    stories = prd["stories"]
+    complete = sum(1 for s in stories if s["passes"])
+    total = len(stories)
     pct = (complete / total * 100) if total > 0 else 0
-    filled = int(pct / 5)
-    bar = "█" * filled + "░" * (20 - filled)
-    console.print(f"[cyan]Progress:[/] [{bar}] {complete}/{total} ({pct:.0f}%)")
 
+    # Status indicators
+    status_icons = {
+        "working": ("yellow", "◉", "WORKING"),
+        "complete": ("green", "✓", "COMPLETE"),
+        "max_iterations": ("yellow", "⚠", "MAX ITERATIONS"),
+        "error": ("red", "✗", "ERROR"),
+    }
+    color, icon, label = status_icons.get(status, ("white", "?", "UNKNOWN"))
 
-def show_completion():
-    """Display completion panel."""
-    console.print()
-    console.print(Panel.fit(
-        "[bold green]✓ All stories complete![/]",
-        border_style="green"
-    ))
+    # Header with status
+    header_text = Text()
+    header_text.append(f" {icon} ", style=f"bold {color}")
+    header_text.append(label, style=f"bold {color}")
+    header_text.append(f"  ⏱ {format_duration(elapsed)}", style="dim")
 
+    iter_text = Text()
+    iter_text.append("Iteration ", style="dim")
+    iter_text.append(f"{iteration}", style="bold white")
+    iter_text.append(f" / {max_iterations}", style="dim")
+    iter_text.append("   ", style="dim")
+    iter_text.append("Progress ", style="dim")
+    iter_text.append(f"{complete}", style="bold green")
+    iter_text.append(f" / {total}", style="dim")
+    iter_text.append(f" ({pct:.0f}%)", style="dim")
 
-def show_max_reached(max_iterations: int, incomplete: int):
-    """Display max iterations panel."""
-    console.print()
-    console.print(Panel.fit(
-        f"[bold yellow]Max iterations reached ({max_iterations})[/]\n"
-        f"[red]{incomplete} stories still incomplete[/]",
-        border_style="yellow"
-    ))
+    header_content = Text()
+    header_content.append_text(header_text)
+    header_content.append("\n")
+    header_content.append_text(iter_text)
+
+    header = Panel(
+        header_content,
+        title="[bold blue]Ralph Loop[/]",
+        subtitle="[dim]autonomous mode[/]",
+        border_style="blue",
+        padding=(0, 1),
+    )
+
+    # Stories table - compact view
+    table = Table(
+        show_header=False,
+        border_style="dim",
+        expand=True,
+        padding=(0, 1),
+        show_edge=False,
+    )
+    table.add_column("", width=2)
+    table.add_column("Story", ratio=1)
+
+    for story in stories:
+        if story["passes"]:
+            icon_str, style = "✓", "green"
+        elif current_story and story["id"] == current_story["id"]:
+            icon_str, style = "▸", "yellow bold"
+        else:
+            icon_str, style = "○", "dim"
+
+        # Truncate long titles
+        title = story["title"]
+        if len(title) > 60:
+            title = title[:57] + "..."
+
+        table.add_row(f"[{style}]{icon_str}[/]", f"[{style}]{title}[/]")
+
+    stories_panel = Panel(
+        table,
+        title="[bold]Stories[/]",
+        border_style="dim",
+        padding=(0, 0),
+    )
+
+    # Footer
+    footer = Text("Ctrl+C to abort", style="dim italic")
+
+    return Group(header, "", stories_panel, "", footer)
 
 
 def main():
+    console = Console()
     max_iterations = int(os.environ.get("MAX_ITERATIONS", "10"))
 
     # Verify ralph directory
@@ -439,43 +487,47 @@ def main():
         console.print(f"[red]Error:[/] {PRD_FILE} not found")
         sys.exit(1)
 
-    # Load PRD and show header
-    prd = load_prd()
-    complete, total = count_stories(prd)
-    show_header(max_iterations, complete, total)
+    console.print()
+    start_time = time.time()
 
-    # Main loop
+    # Main loop with live display
     for iteration in range(1, max_iterations + 1):
-        prd = load_prd()  # Reload each iteration
-        complete, total = count_stories(prd)
-        incomplete = total - complete
+        prd = load_prd()
+        next_story = get_next_story(prd)
 
-        if incomplete == 0:
-            show_completion()
+        if not next_story:
+            # All complete
+            elapsed = time.time() - start_time
+            dashboard = build_dashboard(prd, iteration, max_iterations, elapsed, "complete")
+            console.print(dashboard)
+            console.print()
+            console.print("[bold green]✓ All stories complete![/]")
             sys.exit(0)
 
-        next_story = get_next_story(prd)
-        show_iteration(iteration, max_iterations, next_story, incomplete)
+        # Show dashboard before running claude
+        elapsed = time.time() - start_time
+        dashboard = build_dashboard(prd, iteration, max_iterations, elapsed, "working", next_story)
+        console.print(dashboard)
+        console.print()
 
-        # Run claude with visible output
-        with console.status("[bold green]Starting claude...[/]", spinner="dots"):
-            pass  # Brief status then let subprocess take over
-
+        # Run claude (output streams directly to terminal)
+        console.print(f"[dim]─── claude: {next_story['id']} ───[/]")
         exit_code = run_claude()
+        console.print(f"[dim]─── exit: {exit_code} ───[/]")
+        console.print()
 
         if exit_code != 0:
             console.print(f"[yellow]Warning:[/] claude exited with code {exit_code}")
 
-        # Show updated progress
-        prd = load_prd()
-        complete, total = count_stories(prd)
-        show_progress_bar(complete, total)
-
     # Max iterations reached
     prd = load_prd()
-    complete, total = count_stories(prd)
-    incomplete = total - complete
-    show_max_reached(max_iterations, incomplete)
+    elapsed = time.time() - start_time
+    incomplete = sum(1 for s in prd["stories"] if not s["passes"])
+
+    dashboard = build_dashboard(prd, max_iterations, max_iterations, elapsed, "max_iterations")
+    console.print(dashboard)
+    console.print()
+    console.print(f"[yellow]Max iterations reached. {incomplete} stories remaining.[/]")
     sys.exit(1 if incomplete > 0 else 0)
 
 
