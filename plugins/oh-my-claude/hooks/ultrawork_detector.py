@@ -307,7 +307,6 @@ def main() -> None:
     prompt = data.get("prompt", "")
     cwd = data.get("cwd", ".")
     permission_mode = data.get("permission_mode", "")
-    session_id = data.get("session_id", "unknown")
 
     # ==========================================================================
     # PLAN EXECUTION - Check prompt content (handles Accept and clear)
