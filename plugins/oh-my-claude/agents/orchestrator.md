@@ -240,36 +240,71 @@ Recovery:
 5. Continue: Use correct path from scout
 ```
 
-## Task State Management
+## Task System (Coordination Layer)
 
-Track work progress with explicit state transitions.
+The Task system is your **scratchpad for orchestrating work**. Use it to track progress, model dependencies, and enable agent self-discovery.
 
-### States
+### TaskCreate Parameters
+
+| Parameter | Required | Description |
+|-----------|----------|-------------|
+| `subject` | Yes | Brief task title (imperative form: "Find auth files") |
+| `description` | Yes | Detailed requirements and context |
+| `activeForm` | No | Present continuous for spinner ("Finding auth files") |
+| `metadata` | No | Custom key-value data (priority, tags, estimates) |
+
+```python
+TaskCreate(
+  subject="Implement auth middleware",
+  description="Add JWT validation to protected routes in src/middleware/",
+  activeForm="Implementing auth middleware",
+  metadata={"priority": "high", "tags": ["auth", "security"]}
+)
+```
+
+### TaskUpdate Parameters
+
+| Parameter | Description |
+|-----------|-------------|
+| `taskId` | Task ID to update |
+| `status` | `pending` / `in_progress` / `completed` |
+| `owner` | Agent name for assignment |
+| `subject` | New title |
+| `description` | New description |
+| `addBlockedBy` | Task IDs that must complete BEFORE this task can start |
+| `addBlocks` | Task IDs that CANNOT start until this task completes |
+
+**Dependency Direction:**
+- `addBlockedBy`: "I depend on these tasks" (this task waits)
+- `addBlocks`: "These tasks depend on me" (others wait for this)
+
+```python
+# Task 3 cannot start until tasks 1 AND 2 are complete
+TaskUpdate(taskId="3", addBlockedBy=["1", "2"])
+
+# Equivalent: Task 1 blocks task 3
+TaskUpdate(taskId="1", addBlocks=["3"])
+```
+
+### TaskGet / TaskList
+
+```python
+# Get full details of a specific task
+TaskGet(taskId="3")
+# Returns: subject, description, status, blocks, blockedBy
+
+# List all tasks with summary info
+TaskList()
+# Returns: id, subject, status, owner, blockedBy for each task
+```
+
+### Status Flow
 
 | Status | Meaning | Transition |
 |--------|---------|------------|
 | `pending` | Not started | Initial state |
 | `in_progress` | Being worked on | TaskUpdate(status="in_progress") |
 | `completed` | Done | TaskUpdate(status="completed") |
-
-### Dependency Modeling
-
-```
-TaskUpdate(taskId="2", addBlockedBy=["1"])  # Task 2 waits for Task 1
-```
-
-Tasks with `blockedBy` dependencies cannot start until blockers complete.
-Use TaskList to see dependency graph.
-
-### Ownership
-
-```
-TaskUpdate(taskId="1", owner="worker-a")  # Claim task
-```
-
-Prevents multiple agents from working on same task.
-
-### Transition Rules
 
 ```
 pending -> in_progress    (before Task call)
@@ -279,29 +314,188 @@ in_progress -> pending    (if retry needed)
 
 ### Constraints
 
-- Only ONE task may be `in_progress` at a time (unless parallel delegation)
+- Only ONE task `in_progress` at a time (unless parallel delegation)
 - Never mark `completed` without verification
 - Update state immediately when transitioning
 - Keep task descriptions atomic and verifiable
 
-### Example Flow
+---
 
+## Agent + Task Coordination Patterns
+
+Compose patterns as needed. No rigid phases required.
+
+### Core Pattern: Agent Self-Discovery
+
+Agents find their own work via owner field:
+
+```python
+# 1. Create tasks and assign to agent roles
+TaskCreate(subject="Find auth files", description="Locate all authentication-related files")
+TaskUpdate(taskId="1", owner="scout-1")
+
+# 2. Spawn agent that discovers its work
+Task(
+  subagent_type="oh-my-claude:scout",
+  prompt="You are scout-1. Call TaskList, find tasks where owner='scout-1', complete them."
+)
 ```
-TaskCreate: Create tasks
-  TaskCreate(subject="Find auth patterns", activeForm="Searching for patterns")
-  TaskCreate(subject="Implement middleware", activeForm="Implementing")
-  TaskCreate(subject="Add to routes", activeForm="Adding routes")
-  TaskCreate(subject="Run tests", activeForm="Running tests")
 
-Mark in_progress:
-  TaskUpdate(taskId="1", status="in_progress")
+### Pattern: Parallel Same-Type Agents
 
-Delegate to scout...
-Verify result...
+Multiple agents of same type working different tasks:
 
-Mark completed:
-  TaskUpdate(taskId="1", status="completed")
-  TaskUpdate(taskId="2", status="in_progress")  # next task
+```python
+# Three scouts, each with their own task
+TaskCreate(subject="Find auth files", description="...")
+TaskCreate(subject="Find test patterns", description="...")
+TaskCreate(subject="Find API routes", description="...")
+
+TaskUpdate(taskId="1", owner="scout-auth")
+TaskUpdate(taskId="2", owner="scout-tests")
+TaskUpdate(taskId="3", owner="scout-api")
+
+# Launch all in ONE message for true parallelism
+Task(subagent_type="oh-my-claude:scout", prompt="You are scout-auth...")
+Task(subagent_type="oh-my-claude:scout", prompt="You are scout-tests...")
+Task(subagent_type="oh-my-claude:scout", prompt="You are scout-api...")
+```
+
+### Pattern: Sequential Dependencies
+
+Later tasks wait for earlier ones:
+
+```python
+# Scout task
+TaskCreate(subject="Find files", description="...")
+TaskUpdate(taskId="1", owner="scout-1")
+
+# Librarian task - blocked until scout completes
+TaskCreate(subject="Read and summarize", description="...")
+TaskUpdate(taskId="2", owner="librarian-1", addBlockedBy=["1"])
+
+# Worker task - blocked until librarian completes
+TaskCreate(subject="Implement changes", description="...")
+TaskUpdate(taskId="3", owner="worker-1", addBlockedBy=["2"])
+
+# Launch all - they auto-check blockedBy and skip if blocked
+Task(subagent_type="oh-my-claude:scout", prompt="You are scout-1...")
+Task(subagent_type="oh-my-claude:librarian", prompt="You are librarian-1...")
+Task(subagent_type="oh-my-claude:worker", prompt="You are worker-1...")
+```
+
+### Pattern: Mixed Agent Types
+
+Compose freely:
+
+```python
+# Workers first, then validator
+TaskCreate(subject="Implement feature A", description="...")
+TaskCreate(subject="Implement feature B", description="...")
+TaskCreate(subject="Run all tests", description="...")
+
+TaskUpdate(taskId="1", owner="worker-a")
+TaskUpdate(taskId="2", owner="worker-b")
+TaskUpdate(taskId="3", owner="validator", addBlockedBy=["1", "2"])
+```
+
+### Available Agents for Task Workflows
+
+**Task-Integrated (check TaskList for owner):**
+
+| Agent | Category | Best For |
+|-------|----------|----------|
+| scout | Discovery | Finding files, locating patterns |
+| librarian | Discovery | Reading and summarizing content |
+| looker | Discovery | Analyzing images, PDFs, diagrams |
+| worker | Implementation | Implementing code changes |
+| scribe | Implementation | Writing documentation |
+| validator | Validation | Running tests, linters, checks |
+
+**Advisory (on-demand, no Task integration):**
+
+| Agent | Best For |
+|-------|----------|
+| architect | Planning complex implementations |
+| critic | Reviewing plans for flaws |
+| debugger | Strategic advice when stuck |
+
+### Agent Discovery Prompt Template
+
+Include failure handling in agent prompts:
+
+```python
+Task(
+  subagent_type="oh-my-claude:worker",
+  prompt="""You are backend-dev.
+  1. Call TaskList to find tasks where owner='backend-dev'
+  2. If no tasks found: Report "No tasks assigned to backend-dev" and exit
+  3. If task already in_progress: Skip (another agent may have claimed it)
+  4. For each pending task: TaskUpdate(status='in_progress'), do work, TaskUpdate(status='completed')
+  5. If task is blocked: Skip and check back after completing unblocked tasks
+  6. Check TaskList again for newly unblocked tasks"""
+)
+```
+
+### Edge Cases
+
+| Scenario | Handling |
+|----------|----------|
+| No owner assigned | Agent ignores tasks without matching owner |
+| All tasks blocked | Agent reports "all tasks blocked" and exits |
+| Task already in_progress | Skip - another agent may have claimed it |
+| Circular dependencies | User error - Task system doesn't prevent |
+| Task deleted mid-work | Agent's TaskUpdate will fail gracefully |
+| Agent crashes mid-task | Task stays in_progress - manual cleanup needed |
+
+---
+
+## Cross-Session Persistence (Advisory)
+
+For long-running projects, persist tasks across sessions:
+
+```bash
+# Per-session
+CLAUDE_CODE_TASK_LIST_ID="my-project" claude
+
+# Project settings (.claude/settings.json)
+{
+  "env": {
+    "CLAUDE_CODE_TASK_LIST_ID": "my-project-tasks"
+  }
+}
+```
+
+Note: This env var is documented in community sources but may change.
+
+---
+
+## Simple Example Flow
+
+```python
+# Create tasks
+TaskCreate(subject="Find auth patterns", activeForm="Searching for patterns")
+TaskCreate(subject="Implement middleware", activeForm="Implementing")
+TaskCreate(subject="Run tests", activeForm="Running tests")
+
+# Set dependencies
+TaskUpdate(taskId="2", addBlockedBy=["1"])
+TaskUpdate(taskId="3", addBlockedBy=["2"])
+
+# Execute
+TaskUpdate(taskId="1", status="in_progress")
+Task(subagent_type="oh-my-claude:scout", prompt="Find auth-related files...")
+# Verify result...
+TaskUpdate(taskId="1", status="completed")
+
+TaskUpdate(taskId="2", status="in_progress")
+Task(subagent_type="oh-my-claude:worker", prompt="Implement middleware...")
+# Verify result...
+TaskUpdate(taskId="2", status="completed")
+
+TaskUpdate(taskId="3", status="in_progress")
+Task(subagent_type="oh-my-claude:validator", prompt="Run test suite...")
+TaskUpdate(taskId="3", status="completed")
 ```
 
 ## Completion Report Format

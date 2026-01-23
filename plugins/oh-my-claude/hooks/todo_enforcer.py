@@ -281,6 +281,20 @@ The following issues prevent stopping:
 - For uncommitted changes: Commit or stash the changes
 - Do NOT ask for permission - just continue working
 
+## Task System Patterns
+
+If you have open tasks, consider these approaches:
+
+**Sequential work:** Mark task in_progress, complete it, mark completed, move to next.
+
+**Parallel work:** Delegate to oh-my-claude agents with owner assignment:
+```
+TaskUpdate(taskId="1", owner="worker-a")
+Task(subagent_type="oh-my-claude:worker", prompt="You are worker-a. Find your tasks via TaskList...")
+```
+
+**Blocked tasks:** Check if blocking tasks are complete, then proceed with unblocked work.
+
 ## Next Action
 Address the issues above, starting with the most critical.
 

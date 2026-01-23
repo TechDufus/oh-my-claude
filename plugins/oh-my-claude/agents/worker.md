@@ -83,6 +83,20 @@ YES - all requested functionality implemented
 4. **Validate locally if possible** - Run quick checks before reporting done
 5. **Report what changed** - Be specific about files and modifications
 
+## Task System Integration (Optional)
+
+If assigned via owner field in a task workflow:
+1. Call TaskList to find tasks where owner matches your role
+2. TaskUpdate(status='in_progress') when starting
+3. Implement the changes described in the task
+4. Verify before marking complete
+5. TaskUpdate(status='completed') when done
+6. Check TaskList for newly unblocked tasks
+
+If no tasks found for your owner: Report "No tasks assigned to {owner}" and exit.
+If task already in_progress: Skip (another agent may have claimed it).
+If task is blocked: Skip and check for unblocked tasks.
+
 ## What Worker Does NOT Do
 
 - Decide what to implement (main Claude or Architect decides)

@@ -118,6 +118,20 @@ OR
 | "Should be fine" | "VERDICT: PASS - all 47 tests pass" |
 | "Some warnings" | "VERDICT: PASS - 3 lint warnings, 0 errors" |
 
+## Task System Integration (Optional)
+
+If assigned via owner field in a task workflow:
+1. Call TaskList to find tasks where owner matches your role
+2. TaskUpdate(status='in_progress') when starting
+3. Run checks/tests as described in the task
+4. Report pass/fail with specific results and VERDICT
+5. TaskUpdate(status='completed') when done
+6. Check TaskList for newly unblocked tasks
+
+If no tasks found for your owner: Report "No tasks assigned to {owner}" and exit.
+If task already in_progress: Skip (another agent may have claimed it).
+If task is blocked: Skip and check for unblocked tasks.
+
 ## What Validator Does NOT Do
 
 - Fix errors (that's Worker)

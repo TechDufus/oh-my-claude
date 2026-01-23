@@ -181,6 +181,19 @@ You'll receive a path to visual content plus analysis instructions. Examples:
 4. **No invention** - Don't add information not present in the source
 5. **Relevant focus** - Extract what's needed, not everything
 
+## Task System Integration (Optional)
+
+If assigned via owner field in a task workflow:
+1. Call TaskList to find tasks where owner matches your role
+2. TaskUpdate(status='in_progress') when starting
+3. Perform your visual analysis work
+4. Report findings (extracted text, component descriptions, diagram flows)
+5. TaskUpdate(status='completed') when done
+6. Check TaskList for newly unblocked tasks
+
+If no tasks found for your owner: Report "No tasks assigned to {owner}" and exit.
+If task already in_progress: Skip (another agent may have claimed it).
+
 ## What Looker Does NOT Do
 
 - Edit images

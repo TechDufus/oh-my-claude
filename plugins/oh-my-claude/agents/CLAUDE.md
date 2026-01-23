@@ -276,6 +276,57 @@ Examples:
 3. Document purpose, use cases, output format
 4. Define explicit scope boundaries
 
+## Task System Integration (Optional)
+
+Agents can participate in Task-based orchestration workflows. This is optional - agents work fine standalone.
+
+### When to Add Task Integration
+
+Add Task integration to agents that:
+- Run long-running discovery or implementation work
+- Can be parallelized (multiple instances of same agent type)
+- Benefit from self-discovery via owner field
+
+Skip Task integration for advisory agents (architect, critic, debugger) that are called on-demand.
+
+### Standard Pattern
+
+Add this section to agent system prompts that should support Task workflows:
+
+```markdown
+## Task System Integration (Optional)
+
+If assigned via owner field in a task workflow:
+1. Call TaskList to find tasks where owner matches your role
+2. TaskUpdate(status='in_progress') when starting
+3. Perform your work
+4. TaskUpdate(status='completed') when done
+5. Check TaskList for newly unblocked tasks
+```
+
+### Category-Specific Templates
+
+**Discovery agents (scout, librarian, looker):**
+- Report findings (file paths, summaries, observations)
+- May spawn follow-up tasks based on discoveries
+
+**Implementation agents (worker, scribe):**
+- Implement changes described in task
+- Verify before marking complete
+
+**Validation agents (validator):**
+- Run checks/tests as described
+- Report pass/fail with specific results
+
+### Edge Case Handling
+
+Instruct agents to handle:
+- No tasks found: Report "No tasks assigned to {role}" and exit
+- Task already in_progress: Skip (another agent may have claimed it)
+- Task blocked: Skip and check for unblocked tasks
+
+See `orchestrator.md` for full Task API reference and coordination patterns.
+
 ## Anti-Patterns
 
 - Don't give read-only agents write tools

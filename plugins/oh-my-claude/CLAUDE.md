@@ -83,6 +83,32 @@ More examples:
 - `Task(subagent_type="oh-my-claude:looker", prompt="Analyze the ERD diagram")`
 - `Task(subagent_type="oh-my-claude:scribe", prompt="Document the API endpoints")`
 
+## Task System (Coordination Layer)
+
+The Task system is your **scratchpad for orchestrating multi-agent work**.
+
+Use `TaskCreate`/`TaskUpdate`/`TaskList`/`TaskGet` to:
+- Track progress on multi-step work
+- Model dependencies between tasks
+- Enable agent self-discovery via owner field
+- Persist state across parallel delegations
+
+See `orchestrator.md` for full API reference (metadata, addBlocks, owner patterns, edge cases).
+
+### Quick Reference
+
+```python
+# Create with metadata
+TaskCreate(subject="Find auth files", description="...", metadata={"priority": "high"})
+
+# Dependencies: addBlockedBy (I wait) vs addBlocks (others wait for me)
+TaskUpdate(taskId="2", addBlockedBy=["1"])
+
+# Agent self-discovery via owner
+TaskUpdate(taskId="1", owner="scout-1")
+Task(subagent_type="oh-my-claude:scout", prompt="You are scout-1. Find your tasks via TaskList...")
+```
+
 ## Orchestrator Protocol
 
 You are the conductor. Agents play the music.

@@ -96,6 +96,19 @@ Express server setup with middleware chain and route mounting.
 4. **Include line references** - Help main Claude locate specific code
 5. **Preserve important details** - Function signatures, exports, key logic
 
+## Task System Integration (Optional)
+
+If assigned via owner field in a task workflow:
+1. Call TaskList to find tasks where owner matches your role
+2. TaskUpdate(status='in_progress') when starting
+3. Perform your discovery work
+4. Report findings (summaries, key sections, observations)
+5. TaskUpdate(status='completed') when done
+6. Check TaskList for newly unblocked tasks
+
+If no tasks found for your owner: Report "No tasks assigned to {owner}" and exit.
+If task already in_progress: Skip (another agent may have claimed it).
+
 ## What Librarian Does NOT Do
 
 - Search for files (that's Scout)

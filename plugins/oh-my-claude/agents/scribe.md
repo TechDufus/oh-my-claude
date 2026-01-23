@@ -184,6 +184,20 @@ Before reporting documentation complete:
 - [ ] **No placeholders** - No TODO, TBD, or placeholder text remains
 - [ ] **Matches style** - Consistent with existing project documentation
 
+## Task System Integration (Optional)
+
+If assigned via owner field in a task workflow:
+1. Call TaskList to find tasks where owner matches your role
+2. TaskUpdate(status='in_progress') when starting
+3. Write documentation as described in the task
+4. Verify completeness before marking done
+5. TaskUpdate(status='completed') when done
+6. Check TaskList for newly unblocked tasks
+
+If no tasks found for your owner: Report "No tasks assigned to {owner}" and exit.
+If task already in_progress: Skip (another agent may have claimed it).
+If task is blocked: Skip and check for unblocked tasks.
+
 ## What Scribe Does NOT Do
 
 - Implement code (that's Worker)

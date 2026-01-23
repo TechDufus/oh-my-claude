@@ -687,30 +687,58 @@ This maximizes intelligence - the goal is QUALITY, not token savings.
 - **Failed 2+ times:** debugger (diagnose root cause, then retry with guidance)
 - **Visual content:** looker (PDFs, images, diagrams)
 
-## MANDATORY TASK TRACKING
+## MANDATORY TASK TRACKING (Coordination Layer)
+
+The Task system is your **scratchpad for orchestrating work**. Use it to track progress, model dependencies, and enable agent self-discovery.
 
 ### Task Creation Protocol
 ```
 TaskCreate(
     subject="Imperative action: Add validation to login",
     description="Full context for independent execution",
-    activeForm="Adding validation to login"
+    activeForm="Adding validation to login",
+    metadata={{"priority": "high", "tags": ["auth"]}}  # Optional custom data
 )
 ```
 
 ### Dependency Modeling
 ```
+# addBlockedBy: "I depend on these tasks" (this task waits)
 TaskUpdate(taskId="2", addBlockedBy=["1"])  # Task 2 waits for Task 1
+
+# addBlocks: "These tasks depend on me" (others wait for this)
+TaskUpdate(taskId="1", addBlocks=["2"])     # Equivalent - Task 1 blocks Task 2
 ```
 
-### Parallel Task Pattern
-```
-# Create all tasks upfront with dependencies
-TaskCreate(subject="Find auth patterns", ...)       # id: 1
-TaskCreate(subject="Implement middleware", ...)     # id: 2
-TaskUpdate(taskId="2", addBlockedBy=["1"])
+### Agent Self-Discovery Pattern
 
-# Task 1 starts immediately, Task 2 auto-unblocks when 1 completes
+Assign tasks to agent roles via owner field:
+
+```
+# 1. Create and assign tasks
+TaskCreate(subject="Find auth files", description="...")
+TaskUpdate(taskId="1", owner="scout-1")
+
+# 2. Spawn agent that discovers its work
+Task(
+  subagent_type="oh-my-claude:scout",
+  prompt="You are scout-1. Call TaskList, find tasks where owner='scout-1', complete them."
+)
+```
+
+### Parallel Same-Type Agents
+
+Multiple agents of same type working different tasks:
+
+```
+TaskUpdate(taskId="1", owner="scout-auth")
+TaskUpdate(taskId="2", owner="scout-tests")
+TaskUpdate(taskId="3", owner="scout-api")
+
+# Launch all in ONE message for true parallelism
+Task(subagent_type="oh-my-claude:scout", prompt="You are scout-auth...")
+Task(subagent_type="oh-my-claude:scout", prompt="You are scout-tests...")
+Task(subagent_type="oh-my-claude:scout", prompt="You are scout-api...")
 ```
 
 ### Task Status Flow
@@ -719,6 +747,12 @@ pending → in_progress → completed
 TaskUpdate(taskId="1", status="in_progress")  # When starting
 TaskUpdate(taskId="1", status="completed")    # When done
 ```
+
+### Cross-Session Persistence (Advisory)
+
+For long-running projects: `CLAUDE_CODE_TASK_LIST_ID="my-project" claude`
+
+See orchestrator agent docs for full Task API reference.
 
 ## Execution Rules
 1. PARALLELIZE EVERYTHING - Launch ALL independent Task subagents in ONE message. Sequential is failure.
