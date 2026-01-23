@@ -327,21 +327,25 @@ See `.ralph/guardrails.md` for constraints and boundaries.
 Ralph Loop Runner
 
 Executes AI iterations until all stories complete.
-Uses rich Live display for Docker-style in-place updates.
+Features animated progress display with --watch mode for monitoring.
+
+Usage:
+  uv run loop.py           # Run the loop (execute iterations)
+  uv run loop.py --watch   # Monitor mode (animated dashboard only)
 """
 
+import argparse
 import json
 import os
 import subprocess
 import sys
 import time
-from datetime import datetime
 from pathlib import Path
 
 from rich.console import Console, Group
 from rich.live import Live
 from rich.panel import Panel
-from rich.progress import BarColumn, Progress, SpinnerColumn, TextColumn
+from rich.spinner import Spinner
 from rich.table import Table
 from rich.text import Text
 
@@ -349,11 +353,17 @@ RALPH_DIR = Path(".ralph")
 PRD_FILE = RALPH_DIR / "prd.json"
 PROGRESS_FILE = RALPH_DIR / "progress.txt"
 
+# Spinner frames for active task animation
+SPINNER_FRAMES = ["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"]
+
 
 def load_prd() -> dict:
     """Load and return the PRD JSON."""
-    with open(PRD_FILE) as f:
-        return json.load(f)
+    try:
+        with open(PRD_FILE) as f:
+            return json.load(f)
+    except (FileNotFoundError, json.JSONDecodeError):
+        return {"stories": []}
 
 
 def get_next_story(prd: dict) -> dict | None:
@@ -382,153 +392,231 @@ def run_claude() -> int:
     return result.returncode
 
 
-def build_dashboard(
-    prd: dict,
-    iteration: int,
-    max_iterations: int,
-    elapsed: float,
-    status: str = "working",
-    current_story: dict | None = None,
-) -> Group:
-    """Build the complete dashboard display."""
-    stories = prd["stories"]
-    complete = sum(1 for s in stories if s["passes"])
-    total = len(stories)
-    pct = (complete / total * 100) if total > 0 else 0
+class Dashboard:
+    """Animated dashboard display."""
 
-    # Status indicators
-    status_icons = {
-        "working": ("yellow", "◉", "WORKING"),
-        "complete": ("green", "✓", "COMPLETE"),
-        "max_iterations": ("yellow", "⚠", "MAX ITERATIONS"),
-        "error": ("red", "✗", "ERROR"),
-    }
-    color, icon, label = status_icons.get(status, ("white", "?", "UNKNOWN"))
+    def __init__(self, max_iterations: int):
+        self.max_iterations = max_iterations
+        self.start_time = time.time()
+        self.frame = 0
 
-    # Header with status
-    header_text = Text()
-    header_text.append(f" {icon} ", style=f"bold {color}")
-    header_text.append(label, style=f"bold {color}")
-    header_text.append(f"  ⏱ {format_duration(elapsed)}", style="dim")
+    def get_spinner(self) -> str:
+        """Get current spinner frame."""
+        return SPINNER_FRAMES[self.frame % len(SPINNER_FRAMES)]
 
-    iter_text = Text()
-    iter_text.append("Iteration ", style="dim")
-    iter_text.append(f"{iteration}", style="bold white")
-    iter_text.append(f" / {max_iterations}", style="dim")
-    iter_text.append("   ", style="dim")
-    iter_text.append("Progress ", style="dim")
-    iter_text.append(f"{complete}", style="bold green")
-    iter_text.append(f" / {total}", style="dim")
-    iter_text.append(f" ({pct:.0f}%)", style="dim")
+    def tick(self):
+        """Advance spinner animation."""
+        self.frame += 1
 
-    header_content = Text()
-    header_content.append_text(header_text)
-    header_content.append("\n")
-    header_content.append_text(iter_text)
+    def build(
+        self,
+        prd: dict,
+        iteration: int,
+        status: str = "working",
+        current_story: dict | None = None,
+    ) -> Group:
+        """Build the animated dashboard display."""
+        stories = prd.get("stories", [])
+        complete = sum(1 for s in stories if s.get("passes"))
+        total = len(stories)
+        pct = (complete / total * 100) if total > 0 else 0
+        elapsed = time.time() - self.start_time
 
-    header = Panel(
-        header_content,
-        title="[bold blue]Ralph Loop[/]",
-        subtitle="[dim]autonomous mode[/]",
-        border_style="blue",
-        padding=(0, 1),
-    )
+        # Status config: (color, static_icon, animated, label)
+        status_config = {
+            "working": ("yellow", "◉", True, "WORKING"),
+            "complete": ("green", "✓", False, "COMPLETE"),
+            "max_iterations": ("yellow", "⚠", False, "MAX ITERATIONS"),
+            "error": ("red", "✗", False, "ERROR"),
+            "waiting": ("blue", "◎", True, "WAITING"),
+        }
+        color, static_icon, animated, label = status_config.get(
+            status, ("white", "?", False, "UNKNOWN")
+        )
 
-    # Stories table - compact view
-    table = Table(
-        show_header=False,
-        border_style="dim",
-        expand=True,
-        padding=(0, 1),
-        show_edge=False,
-    )
-    table.add_column("", width=2)
-    table.add_column("Story", ratio=1)
+        # Use spinner for animated states
+        icon = self.get_spinner() if animated else static_icon
 
-    for story in stories:
-        if story["passes"]:
-            icon_str, style = "✓", "green"
-        elif current_story and story["id"] == current_story["id"]:
-            icon_str, style = "▸", "yellow bold"
-        else:
-            icon_str, style = "○", "dim"
+        # Header
+        header_text = Text()
+        header_text.append(f" {icon} ", style=f"bold {color}")
+        header_text.append(label, style=f"bold {color}")
+        header_text.append(f"  ⏱ {format_duration(elapsed)}", style="dim")
 
-        # Truncate long titles
-        title = story["title"]
-        if len(title) > 60:
-            title = title[:57] + "..."
+        iter_text = Text()
+        iter_text.append("Iteration ", style="dim")
+        iter_text.append(f"{iteration}", style="bold white")
+        iter_text.append(f" / {self.max_iterations}", style="dim")
+        iter_text.append("   ", style="dim")
+        iter_text.append("Progress ", style="dim")
+        iter_text.append(f"{complete}", style="bold green")
+        iter_text.append(f" / {total}", style="dim")
+        iter_text.append(f" ({pct:.0f}%)", style="dim")
 
-        table.add_row(f"[{style}]{icon_str}[/]", f"[{style}]{title}[/]")
+        header_content = Text()
+        header_content.append_text(header_text)
+        header_content.append("\n")
+        header_content.append_text(iter_text)
 
-    stories_panel = Panel(
-        table,
-        title="[bold]Stories[/]",
-        border_style="dim",
-        padding=(0, 0),
-    )
+        header = Panel(
+            header_content,
+            title="[bold blue]Ralph Loop[/]",
+            subtitle="[dim]autonomous mode[/]",
+            border_style="blue",
+            padding=(0, 1),
+        )
 
-    # Footer
-    footer = Text("Ctrl+C to abort", style="dim italic")
+        # Stories table
+        table = Table(
+            show_header=False,
+            border_style="dim",
+            expand=True,
+            padding=(0, 1),
+            show_edge=False,
+        )
+        table.add_column("", width=2)
+        table.add_column("Story", ratio=1)
 
-    return Group(header, "", stories_panel, "", footer)
+        for story in stories:
+            if story.get("passes"):
+                icon_str, style = "✓", "green"
+            elif current_story and story["id"] == current_story["id"]:
+                # Animated spinner for active story
+                icon_str, style = self.get_spinner(), "yellow bold"
+            else:
+                icon_str, style = "○", "dim"
+
+            title = story.get("title", "Unknown")
+            if len(title) > 60:
+                title = title[:57] + "..."
+
+            table.add_row(f"[{style}]{icon_str}[/]", f"[{style}]{title}[/]")
+
+        stories_panel = Panel(
+            table,
+            title="[bold]Stories[/]",
+            border_style="dim",
+            padding=(0, 0),
+        )
+
+        footer = Text("Ctrl+C to stop", style="dim italic")
+        return Group(header, "", stories_panel, "", footer)
 
 
-def main():
-    console = Console()
-    max_iterations = int(os.environ.get("MAX_ITERATIONS", "10"))
+def watch_mode(console: Console, max_iterations: int):
+    """Monitor mode - animated dashboard without execution."""
+    console.print()
+    console.print("[bold blue]Ralph Loop Monitor[/] [dim](--watch mode)[/]")
+    console.print("[dim]Watching .ralph/prd.json for changes...[/]")
+    console.print()
 
-    # Verify ralph directory
-    if not RALPH_DIR.exists():
-        console.print("[red]Error:[/] .ralph directory not found")
-        console.print("[dim]Run /ralph-loop-init first[/]")
-        sys.exit(1)
+    dashboard = Dashboard(max_iterations)
 
-    if not PRD_FILE.exists():
-        console.print(f"[red]Error:[/] {PRD_FILE} not found")
-        sys.exit(1)
+    with Live(console=console, refresh_per_second=8, transient=False) as live:
+        try:
+            while True:
+                prd = load_prd()
+                next_story = get_next_story(prd)
+                complete = sum(1 for s in prd.get("stories", []) if s.get("passes"))
+                total = len(prd.get("stories", []))
+
+                if total == 0:
+                    status = "waiting"
+                    iteration = 0
+                elif complete == total:
+                    status = "complete"
+                    iteration = complete
+                else:
+                    status = "working"
+                    iteration = complete + 1
+
+                display = dashboard.build(prd, iteration, status, next_story)
+                live.update(display)
+                dashboard.tick()
+                time.sleep(0.1)
+
+        except KeyboardInterrupt:
+            pass
 
     console.print()
-    start_time = time.time()
+    console.print("[dim]Monitor stopped.[/]")
 
-    # Main loop with live display
+
+def run_mode(console: Console, max_iterations: int):
+    """Execution mode - run iterations with animated transitions."""
+    console.print()
+    dashboard = Dashboard(max_iterations)
+
     for iteration in range(1, max_iterations + 1):
         prd = load_prd()
         next_story = get_next_story(prd)
 
         if not next_story:
-            # All complete
-            elapsed = time.time() - start_time
-            dashboard = build_dashboard(prd, iteration, max_iterations, elapsed, "complete")
-            console.print(dashboard)
+            # All complete - show final animated dashboard briefly
+            with Live(console=console, refresh_per_second=8) as live:
+                for _ in range(16):  # ~2 seconds of animation
+                    prd = load_prd()
+                    display = dashboard.build(prd, iteration, "complete")
+                    live.update(display)
+                    dashboard.tick()
+                    time.sleep(0.1)
             console.print()
             console.print("[bold green]✓ All stories complete![/]")
             sys.exit(0)
 
-        # Show dashboard before running claude
-        elapsed = time.time() - start_time
-        dashboard = build_dashboard(prd, iteration, max_iterations, elapsed, "working", next_story)
-        console.print(dashboard)
-        console.print()
+        # Animated pre-execution display
+        with Live(console=console, refresh_per_second=8, transient=True) as live:
+            for _ in range(24):  # ~3 seconds of animation before claude
+                display = dashboard.build(prd, iteration, "working", next_story)
+                live.update(display)
+                dashboard.tick()
+                time.sleep(0.1)
 
-        # Run claude (output streams directly to terminal)
+        # Static dashboard during claude execution
+        display = dashboard.build(prd, iteration, "working", next_story)
+        console.print(display)
+        console.print()
         console.print(f"[dim]─── claude: {next_story['id']} ───[/]")
+
         exit_code = run_claude()
+
         console.print(f"[dim]─── exit: {exit_code} ───[/]")
         console.print()
 
         if exit_code != 0:
             console.print(f"[yellow]Warning:[/] claude exited with code {exit_code}")
 
-    # Max iterations reached
+    # Max iterations
     prd = load_prd()
-    elapsed = time.time() - start_time
-    incomplete = sum(1 for s in prd["stories"] if not s["passes"])
-
-    dashboard = build_dashboard(prd, max_iterations, max_iterations, elapsed, "max_iterations")
-    console.print(dashboard)
+    incomplete = sum(1 for s in prd.get("stories", []) if not s.get("passes"))
+    display = dashboard.build(prd, max_iterations, "max_iterations")
+    console.print(display)
     console.print()
     console.print(f"[yellow]Max iterations reached. {incomplete} stories remaining.[/]")
     sys.exit(1 if incomplete > 0 else 0)
+
+
+def main():
+    parser = argparse.ArgumentParser(description="Ralph Loop Runner")
+    parser.add_argument("--watch", "-w", action="store_true",
+                        help="Monitor mode (animated dashboard only)")
+    args = parser.parse_args()
+
+    console = Console()
+    max_iterations = int(os.environ.get("MAX_ITERATIONS", "10"))
+
+    if not RALPH_DIR.exists():
+        console.print("[red]Error:[/] .ralph directory not found")
+        console.print("[dim]Run /ralph-loop-init first[/]")
+        sys.exit(1)
+
+    if args.watch:
+        watch_mode(console, max_iterations)
+    else:
+        if not PRD_FILE.exists():
+            console.print(f"[red]Error:[/] {PRD_FILE} not found")
+            sys.exit(1)
+        run_mode(console, max_iterations)
 
 
 if __name__ == "__main__":
