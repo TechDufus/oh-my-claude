@@ -109,6 +109,25 @@ TaskUpdate(taskId="1", owner="scout-1")
 Task(subagent_type="oh-my-claude:scout", prompt="You are scout-1. Find your tasks via TaskList...")
 ```
 
+### Delegation-First Tasks (ENFORCED)
+
+TaskCreate descriptions MUST include a `Task()` delegation call:
+
+```python
+TaskCreate(
+  subject="Implement feature X",
+  description="""
+  Task(subagent_type="oh-my-claude:worker", prompt='''
+    Implement the feature in src/feature.ts...
+  ''')
+  """
+)
+```
+
+**After creating:** Execute the Task() call to spawn the worker.
+
+**Escape hatch:** Add `[NO-DELEGATE]` for tasks main agent handles directly.
+
 ## Orchestrator Protocol
 
 You are the conductor. Agents play the music.
