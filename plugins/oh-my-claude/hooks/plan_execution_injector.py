@@ -59,10 +59,9 @@ Each teammate:
 
 ## IF SWARM FAILS
 
-Marker file exists as safety net. If teammates fail:
-1. New session will detect marker
-2. Execution context re-injected
-3. Continue with subagent orchestration pattern
+The plan is preserved in Claude Code. If teammates fail:
+1. New session will receive plan content when you click "Accept and clear"
+2. ultrawork_detector injects execution context based on prompt prefix
 """
 
 # =============================================================================
@@ -133,7 +132,7 @@ def main() -> None:
     else:
         # No swarm - user will likely "Accept and clear"
         # This context appears before the dialog, can influence Claude's summary
-        # Primary execution context comes from marker file in next session
+        # Execution context injected in next session via prompt prefix detection
         log_debug("Injecting MANUAL_EXECUTION_CONTEXT")
         output_context("PostToolUse", MANUAL_EXECUTION_CONTEXT)
 

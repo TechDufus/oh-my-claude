@@ -9,12 +9,11 @@ import pytest
 
 # Import the module to test its patterns and functions
 from ultrawork_detector import (
-    MARKER_DIR,
     PATTERNS,
     PLAN_EXECUTION_CONTEXT,
-    check_plan_execution,
+    PLAN_EXECUTION_PREFIX,
+    check_plan_execution_prompt,
     detect_validation,
-    get_marker_path,
     is_trivial_request,
 )
 
@@ -393,70 +392,80 @@ class TestIsTrivialRequest:
 
 
 # =============================================================================
-# Plan Execution Marker Tests (moved from session_start.py)
+# Plan Execution Prompt Detection Tests
 # =============================================================================
 
 @pytest.fixture
-def marker_home(tmp_path):
-    """Create a temporary home directory for marker file tests."""
+def test_home(tmp_path):
+    """Create a temporary home directory for tests."""
     claude_dir = tmp_path / ".claude" / "plans"
     claude_dir.mkdir(parents=True)
     return tmp_path
 
 
-# Test session ID used for marker tests
-TEST_SESSION_ID = "test-session-123"
+class TestPlanExecutionPromptDetection:
+    """Tests for plan execution detection via prompt prefix."""
 
-
-@pytest.fixture
-def marker_home_with_marker(marker_home):
-    """Create marker home with session-specific .plan_approved marker file."""
-    marker_path = marker_home / ".claude" / "plans" / f".plan_approved_{TEST_SESSION_ID}"
-    marker_path.touch()
-    return marker_home
-
-
-class TestPlanExecutionMarker:
-    """Tests for plan execution marker detection in UserPromptSubmit hook."""
-
-    def test_marker_detected_injects_plan_context(self, marker_home_with_marker):
-        """When marker exists, should inject PLAN_EXECUTION_CONTEXT."""
+    def test_exact_prefix_detected(self, test_home):
+        """Prompt starting with exact prefix should inject plan context."""
         output = run_hook(
-            {"prompt": "implement the plan", "session_id": TEST_SESSION_ID},
-            marker_home_with_marker,
+            {"prompt": "Implement the following plan:\n\n## Plan content", "session_id": "test"},
+            test_home,
         )
         context = get_context(output)
         assert "ULTRAWORK MODE ACTIVE" in context
         assert "PLAN EXECUTION" in context
         assert "Create tasks" in context
 
-    def test_marker_consumed_after_detection(self, marker_home_with_marker):
-        """Marker should be deleted after successful injection."""
-        marker_path = marker_home_with_marker / ".claude" / "plans" / f".plan_approved_{TEST_SESSION_ID}"
-        assert marker_path.exists(), "Marker should exist before hook runs"
-
-        run_hook({"prompt": "start", "session_id": TEST_SESSION_ID}, marker_home_with_marker)
-
-        assert not marker_path.exists(), "Marker should be consumed (deleted)"
-
-    def test_marker_priority_over_ultrawork_keyword(self, marker_home_with_marker):
-        """Marker should take priority over ultrawork keyword."""
-        # When marker exists AND prompt has "ultrawork", should inject PLAN_EXECUTION context
+    def test_prefix_with_leading_whitespace(self, test_home):
+        """Leading whitespace should be stripped."""
         output = run_hook(
-            {"prompt": "ultrawork fix bugs", "session_id": TEST_SESSION_ID},
-            marker_home_with_marker,
+            {"prompt": "  Implement the following plan:\n...", "session_id": "test"},
+            test_home,
+        )
+        context = get_context(output)
+        assert "PLAN EXECUTION" in context
+
+    def test_similar_but_different_prefix_not_detected(self, test_home):
+        """User typing similar text should NOT trigger plan execution."""
+        output = run_hook(
+            {"prompt": "implement following plan for the feature", "session_id": "test"},
+            test_home,
+        )
+        context = get_context(output)
+        assert "PLAN EXECUTION" not in context
+
+    def test_case_sensitive_prefix(self, test_home):
+        """Prefix detection should be case-sensitive."""
+        output = run_hook(
+            {"prompt": "implement the following plan:", "session_id": "test"},
+            test_home,
+        )
+        context = get_context(output)
+        assert "PLAN EXECUTION" not in context
+
+    def test_empty_prompt_no_crash(self, test_home):
+        """Empty prompt should not crash."""
+        output = run_hook({"prompt": "", "session_id": "test"}, test_home)
+        context = get_context(output)
+        assert "PLAN EXECUTION" not in context
+
+    def test_prefix_priority_over_ultrawork_keyword(self, test_home):
+        """Plan execution prefix should take priority over ultrawork keyword."""
+        output = run_hook(
+            {"prompt": "Implement the following plan:\n\nultrawork fix bugs", "session_id": "test"},
+            test_home,
         )
         context = get_context(output)
         # Should get PLAN_EXECUTION context, not generic ULTRAWORK context
         assert "PLAN EXECUTION" in context
-        # Plan execution context includes ULTRAWORK header but has different content
         assert "Create tasks" in context
 
-    def test_no_marker_normal_ultrawork_behavior(self, marker_home):
-        """Without marker, ultrawork keyword should inject generic ultrawork context."""
+    def test_no_prefix_normal_ultrawork_behavior(self, test_home):
+        """Without prefix, ultrawork keyword should inject generic ultrawork context."""
         output = run_hook(
-            {"prompt": "ultrawork fix bugs", "session_id": TEST_SESSION_ID},
-            marker_home,
+            {"prompt": "ultrawork fix bugs", "session_id": "test"},
+            test_home,
         )
         context = get_context(output)
         assert "ULTRAWORK MODE ACTIVE" in context
@@ -464,90 +473,54 @@ class TestPlanExecutionMarker:
         assert "MANDATORY CERTAINTY PROTOCOL" in context
         assert "PLAN EXECUTION" not in context
 
-    def test_no_marker_no_keyword_passthrough(self, marker_home):
-        """Without marker and no keyword, should pass through without context."""
-        output = run_hook(
-            {"prompt": "just a normal message", "session_id": TEST_SESSION_ID},
-            marker_home,
-        )
-        context = get_context(output)
-        assert context == "", "Should return empty when no marker and no keyword"
-
-    def test_context_includes_execution_protocol(self, marker_home_with_marker):
+    def test_context_includes_execution_protocol(self, test_home):
         """Injected context should include execution protocol."""
         output = run_hook(
-            {"prompt": "go", "session_id": TEST_SESSION_ID},
-            marker_home_with_marker,
+            {"prompt": "Implement the following plan:\n\n## Steps", "session_id": "test"},
+            test_home,
         )
         context = get_context(output)
         assert "Create tasks" in context
         assert "Execute in order" in context
         assert "Verify each step" in context
 
-    def test_context_includes_compliance_rules(self, marker_home_with_marker):
+    def test_context_includes_compliance_rules(self, test_home):
         """Injected context should include plan compliance rules."""
         output = run_hook(
-            {"prompt": "go", "session_id": TEST_SESSION_ID},
-            marker_home_with_marker,
+            {"prompt": "Implement the following plan:\n\n## Rules", "session_id": "test"},
+            test_home,
         )
         context = get_context(output)
         assert "Allowed" in context
         assert "NOT Allowed" in context
 
-    def test_second_run_returns_normal(self, marker_home_with_marker):
-        """Second run after marker consumed should behave normally."""
-        # First run consumes marker
-        run_hook(
-            {"prompt": "first", "session_id": TEST_SESSION_ID},
-            marker_home_with_marker,
-        )
 
-        # Second run should NOT inject plan execution context
-        output = run_hook(
-            {"prompt": "second", "session_id": TEST_SESSION_ID},
-            marker_home_with_marker,
-        )
-        context = get_context(output)
-        # No marker means no plan execution context
-        assert "PLAN EXECUTION" not in context
+class TestCheckPlanExecutionPromptFunction:
+    """Unit tests for check_plan_execution_prompt function directly."""
 
+    def test_returns_true_for_exact_prefix(self):
+        """Should return True for exact prefix match."""
+        assert check_plan_execution_prompt("Implement the following plan:\n\nContent") is True
 
-class TestCheckPlanExecutionFunction:
-    """Unit tests for check_plan_execution function directly."""
+    def test_returns_true_with_leading_whitespace(self):
+        """Should return True when prefix has leading whitespace."""
+        assert check_plan_execution_prompt("  Implement the following plan:\nContent") is True
+        assert check_plan_execution_prompt("\nImplement the following plan:") is True
 
-    def test_returns_false_when_marker_missing(self, marker_home, monkeypatch):
-        """check_plan_execution should return False when marker doesn't exist."""
-        # Monkeypatch MARKER_DIR to use temp dir
-        monkeypatch.setattr(
-            "ultrawork_detector.MARKER_DIR",
-            marker_home / ".claude" / "plans"
-        )
-        assert check_plan_execution("test-session") is False
+    def test_returns_false_for_different_text(self):
+        """Should return False for similar but different text."""
+        assert check_plan_execution_prompt("implement the following plan:") is False
+        assert check_plan_execution_prompt("Implement following plan:") is False
+        assert check_plan_execution_prompt("Please implement the following plan:") is False
 
-    def test_returns_true_and_deletes_marker(self, marker_home_with_marker, monkeypatch):
-        """check_plan_execution should return True and delete marker when it exists."""
-        session_id = "test-session"
-        plans_dir = marker_home_with_marker / ".claude" / "plans"
-        marker_path = plans_dir / f".plan_approved_{session_id}"
-        # Create session-specific marker
-        marker_path.touch()
-        monkeypatch.setattr("ultrawork_detector.MARKER_DIR", plans_dir)
+    def test_returns_false_for_empty_string(self):
+        """Should return False for empty string."""
+        assert check_plan_execution_prompt("") is False
 
-        assert marker_path.exists(), "Marker should exist before check"
-        result = check_plan_execution(session_id)
-        assert result is True, "Should return True when marker exists"
-        assert not marker_path.exists(), "Marker should be deleted after check"
+    def test_returns_false_for_none(self):
+        """Should return False for None input."""
+        assert check_plan_execution_prompt(None) is False
 
-    def test_idempotent_after_consumption(self, marker_home_with_marker, monkeypatch):
-        """check_plan_execution should return False after marker is consumed."""
-        session_id = "test-session"
-        plans_dir = marker_home_with_marker / ".claude" / "plans"
-        marker_path = plans_dir / f".plan_approved_{session_id}"
-        # Create session-specific marker
-        marker_path.touch()
-        monkeypatch.setattr("ultrawork_detector.MARKER_DIR", plans_dir)
-
-        # First call consumes marker
-        assert check_plan_execution(session_id) is True
-        # Second call returns False
-        assert check_plan_execution(session_id) is False
+    def test_prefix_constant_value(self):
+        """Verify the prefix constant has expected value."""
+        assert PLAN_EXECUTION_PREFIX == "Implement the following plan:"

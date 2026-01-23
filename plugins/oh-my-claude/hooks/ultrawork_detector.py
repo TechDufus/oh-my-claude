@@ -24,14 +24,10 @@ from hook_utils import (
 )
 
 # =============================================================================
-# Plan execution marker path (session-specific)
+# Plan execution prompt detection
 # =============================================================================
-MARKER_DIR = Path.home() / ".claude" / "plans"
-
-
-def get_marker_path(session_id: str) -> Path:
-    """Get session-specific marker path."""
-    return MARKER_DIR / f".plan_approved_{session_id}"
+# Claude Code injects this exact prefix when user clicks "Accept and clear"
+PLAN_EXECUTION_PREFIX = "Implement the following plan:"
 
 # =============================================================================
 # Pre-compiled regex patterns (module-level cache)
@@ -246,24 +242,12 @@ When ALL plan items are done:
 """
 
 
-def check_plan_execution(session_id: str) -> bool:
-    """Check for approved plan marker. Consumes marker if found."""
-    marker_path = get_marker_path(session_id)
-    log_debug("=== check_plan_execution in UserPromptSubmit ===")
-    log_debug(f"Marker path: {marker_path}")
-    log_debug(f"Marker exists: {marker_path.exists()}")
-
-    if not marker_path.exists():
-        log_debug("No plan marker found")
+def check_plan_execution_prompt(prompt: str) -> bool:
+    """Check if prompt indicates plan execution (from Accept and clear)."""
+    if not prompt:
         return False
-
-    try:
-        marker_path.unlink()
-        log_debug("Consumed plan marker successfully")
-        return True
-    except OSError as e:
-        log_debug(f"Error deleting marker: {e}")
-        return False
+    # Claude Code injects this exact prefix when user clicks "Accept and clear"
+    return prompt.strip().startswith(PLAN_EXECUTION_PREFIX)
 
 
 def is_trivial_request(prompt: str) -> bool:
@@ -326,11 +310,11 @@ def main() -> None:
     session_id = data.get("session_id", "unknown")
 
     # ==========================================================================
-    # PLAN EXECUTION - Check marker FIRST (catches /clear scenarios)
+    # PLAN EXECUTION - Check prompt content (handles Accept and clear)
     # This takes priority over all other modes
     # ==========================================================================
-    if check_plan_execution(session_id):
-        log_debug("Plan marker found, injecting plan execution context")
+    if check_plan_execution_prompt(prompt):
+        log_debug("Plan execution detected from prompt prefix")
         output_context("UserPromptSubmit", PLAN_EXECUTION_CONTEXT)
         output_empty()
         return  # Early return - don't also inject ultrawork

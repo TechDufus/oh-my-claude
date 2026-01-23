@@ -138,11 +138,6 @@
             "type": "command",
             "command": "uv run --script ${CLAUDE_PLUGIN_ROOT}/hooks/plan_execution_injector.py",
             "timeout": 5
-          },
-          {
-            "type": "command",
-            "command": "uv run --script ${CLAUDE_PLUGIN_ROOT}/hooks/plan_approved.py",
-            "timeout": 5
           }
         ]
       },

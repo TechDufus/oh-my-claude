@@ -168,11 +168,9 @@ Auto-activates when entering native plan mode (no keyword needed).
 ### Plan→Execution Transition
 
 When you approve a plan (ExitPlanMode):
-1. Hook saves plan file path to marker
-2. Next session auto-injects ultrawork + plan reference
-3. Claude reads plan and creates todos from it
-
-This enables seamless planning→implementation workflow across sessions.
+1. Claude Code preserves the plan content
+2. "Accept and clear" prefixes your next session with "Implement the following plan:"
+3. ultrawork_detector injects execution context based on this prefix
 
 ## Other Keywords
 
