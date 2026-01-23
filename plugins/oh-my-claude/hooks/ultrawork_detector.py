@@ -641,7 +641,7 @@ This maximizes intelligence relative to what the user is paying for.
 
 ## Execution Rules
 1. PARALLELIZE EVERYTHING - Launch ALL independent Task subagents in ONE message. Sequential is failure.
-2. TODOWRITE IMMEDIATELY - Minimum 3 todos for any non-trivial work. Update status in real-time.
+2. CREATE TASKS IMMEDIATELY - Use TaskCreate for minimum 3 tasks for any non-trivial work. Use TaskUpdate to track progress (pending → in_progress → completed).
 3. NEVER STOP - Stopping requires passing the MANDATORY STOPPING CHECKLIST. Partial completion = failure. "Good enough" = failure. Only DONE is acceptable.
 4. NO QUESTIONS - Make reasonable decisions. Document them. Keep moving.
 5. DELEGATE EVERYTHING - You plan, agents implement. Direct implementation = failure.
@@ -758,13 +758,13 @@ DO NOT WAIT for the user to point out gaps. Find them yourself.
 ## CRITICAL
 - Multiple Tasks in ONE message = parallelism
 - Single Task per message = sequential failure
-- Incomplete todos = CANNOT stop
+- Incomplete tasks = CANNOT stop (use TaskList to check)
 - Failed validation = CANNOT stop
 
 ## MANDATORY STOPPING CHECKLIST
 
 You CANNOT stop until ALL of these are TRUE:
-- [ ] ALL todos marked "completed" (zero pending/in_progress)
+- [ ] ALL tasks marked "completed" (TaskList shows zero pending/in_progress)
 - [ ] Validation has run AND passed (linters, tests, type checks)
 - [ ] No TODO/FIXME comments left in changed code
 - [ ] Changes have been verified with direct tool calls (not just agent claims)
@@ -777,7 +777,7 @@ If ANY checkbox is FALSE, you MUST continue working. No exceptions.
 When you think you're done, STOP and verify:
 1. Re-read the user's ORIGINAL request word-by-word
 2. Check EVERY requirement was addressed
-3. Run `TodoWrite` to confirm zero incomplete items
+3. Run TaskList to confirm zero incomplete tasks
 4. Run validation ONE MORE TIME
 5. Only then may you present results
 
@@ -791,7 +791,7 @@ When you are TRULY DONE with ALL work, you MUST end your final message with:
 
 This signals task completion. Without this tag, work is assumed to continue.
 Do NOT output this tag until:
-- ALL todos are marked completed
+- ALL tasks are marked completed
 - ALL validation has passed
 - You have verified your work
 
