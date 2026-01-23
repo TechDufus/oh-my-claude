@@ -100,7 +100,7 @@ class TestFormatContext:
             mode="ultrawork",
             git_state=git_state,
             recent_files=[],
-            todos=[],
+            items=[],
             timestamp="2024-01-01T00:00:00Z"
         )
         assert "Mode: ultrawork" in context
@@ -112,7 +112,7 @@ class TestFormatContext:
             mode="normal",
             git_state=git_state,
             recent_files=["file.py"],
-            todos=[],
+            items=[],
             timestamp="2024-01-01T00:00:00Z"
         )
         assert "### Active Todos" in context
@@ -125,7 +125,7 @@ class TestFormatContext:
             mode="normal",
             git_state=git_state,
             recent_files=[],
-            todos=[],
+            items=[],
             timestamp="2024-01-01T00:00:00Z"
         )
         assert "### Recent Files Modified" in context
@@ -138,7 +138,7 @@ class TestFormatContext:
             mode="normal",
             git_state=git_state,
             recent_files=[],
-            todos=[],
+            items=[],
             timestamp="2024-01-01T00:00:00Z"
         )
         assert "Branch: feature-test" in context
@@ -150,13 +150,13 @@ class TestFormatContext:
             mode="normal",
             git_state=git_state,
             recent_files=[],
-            todos=[],
+            items=[],
             timestamp="2024-01-01T00:00:00Z"
         )
         assert "Uncommitted Changes: Yes" in context
 
     def test_format_context_shows_todos(self):
-        """Formatted context includes todos when present."""
+        """Formatted context includes todos when present (legacy format)."""
         git_state = {"branch": "main", "uncommitted_changes": False, "staged_files": []}
         todos = [
             {"status": "pending", "content": "Fix the bug"},
@@ -166,11 +166,31 @@ class TestFormatContext:
             mode="normal",
             git_state=git_state,
             recent_files=[],
-            todos=todos,
-            timestamp="2024-01-01T00:00:00Z"
+            items=todos,
+            timestamp="2024-01-01T00:00:00Z",
+            is_tasks=False
         )
         assert "[pending] Fix the bug" in context
         assert "[complete] Write tests" in context
+
+    def test_format_context_shows_tasks(self):
+        """Formatted context includes tasks when using new Task system."""
+        git_state = {"branch": "main", "uncommitted_changes": False, "staged_files": []}
+        tasks = [
+            {"id": "1", "status": "pending", "subject": "Implement feature"},
+            {"id": "2", "status": "in_progress", "subject": "Write tests", "blockedBy": ["1"]}
+        ]
+        context = format_context(
+            mode="normal",
+            git_state=git_state,
+            recent_files=[],
+            items=tasks,
+            timestamp="2024-01-01T00:00:00Z",
+            is_tasks=True
+        )
+        assert "### Active Tasks" in context
+        assert "[pending] #1 Implement feature" in context
+        assert "[in_progress] #2 Write tests [blocked by: 1]" in context
 
 
 class TestHookIntegration:

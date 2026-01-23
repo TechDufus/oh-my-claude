@@ -23,7 +23,7 @@ When you dump a 500-line file into context, that's 500 lines less reasoning capa
 ### Start Immediately
 - No preamble ("I'll start by...", "Let me...", "I'm going to...")
 - No acknowledgments ("Sure!", "Great idea!", "I'm on it!")
-- Just start working. Use todos for progress tracking.
+- Just start working. Use tasks for progress tracking (TaskCreate, TaskUpdate).
 
 ### No Unnecessary Questions
 When the user gives clear instructions:
@@ -110,7 +110,7 @@ Context protection is always on. Ultrawork adds execution intensity.
 | Aspect | Default | Ultrawork |
 |--------|---------|-----------|
 | Parallelization | When sensible | AGGRESSIVE |
-| TodoWrite | When helpful | MANDATORY (3+ todos) |
+| Task Tools | When helpful | MANDATORY (3+ tasks via TaskCreate) |
 | Stopping | After milestones | NEVER until ALL complete |
 | Questions | When unclear | NEVER - decide and document |
 | Validation | When appropriate | REQUIRED before stopping |
@@ -190,7 +190,7 @@ This enables seamless planning→implementation workflow across sessions.
 - **Context Protector** - Blocks large file reads (>100 lines), forces librarian delegation
 - **Safe Permissions** - Auto-approves safe commands (tests, linters, readonly git)
 - **Context Monitor** - Warns at 70%+ context usage, critical at 85%
-- **Todo Enforcer** - Prevents stopping with incomplete todos
+- **Task Enforcer** - Prevents stopping with incomplete tasks (supports both Task tools and legacy TodoWrite)
 - **Subagent Quality Validator** - Validates subagent outputs before completion (v0.3.2)
 - **PreCompact Context** - Preserves session state + semantic patterns before compaction (v0.3.2)
 

@@ -6,7 +6,10 @@ tools:
   - Glob
   - Grep
   - Task
-  - TodoWrite
+  - TaskCreate
+  - TaskGet
+  - TaskUpdate
+  - TaskList
   - AskUserQuestion
   - Bash(git status:*)
   - Bash(git log:*)
@@ -84,7 +87,7 @@ Before proceeding, verify:
 - Read any file
 - Search the codebase
 - Delegate to other agents
-- Track work with todos
+- Track work with tasks (TaskCreate, TaskUpdate, TaskList)
 - Ask user questions
 - Check git status
 
@@ -237,54 +240,65 @@ Recovery:
 5. Continue: Use correct path from scout
 ```
 
-## Todo State Management
+## Task State Management
 
-Track work progress with explicit state transitions.
+Track work progress with explicit state transitions using the Task tools.
 
 ### States
 
 | State | Meaning | When to Set |
 |-------|---------|-------------|
-| `pending` | Not started | Initial creation |
-| `in_progress` | Currently being worked | Before delegating |
-| `completed` | Finished and verified | After verification passes |
+| `pending` | Not started | Initial creation (TaskCreate) |
+| `in_progress` | Currently being worked | Before delegating (TaskUpdate) |
+| `completed` | Finished and verified | After verification passes (TaskUpdate) |
 
 ### Transition Rules
 
 ```
-pending -> in_progress    (before Task call)
-in_progress -> completed  (after verification)
-in_progress -> pending    (if retry needed)
+pending -> in_progress    (TaskUpdate before delegation)
+in_progress -> completed  (TaskUpdate after verification)
+in_progress -> pending    (TaskUpdate if retry needed)
+```
+
+### Task Dependencies
+
+Use `addBlockedBy` for sequential work:
+```
+TaskCreate: subject="Set up database schema"     → Task #1
+TaskCreate: subject="Create API endpoints"       → Task #2
+TaskUpdate: taskId=2, addBlockedBy=["1"]         → #2 waits for #1
 ```
 
 ### Constraints
 
-- Only ONE todo may be `in_progress` at a time (unless parallel delegation)
+- Only ONE task may be `in_progress` at a time (unless parallel delegation)
 - Never mark `completed` without verification
 - Update state immediately when transitioning
-- Keep todo descriptions atomic and verifiable
+- Keep task subjects atomic and verifiable
+- Use TaskList to check overall progress
 
 ### Example Flow
 
 ```
-TodoWrite: Create todos
-  [pending] Find auth patterns
-  [pending] Implement middleware
-  [pending] Add to routes
-  [pending] Run tests
+TaskCreate: subject="Find auth patterns"      → Task #1 (pending)
+TaskCreate: subject="Implement middleware"    → Task #2 (pending)
+TaskCreate: subject="Add to routes"           → Task #3 (pending)
+TaskCreate: subject="Run tests"               → Task #4 (pending)
 
-Mark in_progress: Find auth patterns
-  [in_progress] Find auth patterns  <-- active
-  [pending] Implement middleware
+TaskUpdate: taskId=1, status="in_progress"
+  #1 [in_progress] Find auth patterns  <-- active
+  #2 [pending] Implement middleware
   ...
 
 Delegate to scout...
 Verify result...
 
-Mark completed: Find auth patterns
-  [completed] Find auth patterns
-  [pending] Implement middleware  <-- next
-  ...
+TaskUpdate: taskId=1, status="completed"
+  #1 [completed] Find auth patterns
+  #2 [pending] Implement middleware  <-- next
+
+TaskUpdate: taskId=2, status="in_progress"
+  ...continue...
 ```
 
 ## Completion Report Format
@@ -345,13 +359,13 @@ Modified:
 2. Explore: Scout + Librarian to understand context
 3. Plan: For COMPLEX tasks, delegate to Architect
 4. Review: For COMPLEX plans, delegate to Critic
-5. Create todos (TodoWrite)
-6. For each todo:
-   a. Mark in_progress
+5. Create tasks (TaskCreate for each work item)
+6. For each task:
+   a. TaskUpdate: status="in_progress"
    b. Delegate to appropriate agent
    c. Verify result (Read, Validator)
    d. If failed 2x, escalate to Debugger
-   e. Mark completed
+   e. TaskUpdate: status="completed"
 7. Final verification (Validator)
 8. Report completion
 ```
@@ -378,10 +392,15 @@ User: "Add authentication to the API"
 
 1. Scout: Find existing auth patterns → src/middleware/auth.ts exists
 2. Librarian: Read auth patterns → Uses JWT, middleware pattern
-3. TodoWrite: Create implementation plan (5 tasks)
-4. Worker: Implement auth middleware → Done
-5. Validator: Run tests → All pass
-6. Worker: Add auth to routes → Done
+3. TaskCreate (5x): Create implementation tasks
+   - #1: Research auth patterns
+   - #2: Implement auth middleware
+   - #3: Add auth to routes
+   - #4: Write tests
+   - #5: Run validation
+4. TaskUpdate: taskId=1, status="in_progress" → Worker
+5. TaskUpdate: taskId=1, status="completed"
+6. TaskUpdate: taskId=2, status="in_progress" → Worker
 7. Validator: Run tests → All pass
 8. Report: Authentication added, all tests pass
 ```
@@ -390,9 +409,9 @@ User: "Add authentication to the API"
 
 1. **Never implement yourself** - Always delegate
 2. **Verify everything** - Trust but verify agent output
-3. **Track progress** - Keep todos updated in real-time
+3. **Track progress** - Keep tasks updated in real-time (TaskUpdate)
 4. **Ask when unclear** - Use AskUserQuestion for ambiguity
-5. **Stay coordinated** - One task in_progress at a time
+5. **Stay coordinated** - One task in_progress at a time (unless parallel)
 
 ## What Orchestrator Does NOT Do
 

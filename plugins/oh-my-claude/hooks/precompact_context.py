@@ -11,6 +11,7 @@ Captures:
 - Current mode (ultrawork/normal)
 - Git state (branch, uncommitted changes)
 - Recent files modified
+- Active tasks/todos (supports both new Task system and legacy TodoWrite)
 - Semantic patterns (problems, solutions, decisions, key files)
 """
 
@@ -216,25 +217,57 @@ def extract_patterns(transcript: list) -> dict:
     }
 
 
+def format_task_items(items: list[dict], is_tasks: bool = False) -> str:
+    """
+    Format task/todo items for display.
+
+    Args:
+        items: List of task or todo items
+        is_tasks: True if using new Task system (has subject, id, blockedBy),
+                  False if using legacy TodoWrite (has content)
+
+    Returns:
+        Formatted string for display
+    """
+    if not items:
+        return "  (none)\n"
+
+    result = ""
+    for item in items[:5]:
+        status = item.get("status", "pending")
+        # Tasks use 'subject', Todos use 'content'
+        content = item.get("subject") or item.get("content") or ""
+        content = content[:80]
+
+        # Show task ID and dependencies if present (new Task system)
+        prefix = ""
+        suffix = ""
+        if is_tasks:
+            task_id = item.get("id", "")
+            if task_id:
+                prefix = f"#{task_id} "
+            blocked_by = item.get("blockedBy", [])
+            if blocked_by:
+                suffix = f" [blocked by: {', '.join(str(b) for b in blocked_by)}]"
+
+        result += f"  - [{status}] {prefix}{content}{suffix}\n"
+    return result
+
+
 def format_context(
     mode: str,
     git_state: dict,
     recent_files: list[str],
-    todos: list[dict],
+    items: list[dict],
     timestamp: str,
+    is_tasks: bool = False,
     patterns: dict | None = None
 ) -> str:
     """Format preserved context for injection."""
     files_str = "\n".join(f"  - {f}" for f in recent_files) if recent_files else "  (none)"
 
-    todo_str = ""
-    if todos:
-        for todo in todos[:5]:
-            status = todo.get("status", "pending")
-            content = todo.get("content", "")[:80]
-            todo_str += f"  - [{status}] {content}\n"
-    else:
-        todo_str = "  (none)\n"
+    items_str = format_task_items(items, is_tasks)
+    section_title = "Active Tasks" if is_tasks else "Active Todos"
 
     staged_str = ", ".join(git_state.get("staged_files", [])[:5]) or "(none)"
 
@@ -273,8 +306,8 @@ Staged Files: {staged_str}
 ### Recent Files Modified
 {files_str}
 
-### Active Todos
-{todo_str}{patterns_str}
+### {section_title}
+{items_str}{patterns_str}
 </context-preservation>
 
 IMPORTANT: This context was preserved before compaction. Resume work from this state."""
@@ -307,7 +340,20 @@ def main() -> None:
     mode = detect_mode(data)
     git_state = get_git_state(cwd)
     recent_files = get_recent_files(cwd)
+
+    # Try new Task system first, fall back to legacy TodoWrite
+    tasks = get_nested(data, "tasks", default=[])
     todos = get_nested(data, "todos", default=[])
+
+    # Determine which task system is in use
+    if tasks:
+        items = tasks
+        is_tasks = True
+        log_debug(f"using Task system: {len(tasks)} tasks")
+    else:
+        items = todos
+        is_tasks = False
+        log_debug(f"using TodoWrite: {len(todos)} todos")
 
     # Extract semantic patterns from transcript
     transcript = get_nested(data, "transcript", default=[])
@@ -315,7 +361,7 @@ def main() -> None:
 
     timestamp = datetime.now(timezone.utc).isoformat()
 
-    context = format_context(mode, git_state, recent_files, todos, timestamp, patterns)
+    context = format_context(mode, git_state, recent_files, items, timestamp, is_tasks, patterns)
     log_debug(f"preserving context: mode={mode}, branch={git_state.get('branch')}, patterns={len(patterns.get('problems', []))}p/{len(patterns.get('solutions', []))}s/{len(patterns.get('decisions', []))}d")
     output_system_message(context)
 

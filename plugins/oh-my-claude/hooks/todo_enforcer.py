@@ -5,9 +5,13 @@
 # ///
 """
 todo_enforcer.py
-Stop hook: Prevents stopping when todos are incomplete
+Stop hook: Prevents stopping when tasks/todos are incomplete
 
 Called when Claude tries to stop. Returns continuation prompt if work remains.
+
+Supports both:
+- Legacy TodoWrite tool (todos with content/status/activeForm)
+- New Task* tools from Claude Code v2.1.16+ (tasks with id/subject/status/owner/blockedBy)
 """
 
 import os
@@ -45,7 +49,8 @@ def analyze_transcript(transcript: list[dict[str, Any]], max_entries: int = 1000
     Collects:
     - last_assistant_message: Content of last assistant message
     - validation_ran: Whether validation was triggered
-    - last_todo_write: Todos from the last TodoWrite tool result
+    - last_todo_write: Todos from the last TodoWrite tool result (legacy)
+    - last_task_state: Tasks from Task* tool results (new system)
 
     Args:
         transcript: List of transcript entries.
@@ -58,7 +63,11 @@ def analyze_transcript(transcript: list[dict[str, Any]], max_entries: int = 1000
         "last_assistant_message": "",
         "validation_ran": False,
         "last_todo_write": None,
+        "last_task_state": None,
     }
+
+    # Task tools that indicate task management activity
+    task_tools = ("TaskCreate", "TaskUpdate", "TaskList", "TaskGet")
 
     for i, entry in enumerate(transcript):
         if i >= max_entries:
@@ -67,6 +76,7 @@ def analyze_transcript(transcript: list[dict[str, Any]], max_entries: int = 1000
 
         entry_type = entry.get("type", "")
         entry_role = entry.get("role", "")
+        tool_name = entry.get("tool", "")
 
         # Track last assistant message
         if entry_role == "assistant":
@@ -74,16 +84,29 @@ def analyze_transcript(transcript: list[dict[str, Any]], max_entries: int = 1000
             if content:
                 result["last_assistant_message"] = content
 
-        # Track TodoWrite results
-        if entry_type == "tool_result" and entry.get("tool") == "TodoWrite":
+        # Track TodoWrite results (legacy)
+        if entry_type == "tool_result" and tool_name == "TodoWrite":
             todos = entry.get("todos")
             if todos is not None:
                 result["last_todo_write"] = todos
 
+        # Track Task* tool results (new system)
+        if entry_type == "tool_result" and tool_name in task_tools:
+            # TaskList returns full task list
+            # TaskCreate/TaskUpdate may also contain updated task info
+            tasks = entry.get("tasks")
+            if tasks is not None:
+                result["last_task_state"] = tasks
+            # Also check nested result structure
+            elif entry.get("result"):
+                tasks = entry["result"].get("tasks")
+                if tasks is not None:
+                    result["last_task_state"] = tasks
+
         # Check for validation triggers
         if not result["validation_ran"]:
             # Check Task tool with validator
-            if entry_type == "tool_use" and entry.get("tool") == "Task":
+            if entry_type == "tool_use" and tool_name == "Task":
                 input_data = entry.get("input") or {}
                 input_str = str(input_data).lower()
                 if "validator" in input_str:
@@ -98,30 +121,68 @@ def analyze_transcript(transcript: list[dict[str, Any]], max_entries: int = 1000
     return result
 
 
-def get_incomplete_todos_from_todos(data: dict[str, Any]) -> int:
-    """Count incomplete todos from .todos field."""
+def get_incomplete_items_from_data(data: dict[str, Any]) -> int:
+    """
+    Count incomplete items from data, checking both tasks and todos fields.
+
+    Prefers new Task system (.tasks) over legacy TodoWrite (.todos).
+    """
+    # Try new Task system first
+    tasks = data.get("tasks") or []
+    if tasks:
+        return sum(1 for t in tasks if t.get("status") in ("pending", "in_progress"))
+
+    # Fall back to legacy TodoWrite
     todos = data.get("todos") or []
     return sum(1 for t in todos if t.get("status") in ("pending", "in_progress"))
 
 
-def get_completed_todos_from_todos(data: dict[str, Any]) -> int:
-    """Count completed todos from .todos field."""
+def get_completed_items_from_data(data: dict[str, Any]) -> int:
+    """
+    Count completed items from data, checking both tasks and todos fields.
+
+    Prefers new Task system (.tasks) over legacy TodoWrite (.todos).
+    """
+    # Try new Task system first
+    tasks = data.get("tasks") or []
+    if tasks:
+        return sum(1 for t in tasks if t.get("status") == "completed")
+
+    # Fall back to legacy TodoWrite
     todos = data.get("todos") or []
     return sum(1 for t in todos if t.get("status") == "completed")
 
 
-def count_todos_by_status(todos: list[dict[str, Any]] | None) -> tuple[int, int]:
+def count_items_by_status(items: list[dict[str, Any]] | None) -> tuple[int, int]:
     """
-    Count incomplete and completed todos from a list.
+    Count incomplete and completed items from a list.
+
+    Works with both Task items (id/subject/status) and Todo items (content/status).
 
     Returns:
         Tuple of (incomplete_count, completed_count).
     """
-    if not todos:
+    if not items:
         return 0, 0
-    incomplete = sum(1 for t in todos if t.get("status") in ("pending", "in_progress"))
-    completed = sum(1 for t in todos if t.get("status") == "completed")
+    incomplete = sum(1 for t in items if t.get("status") in ("pending", "in_progress"))
+    completed = sum(1 for t in items if t.get("status") == "completed")
     return incomplete, completed
+
+
+# Legacy aliases for backwards compatibility
+def get_incomplete_todos_from_todos(data: dict[str, Any]) -> int:
+    """Legacy alias - use get_incomplete_items_from_data instead."""
+    return get_incomplete_items_from_data(data)
+
+
+def get_completed_todos_from_todos(data: dict[str, Any]) -> int:
+    """Legacy alias - use get_completed_items_from_data instead."""
+    return get_completed_items_from_data(data)
+
+
+def count_todos_by_status(todos: list[dict[str, Any]] | None) -> tuple[int, int]:
+    """Legacy alias - use count_items_by_status instead."""
+    return count_items_by_status(todos)
 
 
 def has_uncommitted_changes(cwd: str) -> bool:
@@ -197,25 +258,37 @@ def main() -> None:
     transcript = data.get("transcript") or []
     analysis = analyze_transcript(transcript)
 
-    # Check for incomplete todos - first from .todos field
-    incomplete_todos = get_incomplete_todos_from_todos(data)
-    completed_todos = get_completed_todos_from_todos(data)
+    # Check for incomplete items - first from .tasks or .todos field
+    incomplete_items = get_incomplete_items_from_data(data)
+    completed_items = get_completed_items_from_data(data)
 
-    # Fall back to transcript if no .todos field
-    if incomplete_todos == 0 and completed_todos == 0:
-        transcript_incomplete, transcript_completed = count_todos_by_status(
-            analysis["last_todo_write"]
-        )
-        incomplete_todos = transcript_incomplete
-        completed_todos = transcript_completed
+    # Determine which system is being used for context messages
+    using_tasks = bool(data.get("tasks"))
+
+    # Fall back to transcript if no direct data
+    if incomplete_items == 0 and completed_items == 0:
+        # Try new Task system from transcript first
+        if analysis["last_task_state"]:
+            transcript_incomplete, transcript_completed = count_items_by_status(
+                analysis["last_task_state"]
+            )
+            using_tasks = True
+        else:
+            # Fall back to legacy TodoWrite
+            transcript_incomplete, transcript_completed = count_items_by_status(
+                analysis["last_todo_write"]
+            )
+        incomplete_items = transcript_incomplete
+        completed_items = transcript_completed
 
     # Collect all issues that should prevent stopping
     cwd = data.get("cwd") or "."
     issues: list[str] = []
 
-    # Check 1: Incomplete todos
-    if incomplete_todos > 0:
-        issues.append(f"Incomplete todos: {incomplete_todos} remaining")
+    # Check 1: Incomplete tasks/todos
+    if incomplete_items > 0:
+        item_type = "tasks" if using_tasks else "todos"
+        issues.append(f"Incomplete {item_type}: {incomplete_items} remaining")
 
     # Check 2: Active plan drafts (if enabled)
     if should_check_plans():
@@ -231,6 +304,12 @@ def main() -> None:
     # If any issues exist, block with combined message
     if issues:
         issues_text = "\n".join(f"- {issue}" for issue in issues)
+        # Provide appropriate guidance based on which system is in use
+        if using_tasks:
+            task_guidance = "- For incomplete tasks: Use TaskList to review, then TaskUpdate to mark completed or continue working"
+        else:
+            task_guidance = "- For incomplete todos: Review your TodoWrite list and continue working"
+
         context = f"""[WORK INCOMPLETE - CANNOT STOP]
 
 The following issues prevent stopping:
@@ -238,7 +317,7 @@ The following issues prevent stopping:
 
 ## Rules
 - You CANNOT stop until ALL issues are resolved
-- For incomplete todos: Review your TodoWrite list and continue working
+{task_guidance}
 - For active plans: Complete or archive the plan drafts
 - For uncommitted changes: Commit or stash the changes
 - Do NOT ask for permission - just continue working
@@ -281,13 +360,14 @@ Do NOT ask - just finish the work."""
                 do_output_block("Uncommitted changes with incomplete work pattern", context)
                 output_empty()
 
-    # If work was done (completed todos exist), check validation status
-    if completed_todos > 0:
+    # If work was done (completed items exist), check validation status
+    if completed_items > 0:
+        item_type = "task(s)" if using_tasks else "todo(s)"
         if not analysis["validation_ran"]:
             # Validation hasn't run yet - inject prompt to run validator
             context = f"""[AUTO-VALIDATION REQUIRED]
 
-All {completed_todos} todo(s) are marked completed. Before stopping, you MUST run validation.
+All {completed_items} {item_type} are marked completed. Before stopping, you MUST run validation.
 
 ## Required Action
 Use Task with subagent_type="oh-my-claude:validator" to verify the work:
