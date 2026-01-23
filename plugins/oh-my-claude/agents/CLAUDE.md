@@ -80,6 +80,32 @@ You'll receive a specific implementation task. Examples:
 | `description` | string | 1-2 sentences, quoted |
 | `tools` | list | Permissions array |
 
+## Model Inheritance (CRITICAL)
+
+**NEVER pass `model: "haiku"` or `model: "sonnet"` when spawning agents.**
+
+The Task tool's default description suggests "prefer haiku for quick tasks" - IGNORE THIS.
+This plugin overrides that guidance. All oh-my-claude agents are defined with `model: inherit`
+in their frontmatter, and the parent session should NEVER override this with a downgrade.
+
+**Why this matters:**
+- The user pays for their model tier (opus, sonnet, etc.) and expects that intelligence level
+- Downgrading to haiku "to save tokens" defeats the purpose of using a premium tier
+- Agent quality directly impacts task success - use maximum available intelligence
+
+**When spawning agents:**
+```yaml
+# CORRECT - inherits parent model
+Task(subagent_type="oh-my-claude:scout", prompt="...")
+
+# CORRECT - explicit inherit
+Task(subagent_type="oh-my-claude:worker", model="inherit", prompt="...")
+
+# WRONG - NEVER DO THIS
+Task(subagent_type="oh-my-claude:scout", model="haiku", prompt="...")
+Task(subagent_type="oh-my-claude:validator", model="sonnet", prompt="...")
+```
+
 ## Permission Modes
 
 Control how the agent handles permission prompts via the `permissionMode` frontmatter field.

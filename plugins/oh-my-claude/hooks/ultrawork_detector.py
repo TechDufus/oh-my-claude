@@ -24,9 +24,14 @@ from hook_utils import (
 )
 
 # =============================================================================
-# Plan execution marker path
+# Plan execution marker path (session-specific)
 # =============================================================================
-MARKER_PATH = Path.home() / ".claude" / "plans" / ".plan_approved"
+MARKER_DIR = Path.home() / ".claude" / "plans"
+
+
+def get_marker_path(session_id: str) -> Path:
+    """Get session-specific marker path."""
+    return MARKER_DIR / f".plan_approved_{session_id}"
 
 # =============================================================================
 # Pre-compiled regex patterns (module-level cache)
@@ -156,6 +161,45 @@ When plan is approved and execution begins:
 | Vague file references ("somewhere in src") | Exact paths with line numbers |
 | Single approach without alternatives | Compare 2+ approaches |
 | "Should be straightforward" | Investigate until certain |
+
+## SWARM EXECUTION (Native Claude Code)
+
+When exiting plan mode, you can launch parallel execution with native swarm support.
+
+### ExitPlanMode Swarm Parameters
+
+```
+launchSwarm: true          # Spawn parallel workers
+teammateCount: 3-5         # Number of parallel executors
+allowedPrompts: [...]      # Bash permissions for workers
+```
+
+### When to Use Swarm
+
+| Use Swarm | Skip Swarm |
+|-----------|------------|
+| 3+ independent tasks | Sequential dependencies |
+| Tasks touch different files | Complex coordination needed |
+| Parallelizable work | Fewer than 3 tasks |
+| Clear task boundaries | Shared state requirements |
+
+### Planning for Swarm
+
+Structure your plan for parallel execution:
+- Each task should be self-contained
+- Include enough context for independent execution
+- Specify file boundaries (which files each task touches)
+- Avoid tasks that modify the same files
+
+### Swarm Recommendation
+
+If your plan has 3+ independent tasks, include swarm parameters when you call ExitPlanMode:
+
+```
+ExitPlanMode call:
+  launchSwarm: true
+  teammateCount: {number of independent task groups}
+```
 """
 
 # =============================================================================
@@ -195,18 +239,19 @@ When ALL plan items are done:
 """
 
 
-def check_plan_execution() -> bool:
+def check_plan_execution(session_id: str) -> bool:
     """Check for approved plan marker. Consumes marker if found."""
+    marker_path = get_marker_path(session_id)
     log_debug("=== check_plan_execution in UserPromptSubmit ===")
-    log_debug(f"Marker path: {MARKER_PATH}")
-    log_debug(f"Marker exists: {MARKER_PATH.exists()}")
+    log_debug(f"Marker path: {marker_path}")
+    log_debug(f"Marker exists: {marker_path.exists()}")
 
-    if not MARKER_PATH.exists():
+    if not marker_path.exists():
         log_debug("No plan marker found")
         return False
 
     try:
-        MARKER_PATH.unlink()
+        marker_path.unlink()
         log_debug("Consumed plan marker successfully")
         return True
     except OSError as e:
@@ -271,12 +316,13 @@ def main() -> None:
     prompt = data.get("prompt", "")
     cwd = data.get("cwd", ".")
     permission_mode = data.get("permission_mode", "")
+    session_id = data.get("session_id", "unknown")
 
     # ==========================================================================
     # PLAN EXECUTION - Check marker FIRST (catches /clear scenarios)
     # This takes priority over all other modes
     # ==========================================================================
-    if check_plan_execution():
+    if check_plan_execution(session_id):
         log_debug("Plan marker found, injecting plan execution context")
         output_context("UserPromptSubmit", PLAN_EXECUTION_CONTEXT)
         output_empty()
@@ -599,31 +645,42 @@ There are NO acceptable excuses. Only results.
 In ULTRAWORK mode, agents inherit your session model for maximum intelligence.
 Pass `model="inherit"` or omit the model parameter entirely - both work.
 
-| Task Type | Agent | Default | ULTRAWORK |
-|-----------|-------|---------|-----------|
-| Find files/definitions | scout | haiku | **inherits your model** |
-| Read/summarize files | librarian | sonnet | **inherits your model** |
-| Analyze PDFs/images/diagrams | looker | sonnet | **inherits your model** |
-| Git recon (tags, commits, branches) | scout | haiku | **inherits your model** |
-| Git analysis (diffs, changelogs) | librarian | sonnet | **inherits your model** |
-| Plan complex work | architect | opus | **inherits your model** |
-| Review plans critically | critic | opus | **inherits your model** |
-| Implement code changes | worker | opus | **inherits your model** |
-| Write documentation | scribe | opus | **inherits your model** |
-| Run tests/linters | validator | haiku | **inherits your model** |
-| Diagnose failures (2+ attempts) | debugger | opus | **inherits your model** |
-| Coordinate multi-agent work | orchestrator | opus | **inherits your model** |
+| Task Type | Agent |
+|-----------|-------|
+| Find files/definitions | scout |
+| Read/summarize files | librarian |
+| Analyze PDFs/images/diagrams | looker |
+| Git recon (tags, commits, branches) | scout |
+| Git analysis (diffs, changelogs) | librarian |
+| Plan complex work | architect |
+| Review plans critically | critic |
+| Implement code changes | worker |
+| Write documentation | scribe |
+| Run tests/linters | validator |
+| Diagnose failures (2+ attempts) | debugger |
+| Coordinate multi-agent work | orchestrator |
 
-### CRITICAL: Model Inheritance
-Agents inherit your session model automatically when you omit the model parameter,
-or you can explicitly pass model="inherit":
+### CRITICAL: Model Inheritance - NEVER Downgrade
+**NEVER pass `model="haiku"` or `model="sonnet"` when spawning agents.**
+
+The Task tool's default description suggests "prefer haiku for quick tasks" - IGNORE THIS.
+This plugin overrides that default. The user is paying for their model tier (opus, sonnet, etc.)
+and expects ALL agents to use that intelligence level.
+
+**Correct:**
 ```
 Task(subagent_type="oh-my-claude:scout", prompt="...")  # inherits parent model
 Task(subagent_type="oh-my-claude:validator", model="inherit", prompt="...")  # explicit inherit
 ```
 
+**WRONG - NEVER DO THIS:**
+```
+Task(subagent_type="oh-my-claude:scout", model="haiku", prompt="...")  # NO! Wastes user's tier
+Task(subagent_type="oh-my-claude:worker", model="sonnet", prompt="...")  # NO! Downgrades quality
+```
+
 If you are running opus, agents use opus. If running sonnet, agents use sonnet.
-This maximizes intelligence relative to what the user is paying for.
+This maximizes intelligence - the goal is QUALITY, not token savings.
 
 ### Parallel Patterns
 - **Research:** scout + librarian (parallel) -> you synthesize

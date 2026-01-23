@@ -9,11 +9,12 @@ import pytest
 
 # Import the module to test its patterns and functions
 from ultrawork_detector import (
-    MARKER_PATH,
+    MARKER_DIR,
     PATTERNS,
     PLAN_EXECUTION_CONTEXT,
     check_plan_execution,
     detect_validation,
+    get_marker_path,
     is_trivial_request,
 )
 
@@ -403,10 +404,14 @@ def marker_home(tmp_path):
     return tmp_path
 
 
+# Test session ID used for marker tests
+TEST_SESSION_ID = "test-session-123"
+
+
 @pytest.fixture
 def marker_home_with_marker(marker_home):
-    """Create marker home with .plan_approved marker file."""
-    marker_path = marker_home / ".claude" / "plans" / ".plan_approved"
+    """Create marker home with session-specific .plan_approved marker file."""
+    marker_path = marker_home / ".claude" / "plans" / f".plan_approved_{TEST_SESSION_ID}"
     marker_path.touch()
     return marker_home
 
@@ -416,7 +421,10 @@ class TestPlanExecutionMarker:
 
     def test_marker_detected_injects_plan_context(self, marker_home_with_marker):
         """When marker exists, should inject PLAN_EXECUTION_CONTEXT."""
-        output = run_hook({"prompt": "implement the plan"}, marker_home_with_marker)
+        output = run_hook(
+            {"prompt": "implement the plan", "session_id": TEST_SESSION_ID},
+            marker_home_with_marker,
+        )
         context = get_context(output)
         assert "ULTRAWORK MODE ACTIVE" in context
         assert "PLAN EXECUTION" in context
@@ -424,17 +432,20 @@ class TestPlanExecutionMarker:
 
     def test_marker_consumed_after_detection(self, marker_home_with_marker):
         """Marker should be deleted after successful injection."""
-        marker_path = marker_home_with_marker / ".claude" / "plans" / ".plan_approved"
+        marker_path = marker_home_with_marker / ".claude" / "plans" / f".plan_approved_{TEST_SESSION_ID}"
         assert marker_path.exists(), "Marker should exist before hook runs"
 
-        run_hook({"prompt": "start"}, marker_home_with_marker)
+        run_hook({"prompt": "start", "session_id": TEST_SESSION_ID}, marker_home_with_marker)
 
         assert not marker_path.exists(), "Marker should be consumed (deleted)"
 
     def test_marker_priority_over_ultrawork_keyword(self, marker_home_with_marker):
         """Marker should take priority over ultrawork keyword."""
         # When marker exists AND prompt has "ultrawork", should inject PLAN_EXECUTION context
-        output = run_hook({"prompt": "ultrawork fix bugs"}, marker_home_with_marker)
+        output = run_hook(
+            {"prompt": "ultrawork fix bugs", "session_id": TEST_SESSION_ID},
+            marker_home_with_marker,
+        )
         context = get_context(output)
         # Should get PLAN_EXECUTION context, not generic ULTRAWORK context
         assert "PLAN EXECUTION" in context
@@ -443,7 +454,10 @@ class TestPlanExecutionMarker:
 
     def test_no_marker_normal_ultrawork_behavior(self, marker_home):
         """Without marker, ultrawork keyword should inject generic ultrawork context."""
-        output = run_hook({"prompt": "ultrawork fix bugs"}, marker_home)
+        output = run_hook(
+            {"prompt": "ultrawork fix bugs", "session_id": TEST_SESSION_ID},
+            marker_home,
+        )
         context = get_context(output)
         assert "ULTRAWORK MODE ACTIVE" in context
         # Should get generic ultrawork content (not plan execution)
@@ -452,13 +466,19 @@ class TestPlanExecutionMarker:
 
     def test_no_marker_no_keyword_passthrough(self, marker_home):
         """Without marker and no keyword, should pass through without context."""
-        output = run_hook({"prompt": "just a normal message"}, marker_home)
+        output = run_hook(
+            {"prompt": "just a normal message", "session_id": TEST_SESSION_ID},
+            marker_home,
+        )
         context = get_context(output)
         assert context == "", "Should return empty when no marker and no keyword"
 
     def test_context_includes_execution_protocol(self, marker_home_with_marker):
         """Injected context should include execution protocol."""
-        output = run_hook({"prompt": "go"}, marker_home_with_marker)
+        output = run_hook(
+            {"prompt": "go", "session_id": TEST_SESSION_ID},
+            marker_home_with_marker,
+        )
         context = get_context(output)
         assert "Create todos" in context
         assert "Execute in order" in context
@@ -466,7 +486,10 @@ class TestPlanExecutionMarker:
 
     def test_context_includes_compliance_rules(self, marker_home_with_marker):
         """Injected context should include plan compliance rules."""
-        output = run_hook({"prompt": "go"}, marker_home_with_marker)
+        output = run_hook(
+            {"prompt": "go", "session_id": TEST_SESSION_ID},
+            marker_home_with_marker,
+        )
         context = get_context(output)
         assert "Allowed" in context
         assert "NOT Allowed" in context
@@ -474,10 +497,16 @@ class TestPlanExecutionMarker:
     def test_second_run_returns_normal(self, marker_home_with_marker):
         """Second run after marker consumed should behave normally."""
         # First run consumes marker
-        run_hook({"prompt": "first"}, marker_home_with_marker)
+        run_hook(
+            {"prompt": "first", "session_id": TEST_SESSION_ID},
+            marker_home_with_marker,
+        )
 
         # Second run should NOT inject plan execution context
-        output = run_hook({"prompt": "second"}, marker_home_with_marker)
+        output = run_hook(
+            {"prompt": "second", "session_id": TEST_SESSION_ID},
+            marker_home_with_marker,
+        )
         context = get_context(output)
         # No marker means no plan execution context
         assert "PLAN EXECUTION" not in context
@@ -488,29 +517,37 @@ class TestCheckPlanExecutionFunction:
 
     def test_returns_false_when_marker_missing(self, marker_home, monkeypatch):
         """check_plan_execution should return False when marker doesn't exist."""
-        # Monkeypatch MARKER_PATH to use temp dir
+        # Monkeypatch MARKER_DIR to use temp dir
         monkeypatch.setattr(
-            "ultrawork_detector.MARKER_PATH",
-            marker_home / ".claude" / "plans" / ".plan_approved"
+            "ultrawork_detector.MARKER_DIR",
+            marker_home / ".claude" / "plans"
         )
-        assert check_plan_execution() is False
+        assert check_plan_execution("test-session") is False
 
     def test_returns_true_and_deletes_marker(self, marker_home_with_marker, monkeypatch):
         """check_plan_execution should return True and delete marker when it exists."""
-        marker_path = marker_home_with_marker / ".claude" / "plans" / ".plan_approved"
-        monkeypatch.setattr("ultrawork_detector.MARKER_PATH", marker_path)
+        session_id = "test-session"
+        plans_dir = marker_home_with_marker / ".claude" / "plans"
+        marker_path = plans_dir / f".plan_approved_{session_id}"
+        # Create session-specific marker
+        marker_path.touch()
+        monkeypatch.setattr("ultrawork_detector.MARKER_DIR", plans_dir)
 
         assert marker_path.exists(), "Marker should exist before check"
-        result = check_plan_execution()
+        result = check_plan_execution(session_id)
         assert result is True, "Should return True when marker exists"
         assert not marker_path.exists(), "Marker should be deleted after check"
 
     def test_idempotent_after_consumption(self, marker_home_with_marker, monkeypatch):
         """check_plan_execution should return False after marker is consumed."""
-        marker_path = marker_home_with_marker / ".claude" / "plans" / ".plan_approved"
-        monkeypatch.setattr("ultrawork_detector.MARKER_PATH", marker_path)
+        session_id = "test-session"
+        plans_dir = marker_home_with_marker / ".claude" / "plans"
+        marker_path = plans_dir / f".plan_approved_{session_id}"
+        # Create session-specific marker
+        marker_path.touch()
+        monkeypatch.setattr("ultrawork_detector.MARKER_DIR", plans_dir)
 
         # First call consumes marker
-        assert check_plan_execution() is True
+        assert check_plan_execution(session_id) is True
         # Second call returns False
-        assert check_plan_execution() is False
+        assert check_plan_execution(session_id) is False

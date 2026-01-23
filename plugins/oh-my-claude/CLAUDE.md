@@ -52,6 +52,17 @@ Match your response length to the task:
 
 All agents use `model: inherit` - same model as your session.
 
+### Model Inheritance (CRITICAL)
+
+**NEVER pass `model: "haiku"` or `model: "sonnet"` when spawning agents.**
+
+Always omit the model parameter or use `model: "inherit"`. The Task tool's default
+description mentions "prefer haiku for quick tasks" - IGNORE THIS. This plugin
+overrides that guidance. The user pays for their model tier - use it.
+
+**Correct:** `Task(subagent_type="oh-my-claude:scout", prompt="...")`
+**WRONG:** `Task(subagent_type="oh-my-claude:scout", model="haiku", prompt="...")`
+
 | Agent | Job | When |
 |-------|-----|------|
 | **scout** | FIND | "Where is X?", locate files/definitions, git recon (tags, branches, commit lists) |
