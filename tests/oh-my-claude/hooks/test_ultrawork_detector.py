@@ -470,7 +470,7 @@ class TestPlanExecutionPromptDetection:
         context = get_context(output)
         assert "ULTRAWORK MODE ACTIVE" in context
         # Should get generic ultrawork content (not plan execution)
-        assert "MANDATORY CERTAINTY PROTOCOL" in context
+        assert "CERTAINTY PROTOCOL" in context
         assert "PLAN EXECUTION" not in context
 
     def test_context_includes_execution_protocol(self, test_home):

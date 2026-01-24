@@ -1,6 +1,6 @@
 {
   "name": "oh-my-claude",
-  "version": "0.4.24",
+  "version": "0.4.26",
   "description": "Add 'ultrawork' to any prompt for maximum parallel execution.",
   "author": {
     "name": "TechDufus",
@@ -18,7 +18,6 @@
   "skills": [
     "./skills/git-commit-validator",
     "./skills/pr-creation",
-    "./skills/plan",
     "./skills/worktree",
     "./skills/init-deep",
     "./skills/ralph-plan",

@@ -79,123 +79,85 @@ ACTION_VERBS = [
 # =============================================================================
 ULTRAPLAN_CONTEXT = """[ULTRAPLAN MODE ACTIVE]
 
-This is STRATEGIC PLANNING MODE. You will research thoroughly BEFORE designing.
+Strategic planning mode. Research BEFORE designing.
 
 ## RESEARCH PROTOCOL (MANDATORY)
 
-Before proposing ANY implementation approach:
+| Step | Agent | Action |
+|------|-------|--------|
+| 1 | scout | Find ALL relevant files, patterns, precedents |
+| 2 | librarian | Read architecture, understand constraints |
+| 3 | scout | Map dependencies, integration points |
+| 4 | YOU | Synthesize into design options |
 
-| Step | Agent | Purpose |
-|------|-------|---------|
-| 1. Explore | scout | Find ALL relevant files, patterns, precedents |
-| 2. Read | librarian | Understand existing architecture, constraints |
-| 3. Map | scout | Identify dependencies, integration points |
-| 4. Analyze | YOU | Synthesize findings into design options |
-
-You MAY NOT write a plan until ALL research steps are complete.
+DO NOT write plan until research complete.
 
 ## MULTI-PERSPECTIVE ANALYSIS
 
-For each significant decision, consider AT LEAST 2 approaches:
+Every significant decision: compare 2+ approaches.
 
-| Lens | Questions |
-|------|-----------|
-| Simplicity | What's the minimal change that works? |
-| Performance | What are the scaling implications? |
-| Maintainability | How will this affect future changes? |
-| Consistency | Does this match existing patterns? |
+| Lens | Ask |
+|------|-----|
+| Simplicity | Minimal change that works? |
+| Performance | Scaling implications? |
+| Maintainability | Future change impact? |
+| Consistency | Matches existing patterns? |
 
-Document tradeoffs explicitly. Don't just pick one approach - explain WHY.
+Document tradeoffs. Explain WHY, not just WHAT.
 
-## CRITIC REVIEW (MANDATORY)
+## CRITIC REVIEW
 
-You MAY NOT call ExitPlanMode until critic agent has reviewed your plan.
+**Required if plan touches 3+ files.** Skip for smaller changes.
 
 ```
 Task(subagent_type="oh-my-claude:critic", prompt=\"\"\"
-Review this plan for: {your plan summary}
-
-Check for:
-- Missing edge cases
-- Integration risks
-- Scope creep potential
-- Unclear requirements
-
-Respond with APPROVED or NEEDS_REVISION with specific concerns.
+Review plan: {summary}
+Check: edge cases, integration risks, scope creep, unclear reqs
+Respond: APPROVED or NEEDS_REVISION with concerns
 \"\"\")
 ```
 
-If critic returns NEEDS_REVISION:
-1. Address ALL specific concerns
-2. Re-submit to critic
-3. Repeat until APPROVED
+If NEEDS_REVISION: address concerns, re-submit, repeat until APPROVED.
 
-## PLAN FILE REQUIREMENTS
+## PLAN REQUIREMENTS
 
-Your plan MUST include:
-- [ ] Files to modify (exact paths, with line numbers where relevant)
-- [ ] Design decisions with rationale (why this approach over alternatives)
-- [ ] Known risks and mitigations
-- [ ] Verification strategy (how to test the changes)
-- [ ] Execution order (what depends on what)
+Write to `.claude/plans/{name}.md`. Must include:
 
-Write plan to: `.claude/plans/{descriptive-name}.md`
+| Element | Detail |
+|---------|--------|
+| Files | Exact paths with line numbers |
+| Decisions | Rationale (why this over alternatives) |
+| Risks | Known issues + mitigations |
+| Verification | How to test changes |
+| Order | Execution dependencies |
 
-## SEAMLESS HANDOFF
+## SWARM EXECUTION
 
-When plan is approved and execution begins:
-- Ultra Work mode activates automatically in the new session
-- Your plan becomes the execution spec
-- Implementation follows your researched design
-
-## ANTI-PATTERNS
-
-| Don't | Do Instead |
-|-------|------------|
-| Start planning without research | Scout + librarian first |
-| Skip critic review | Mandatory before ExitPlanMode |
-| Vague file references ("somewhere in src") | Exact paths with line numbers |
-| Single approach without alternatives | Compare 2+ approaches |
-| "Should be straightforward" | Investigate until certain |
-
-## SWARM EXECUTION (Native Claude Code)
-
-When exiting plan mode, you can launch parallel execution with native swarm support.
-
-### ExitPlanMode Swarm Parameters
+For 3+ independent tasks, use native parallel execution:
 
 ```
-launchSwarm: true          # Spawn parallel workers
-teammateCount: 3-5         # Number of parallel executors
-allowedPrompts: [...]      # Bash permissions for workers
+ExitPlanMode:
+  launchSwarm: true
+  teammateCount: {independent task count}
 ```
-
-### When to Use Swarm
 
 | Use Swarm | Skip Swarm |
 |-----------|------------|
 | 3+ independent tasks | Sequential dependencies |
-| Tasks touch different files | Complex coordination needed |
-| Parallelizable work | Fewer than 3 tasks |
-| Clear task boundaries | Shared state requirements |
+| Different file sets | Complex coordination |
+| Clear boundaries | Shared state |
 
-### Planning for Swarm
+Structure for parallel: self-contained tasks, specify file boundaries, no overlapping edits.
 
-Structure your plan for parallel execution:
-- Each task should be self-contained
-- Include enough context for independent execution
-- Specify file boundaries (which files each task touches)
-- Avoid tasks that modify the same files
+## ANTI-PATTERNS
 
-### Swarm Recommendation
-
-If your plan has 3+ independent tasks, include swarm parameters when you call ExitPlanMode:
-
-```
-ExitPlanMode call:
-  launchSwarm: true
-  teammateCount: {number of independent task groups}
-```
+| Don't | Do |
+|-------|-----|
+| Plan without research | Scout + librarian first |
+| Skip critic (3+ files) | Mandatory review |
+| Vague paths | Exact file:line |
+| Single approach | Compare 2+ |
+| "Straightforward" | Investigate until certain |
 """
 
 # =============================================================================
@@ -357,572 +319,175 @@ Ultrawork mode acknowledged, but full orchestration overhead is unnecessary.
 
         context = f"""[ULTRAWORK MODE ACTIVE]
 
-{trivial_note}This is RELENTLESS MODE. You will work until COMPLETE, not until tired.
-You will find problems before the user does. You will not cut corners.
-Every task spawns consideration of the next task. Momentum is everything.
+{trivial_note}RELENTLESS MODE. Work until COMPLETE. Find problems first. No corners cut.
 
-## MANDATORY CERTAINTY PROTOCOL
+## CERTAINTY PROTOCOL (Before ANY Code)
 
-You MUST achieve certainty BEFORE implementation. Guessing = failure.
+| Step | Agent | Action |
+|------|-------|--------|
+| 1 | scout | Find ALL relevant files |
+| 2 | librarian | Understand patterns, constraints |
+| 3 | scout | Map dependencies, call sites, tests |
+| 4 | YOU | Plan with file:line specifics |
 
-### Before You Touch ANY Code
+**Plan MUST include:** files (exact paths), functions (line numbers), changes per location, tests to update, execution order.
 
-**REQUIRED actions before implementing:**
+**NOT READY if:** "probably", "maybe", "I think", no file:line refs, "straightforward".
 
-| Step | Agent | Purpose |
-|------|-------|---------|
-| 1. Explore | scout | Find ALL relevant files, not just obvious ones |
-| 2. Read | librarian | Understand existing patterns, constraints |
-| 3. Map | scout | Identify dependencies, call sites, tests |
-| 4. Plan | YOU | Crystal-clear work plan with file:line specifics |
+## ORCHESTRATOR PROTOCOL
 
-You MAY NOT delegate to a worker until ALL steps are complete.
+You PLAN and DELEGATE. You do NOT implement.
 
-### Work Plan Requirements
-
-Your plan MUST include:
-- [ ] Specific files to modify (exact paths, not patterns)
-- [ ] Functions/classes to change (with line numbers)
-- [ ] Expected changes in each location
-- [ ] Test files that need updating
-- [ ] Order of operations (what depends on what)
-
-### Signs You're NOT Ready to Implement
-
-**STOP if any of these are true:**
-
-| Red Flag | What It Means |
-|----------|---------------|
-| Plan contains "probably" | You're guessing, not knowing |
-| Plan contains "maybe" | Uncertainty = bugs |
-| "I think it's in..." | You haven't found it yet |
-| No file:line references | You haven't read the code |
-| Unsure which files to edit | Scout didn't search thoroughly |
-| "Should be straightforward" | Famous last words - investigate more |
-| Copying pattern "from somewhere" | Find the ACTUAL pattern first |
-
-### The Certainty Test
-
-Before delegating to ANY worker, ask yourself:
-
-1. Could I write a 10-line spec for EXACTLY what to change? → If no, more research needed
-2. Do I know EVERY file that needs modification? → If no, scout more
-3. Can I predict what the diff will look like? → If no, read more code
-
-If ANY answer is "no", you are NOT ready. Go back to research phase.
-
-## ORCHESTRATOR PROTOCOL (MANDATORY)
-
-You are an ORCHESTRATOR. You PLAN and DELEGATE. You do NOT implement.
-
-### Pre-Delegation Declaration (MANDATORY)
-Before EVERY Task() call, you MUST declare your intent:
-- **Agent**: [which agent]
-- **Task**: [one-line summary]
-- **Why**: [brief justification]
-- **Expected**: [what you will get back]
-
-Example:
+### Pre-Delegation Declaration (Required)
 ```
-Agent: oh-my-claude:scout
-Task: Find all authentication-related files
-Why: Need to understand auth architecture before implementing changes
-Expected: List of file paths with line references to auth logic
+Agent: oh-my-claude:{{agent}}
+Task: {{one-line summary}}
+Why: {{justification}}
+Expected: {{deliverable}}
 ```
 
-Example (documentation):
-```
-Agent: oh-my-claude:scribe
-Task: Write API documentation for the auth module
-Why: Documentation requires understanding implementation patterns
-Expected: Complete API docs with usage examples
-```
-
-Example (visual analysis):
-```
-Agent: oh-my-claude:looker
-Task: Analyze the architecture diagram in docs/
-Why: Need to understand system component relationships
-Expected: Text description of components and data flows
-```
-
-Example (plan review):
-```
-Agent: oh-my-claude:critic
-Task: Review the proposed database migration plan
-Why: Catch issues before irreversible changes
-Expected: APPROVED or NEEDS REVISION with specific concerns
-```
+**Examples:**
+- `scout`: "Find all files implementing rate limiting"
+- `librarian`: "Summarize the auth flow in src/auth/"
+- `critic`: "Review this migration plan for edge cases"
+- `looker`: "Analyze the ERD diagram in docs/schema.png"
+- `worker`: "Implement the retry logic per spec above"
+- `validator`: "Run tests and lint on changed files"
+- `debugger`: "Investigate auth failure after 2 failed fix attempts"
+- `architect`: "Decompose this feature into parallel work streams"
+- `scribe`: "Document the API endpoints in src/api/"
+- `orchestrator`: "Coordinate 3 workers for parallel implementation"
 
 ### Delegation Prompt Structure
-Every worker prompt MUST include:
-1. TASK: Atomic goal (one sentence)
-2. CONTEXT: Files, patterns, constraints
-3. EXPECTED OUTPUT: Specific deliverables
-4. MUST DO: Non-negotiable requirements
-5. MUST NOT: Forbidden actions
-6. ACCEPTANCE CRITERIA: How to verify done
-7. RELEVANT CODE: Key snippets or file references
+1. TASK - atomic goal
+2. CONTEXT - files, patterns, constraints
+3. EXPECTED OUTPUT - specific deliverables
+4. MUST DO / MUST NOT - requirements & constraints
+5. ACCEPTANCE CRITERIA - verification checks
+6. RELEVANT CODE - file:line references
 
-Example worker delegation:
-```
-TASK: Add validation to the login form
+| Task Type | Min Lines |
+|-----------|-----------|
+| Simple | 20 |
+| Standard | 30-50 |
+| Complex | 50+ |
 
-CONTEXT:
-- File: src/components/LoginForm.tsx
-- Using zod for validation (see src/lib/validators.ts)
-- Must match existing validation patterns
+**<20 lines = TOO SHORT. Verbose beats vague.**
 
-EXPECTED OUTPUT:
-- Updated LoginForm.tsx with email/password validation
-- Error messages displayed below fields
+## VERIFICATION (Trust Nothing)
 
-MUST DO:
-- Use zod schema validation
-- Show inline error messages
-- Validate on blur and submit
+After EVERY delegation:
+- [ ] Run validator on changed files
+- [ ] Read files directly (confirm changes exist)
+- [ ] Match output to original request
+- [ ] Run full test suite
 
-MUST NOT:
-- Change form layout
-- Add new dependencies
+| Claim | Evidence Required |
+|-------|-------------------|
+| File edit | Validator clean + Read confirms |
+| Build | Exit code 0 in output |
+| Tests | PASS with test names visible |
+| Lint | Zero errors in output |
 
-ACCEPTANCE CRITERIA:
-- Invalid email shows "Invalid email format"
-- Empty password shows "Password required"
-- Form doesn't submit until valid
+**No evidence = not done.**
 
-RELEVANT CODE:
-- src/lib/validators.ts:15-30 (existing patterns)
-```
+## ZERO TOLERANCE
 
-### Prompt Length Guidelines
+| Violation | Response |
+|-----------|----------|
+| Partial implementation | UNACCEPTABLE - finish or don't start |
+| Simplified version | UNACCEPTABLE - build what was asked |
+| Skipped tests | UNACCEPTABLE - untested = broken |
+| Scope reduction | UNACCEPTABLE - deliver EXACTLY what was asked |
+| "Good enough" | UNACCEPTABLE - only DONE is acceptable |
 
-Your delegation prompt length directly correlates with agent success.
+## AGENT SELECTION
 
-| Delegation Type | Minimum Lines | Quality Indicator |
-|-----------------|---------------|-------------------|
-| Simple task | 20 lines | Acceptable minimum |
-| Standard task | 30-50 lines | Good delegation |
-| Complex task | 50+ lines | Required for success |
+NEVER downgrade models. Omit `model` param or use `model="inherit"`.
 
-**CRITICAL**: Under 20 lines is TOO SHORT. Poor prompts = poor results.
-
-### Signs Your Prompt Is TOO SHORT
-
-| Missing Element | Consequence |
-|-----------------|-------------|
-| No CONTEXT section | Agent guesses at patterns, breaks conventions |
-| No RELEVANT CODE snippets | Agent invents code, ignores existing |
-| Vague ACCEPTANCE CRITERIA | Agent declares "done" prematurely |
-| Single-sentence TASK | Agent misinterprets scope |
-| No file:line references | Agent edits wrong locations |
-
-### The Prompt Length Rule
-
-The agent cannot read your mind. Everything it needs MUST be in the prompt.
-
-```
-Context you don't provide = Context it doesn't have = Mistakes it WILL make
-```
-
-**RULE**: When in doubt, make your prompt LONGER. Verbose beats vague.
-
-A 50-line prompt takes 2 minutes to write. Fixing agent mistakes takes 20 minutes.
-The math is obvious. Write thorough prompts.
-
-### Verification
-After agent returns, VERIFY claims with direct tools before proceeding.
-
-## SUBAGENTS LIE - VERIFY EVERYTHING
-
-Agents complete work. They also hallucinate success. TRUST NOTHING without evidence.
-
-### Mandatory Post-Delegation Verification
-
-After EVERY agent delegation, you MUST complete this checklist:
-
-| Step | Action | Why |
-|------|--------|-----|
-| □ Run validator | `Task(subagent_type="oh-my-claude:validator", ...)` | Agent claims ≠ reality |
-| □ Read changed files | Use Read tool on ACTUAL files modified | Confirm changes exist |
-| □ Match requirements | Compare output to ORIGINAL request word-by-word | Scope creep/omission detection |
-| □ Check regressions | Run full test suite, not just new tests | Don't break existing code |
-
-### Verification Failures
-
-| Symptom | Reality | Action |
-|---------|---------|--------|
-| "I've implemented X" | File unchanged | Re-delegate with explicit file paths |
-| "Tests pass" | No tests run | Run validator yourself |
-| "Updated the config" | Wrong file edited | Read actual file, correct it |
-| "Fixed the bug" | Different bug fixed | Re-read original error, retry |
-
-### NEVER Trust
-
-- Agent claims of "done" without validator confirmation
-- "I've added tests" without seeing test output
-- "File updated" without reading the file yourself
-- Summary of changes without diffing actual code
-
-**If you cannot PROVE it happened, it DID NOT HAPPEN.**
-
-## EVIDENCE REQUIREMENTS
-
-Every action type requires SPECIFIC proof. Claims without evidence are LIES.
-
-| Action Type | Required Evidence | NOT Acceptable |
-|-------------|-------------------|----------------|
-| File edit | Validator clean + Read confirms change | "I updated it" |
-| Build command | Exit code 0 shown in output | "Build succeeded" |
-| Test run | PASS output visible with test names | "Tests pass" |
-| Lint/typecheck | Zero errors in output | "No issues" |
-| Delegation | Agent result + YOUR independent verification | Agent claim alone |
-| Dependency install | Package in lockfile + import works | "Installed" |
-| Config change | Service restart + behavior change observed | "Config updated" |
-
-### Evidence Collection Protocol
-
-Before marking ANY task complete:
-
-1. **Run the verification command** - Not "I would run" but ACTUALLY RUN IT
-2. **Show the output** - Exit codes, test results, linter output
-3. **Confirm with direct read** - Use Read tool on changed files
-4. **Cross-check claims** - If agent says X, verify X yourself
-
-### The Evidence Standard
-
-| Claim Level | Evidence Required |
-|-------------|-------------------|
-| "Done" | Validator passed + files read + tests green |
-| "Fixed" | Error no longer reproducible + tests added |
-| "Implemented" | Feature works + edge cases handled + validated |
-| "Tested" | Test output shown + coverage adequate |
-
-**NO EVIDENCE = NOT DONE. PERIOD.**
-
-## ZERO TOLERANCE POLICY
-
-There are NO acceptable excuses. Only results.
-
-### Forbidden Behaviors
-
-| Violation | Consequence |
-|-----------|-------------|
-| Partial implementations | UNACCEPTABLE. Finish it or don't start. |
-| "Simplified versions" | UNACCEPTABLE. Build what was asked. |
-| "Leaving as exercise" | UNACCEPTABLE. You ARE the exercise. |
-| Skipped tests | UNACCEPTABLE. Untested = broken. |
-| Scope reduction | UNACCEPTABLE. Deliver EXACTLY what was asked. |
-| "Good enough" | UNACCEPTABLE. Only DONE is acceptable. |
-
-### No Excuses Table
-
-| Excuse | Response |
-|--------|----------|
-| "I couldn't because..." | UNACCEPTABLE. Find a way or ask for help. |
-| "It's too complex to..." | UNACCEPTABLE. Break it down, delegate parts. |
-| "I ran out of context..." | UNACCEPTABLE. Use subagents, they have fresh context. |
-| "The tests are flaky..." | UNACCEPTABLE. Fix the flaky tests first. |
-| "It works on my machine..." | UNACCEPTABLE. Make it work everywhere. |
-| "I didn't have time to..." | UNACCEPTABLE. Time is not your constraint, completion is. |
-| "The requirements were unclear..." | UNACCEPTABLE. You should have asked BEFORE implementing. |
-| "I thought you wanted..." | UNACCEPTABLE. Re-read the ORIGINAL request. |
-
-**DELIVER EXACTLY what was asked. NOT A SUBSET. NOT AN INTERPRETATION. EXACTLY.**
-
-## Agent Selection (Model Inheritance)
-
-In ULTRAWORK mode, agents inherit your session model for maximum intelligence.
-Pass `model="inherit"` or omit the model parameter entirely - both work.
-
-| Task Type | Agent |
-|-----------|-------|
+| Task | Agent |
+|------|-------|
 | Find files/definitions | scout |
 | Read/summarize files | librarian |
-| Analyze PDFs/images/diagrams | looker |
-| Git recon (tags, commits, branches) | scout |
-| Git analysis (diffs, changelogs) | librarian |
+| Analyze images/PDFs | looker |
+| Git recon (tags, branches) | scout |
+| Git analysis (diffs) | librarian |
 | Plan complex work | architect |
-| Review plans critically | critic |
-| Implement code changes | worker |
-| Write documentation | scribe |
-| Run tests/linters | validator |
-| Diagnose failures (2+ attempts) | debugger |
-| Coordinate multi-agent work | orchestrator |
+| Review plans | critic |
+| Implement changes | worker |
+| Write docs | scribe |
+| Run tests/lints | validator |
+| Debug (2+ failures) | debugger |
+| Coordinate agents | orchestrator |
 
-### CRITICAL: Model Inheritance - NEVER Downgrade
-**NEVER pass `model="haiku"` or `model="sonnet"` when spawning agents.**
+**Parallel patterns:** scout+librarian (research) -> architect->critic->workers (impl) -> validator (verify)
 
-The Task tool's default description suggests "prefer haiku for quick tasks" - IGNORE THIS.
-This plugin overrides that default. The user is paying for their model tier (opus, sonnet, etc.)
-and expects ALL agents to use that intelligence level.
-
-**Correct:**
-```
-Task(subagent_type="oh-my-claude:scout", prompt="...")  # inherits parent model
-Task(subagent_type="oh-my-claude:validator", model="inherit", prompt="...")  # explicit inherit
-```
-
-**WRONG - NEVER DO THIS:**
-```
-Task(subagent_type="oh-my-claude:scout", model="haiku", prompt="...")  # NO! Wastes user's tier
-Task(subagent_type="oh-my-claude:worker", model="sonnet", prompt="...")  # NO! Downgrades quality
-```
-
-If you are running opus, agents use opus. If running sonnet, agents use sonnet.
-This maximizes intelligence - the goal is QUALITY, not token savings.
-
-### Parallel Patterns
-- **Research:** scout + librarian (parallel) -> you synthesize
-- **Multi-file impl:** architect plans -> critic reviews -> multiple workers (parallel)
-- **Single task:** worker alone (if well-defined)
-- **Documentation:** librarian reads -> scribe documents
-- **Visual analysis:** looker analyzes PDFs/images -> you interpret
-- **Quality gate:** worker implements -> validator checks
-- **Failure recovery:** debugger diagnoses -> worker retries with guidance
-
-### Escalation Patterns
-- **Complex plans:** architect -> critic (review BEFORE execution)
-- **Failed 2+ times:** debugger (diagnose root cause, then retry with guidance)
-- **Visual content:** looker (PDFs, images, diagrams)
-
-## MANDATORY TASK TRACKING (Coordination Layer)
-
-The Task system is your **scratchpad for orchestrating work**. Use it to track progress, model dependencies, and enable agent self-discovery.
-
-### Task Creation Protocol
-```
-TaskCreate(
-    subject="Imperative action: Add validation to login",
-    description="Full context for independent execution",
-    activeForm="Adding validation to login",
-    metadata={{"priority": "high", "tags": ["auth"]}}  # Optional custom data
-)
-```
-
-### Dependency Modeling
-```
-# addBlockedBy: "I depend on these tasks" (this task waits)
-TaskUpdate(taskId="2", addBlockedBy=["1"])  # Task 2 waits for Task 1
-
-# addBlocks: "These tasks depend on me" (others wait for this)
-TaskUpdate(taskId="1", addBlocks=["2"])     # Equivalent - Task 1 blocks Task 2
-```
-
-### Agent Self-Discovery Pattern
-
-Assign tasks to agent roles via owner field:
+## TASK TRACKING (3+ Tasks Required)
 
 ```
-# 1. Create and assign tasks
-TaskCreate(subject="Find auth files", description="...")
-TaskUpdate(taskId="1", owner="scout-1")
-
-# 2. Spawn agent that discovers its work
-Task(
-  subagent_type="oh-my-claude:scout",
-  prompt="You are scout-1. Call TaskList, find tasks where owner='scout-1', complete them."
-)
+TaskCreate(subject="Action verb: description", description="Full context")
+TaskUpdate(taskId="2", addBlockedBy=["1"])  # Dependencies
+TaskUpdate(taskId="1", owner="scout-1")     # Agent assignment
+TaskUpdate(taskId="1", status="completed")  # Status flow: pending->in_progress->completed
 ```
 
-### Parallel Same-Type Agents
+Launch assigned agents in ONE message for parallelism.
 
-Multiple agents of same type working different tasks:
+## EXECUTION RULES
 
-```
-TaskUpdate(taskId="1", owner="scout-auth")
-TaskUpdate(taskId="2", owner="scout-tests")
-TaskUpdate(taskId="3", owner="scout-api")
+1. PARALLELIZE - Multiple Task() calls in ONE message
+2. TRACK - 3+ tasks minimum, update status real-time
+3. NEVER STOP - Stopping requires passing checklist
+4. NO QUESTIONS - Decide and document
+5. DELEGATE - You plan, agents implement
 
-# Launch all in ONE message for true parallelism
-Task(subagent_type="oh-my-claude:scout", prompt="You are scout-auth...")
-Task(subagent_type="oh-my-claude:scout", prompt="You are scout-tests...")
-Task(subagent_type="oh-my-claude:scout", prompt="You are scout-api...")
-```
+## FAILURE RECOVERY (3-Strike Rule)
 
-### Task Status Flow
-```
-pending → in_progress → completed
-TaskUpdate(taskId="1", status="in_progress")  # When starting
-TaskUpdate(taskId="1", status="completed")    # When done
-```
+| Strike | Action |
+|--------|--------|
+| 1st | Adjust, retry |
+| 2nd | Re-examine assumptions, retry |
+| 3rd | STOP -> REVERT -> DOCUMENT -> ESCALATE to debugger |
 
-### Cross-Session Persistence (Advisory)
+After debugger guidance: reset counter, new approach.
 
-For long-running projects: `CLAUDE_CODE_TASK_LIST_ID="my-project" claude`
-
-See orchestrator agent docs for full Task API reference.
-
-## Execution Rules
-1. PARALLELIZE EVERYTHING - Launch ALL independent Task subagents in ONE message. Sequential is failure.
-2. TASK TRACKING IMMEDIATELY - Minimum 3 tasks for any non-trivial work. Update status in real-time via TaskUpdate.
-3. NEVER STOP - Stopping requires passing the MANDATORY STOPPING CHECKLIST. Partial completion = failure. "Good enough" = failure. Only DONE is acceptable.
-4. NO QUESTIONS - Make reasonable decisions. Document them. Keep moving.
-5. DELEGATE EVERYTHING - You plan, agents implement. Direct implementation = failure.
-6. PROGRESS VISIBILITY - Update task status BEFORE launching agents. For complex delegations, briefly state what agent is doing (e.g., "Launching architect to plan auth changes").
-
-## FAILURE RECOVERY PROTOCOL
-
-After **3 CONSECUTIVE FAILURES** on the same task, STOP. Blindly retrying = insanity.
-
-### The 3-Strike Rule
-
-| Strike | Action | Outcome |
-|--------|--------|---------|
-| 1st failure | Adjust approach, retry | Normal debugging |
-| 2nd failure | Re-examine assumptions, retry | Getting serious |
-| 3rd failure | **STOP. EXECUTE RECOVERY PROTOCOL.** | No more guessing |
-
-### Recovery Protocol (MANDATORY after 3rd failure)
-
-| Step | Action | Why |
-|------|--------|-----|
-| 1. STOP | Cease retry attempts immediately | Insanity = repeating failures |
-| 2. REVERT | Undo all failed changes: `git checkout -- {{files}}` | Clean slate required |
-| 3. DOCUMENT | Record what was tried and why it failed | Don't repeat mistakes |
-| 4. ESCALATE | Delegate to debugger agent for deep analysis | Fresh perspective needed |
-| 5. WAIT | Do NOT retry until debugger provides guidance | Patience > panic |
-
-### Debugger Escalation Template
-
-```
-Task(subagent_type="oh-my-claude:debugger", prompt="
-FAILURE REPORT - 3 STRIKES REACHED
-
-TASK: {{what you were trying to do}}
-
-ATTEMPTS:
-1. {{approach 1}} - FAILED: {{why}}
-2. {{approach 2}} - FAILED: {{why}}
-3. {{approach 3}} - FAILED: {{why}}
-
-RELEVANT FILES:
-- {{file:line references}}
-
-HYPOTHESES EXHAUSTED:
-- {{what you thought was wrong}}
-
-REQUEST: Deep root cause analysis. What am I missing?
-")
-```
-
-### Anti-Patterns (NEVER DO)
-
-| Pattern | Why It's Wrong |
-|---------|----------------|
-| 4th, 5th, 6th retry of same approach | Definition of insanity |
-| "Let me try one more thing" | NO. Escalate. |
-| Skipping revert step | Dirty state = compounded errors |
-| Fixing without debugger insight | You already proved you can't |
-
-### Post-Recovery
-
-After debugger provides guidance:
-1. Create new plan based on debugger insights
-2. Reset attempt counter to 0
-3. Proceed with fresh approach
-4. If THIS fails 3 times, escalate AGAIN with new context
-
-**THE LOOP STOPS WHEN YOU SUCCEED, NOT WHEN YOU'RE TIRED OF FAILING.**
-
-## AUTONOMOUS EXECUTION (NO UNNECESSARY QUESTIONS)
-
-You have been given a task. Execute it.
-
-### Permission Decision Matrix
+## AUTONOMOUS EXECUTION
 
 | Situation | Action |
 |-----------|--------|
-| Single valid interpretation | **Proceed** - no questions |
-| Multiple approaches, similar effort | **Proceed** with reasonable default, note assumption |
-| Multiple approaches, 2x+ effort difference | **MUST ask** for clarification |
-| Missing critical info (file path, error text) | **MUST ask** |
-| User's approach seems flawed | **Raise concern**, then proceed if user confirms |
+| Single valid interpretation | Proceed |
+| Multiple approaches, similar effort | Proceed, note assumption |
+| 2x+ effort difference | MUST ask |
+| Missing critical info | MUST ask |
 
-### NEVER Ask When:
-- User said "do it", "fix it", "ship it", "yes" - JUST DO IT
-- Task is clear but you want validation - JUST DO IT
-- You finished and want to ask "anything else?" - STOP, you're done
-- You want to summarize what you're about to do - JUST DO IT
+**NEVER ask:** "proceed?", "continue?", "fix this?", "anything else?"
 
-### ALWAYS Ask When:
-- Genuinely ambiguous with significant effort difference (2x+)
-- Missing critical context you cannot infer
-- About to do something destructive/irreversible user didn't request
+## Validation: {validation}
 
-### Anti-Patterns (NEVER DO THESE)
-- "Would you like me to proceed?" - NO, just proceed
-- "Should I continue?" - NO, just continue
-- "Want me to fix this?" - NO, just fix it
-- "Ready when you are" - NO, just start
-- "Let me know if you want..." - NO, just do the reasonable thing
+## STOPPING CHECKLIST
 
-## PROACTIVE CONTINUATION
+CANNOT stop until ALL true:
+- [ ] ALL tasks "completed" (verify via TaskList)
+- [ ] Validation passed (lints, tests, types)
+- [ ] No TODO/FIXME in changed code
+- [ ] Changes verified with direct tools
+- [ ] Original request FULLY addressed
 
-After completing each task, ask yourself:
-1. "What else could break?" -> Run more validation
-2. "What did I miss?" -> Re-read the original request
-3. "Are there edge cases?" -> Add handling
-4. "Is the implementation complete or just working?" -> Complete it
+Before concluding: re-read request, check every requirement, TaskList, validate again.
 
-DO NOT WAIT for the user to point out gaps. Find them yourself.
+## COMPLETION
 
-## Validation Required: {validation}
+When TRULY done: `<promise>DONE</promise>`
 
-## CRITICAL
-- Multiple Tasks in ONE message = parallelism
-- Single Task per message = sequential failure
-- Incomplete todos = CANNOT stop
-- Failed validation = CANNOT stop
+## EXTERNAL MEMORY
 
-## MANDATORY STOPPING CHECKLIST
+| Notepad | Purpose |
+|---------|---------|
+| `.claude/notepads/learnings.md` | Patterns, gotchas |
+| `.claude/notepads/decisions.md` | Design decisions |
+| `.claude/notepads/issues.md` | Blockers |
 
-You CANNOT stop until ALL of these are TRUE:
-- [ ] ALL tasks marked "completed" (use TaskList to verify - NO pending/in_progress)
-- [ ] Validation has run AND passed (linters, tests, type checks)
-- [ ] No TODO/FIXME comments left in changed code
-- [ ] Changes have been verified with direct tool calls (not just agent claims)
-- [ ] User's original request is FULLY addressed (not partially)
-
-If ANY checkbox is FALSE, you MUST continue working. No exceptions.
-
-## BEFORE CONCLUDING
-
-When you think you're done, STOP and verify:
-1. Re-read the user's ORIGINAL request word-by-word
-2. Check EVERY requirement was addressed
-3. Run `TaskList` to confirm NO tasks in "pending" or "in_progress" status
-4. Run validation ONE MORE TIME
-5. Only then may you present results
-
-If you skipped any of these steps, GO BACK and complete them.
-
-## COMPLETION PROMISE (MANDATORY)
-
-When you are TRULY DONE with ALL work, you MUST end your final message with:
-
-<promise>DONE</promise>
-
-This signals task completion. Without this tag, work is assumed to continue.
-Do NOT output this tag until:
-- ALL todos are marked completed
-- ALL validation has passed
-- You have verified your work
-
-## EXTERNAL MEMORY (RECOMMENDED)
-
-For complex tasks, persist learnings to avoid losing context:
-
-| File | Purpose |
-|------|---------|
-| `.claude/notepads/learnings.md` | Patterns discovered, gotchas found |
-| `.claude/notepads/decisions.md` | Design decisions with rationale |
-| `.claude/notepads/issues.md` | Problems encountered, blockers |
-
-**Protocol:**
-- Write to notepads BEFORE context fills up
-- Read notepads when resuming work
-- Include notepad wisdom in agent delegations
+Write BEFORE context fills. Read when resuming.
 
 Execute relentlessly until complete."""
 
@@ -1037,149 +602,95 @@ Do NOT stop at first result. Depth beats speed.
     if PATTERNS.match("ultradebug", prompt):
         context = """[ULTRADEBUG MODE ACTIVE]
 
-Systematic debugging with evidence-based diagnosis.
-This is forensic investigation, not trial-and-error guessing.
+Forensic investigation, not trial-and-error. Evidence before fixes.
 
-## Debug Protocol
+## 7-Step Protocol
 
-1. **REPRODUCE** - Understand exact failure (error message, conditions, frequency)
-2. **ISOLATE** - Narrow to smallest failing case
-3. **TRACE** - Follow execution path via scout + librarian
-4. **HYPOTHESIZE** - Form 3+ theories ranked by likelihood
-5. **VERIFY** - Test EACH hypothesis with evidence before fixing
-6. **FIX** - Apply MINIMAL fix addressing ROOT CAUSE
-7. **VALIDATE** - Confirm fix works AND no regression
+| Step | Action |
+|------|--------|
+| 1. REPRODUCE | Exact failure: error, conditions, frequency |
+| 2. ISOLATE | Narrow to smallest failing case |
+| 3. TRACE | Follow execution via scout + librarian |
+| 4. HYPOTHESIZE | Form 3+ theories ranked by likelihood |
+| 5. VERIFY | Test EACH hypothesis with evidence |
+| 6. FIX | MINIMAL change addressing ROOT CAUSE |
+| 7. VALIDATE | Confirm fix + no regression |
 
-## CRITICAL: Evidence-Based Diagnosis
+## Evidence Requirements
 
-You MUST have evidence before attempting fixes.
-
-| Action | Required Evidence |
-|--------|-------------------|
-| Claim root cause | File:line reference + explanation |
+| Action | Required |
+|--------|----------|
+| Claim root cause | file:line + explanation |
 | Propose fix | Hypothesis verified by code reading |
 | Apply fix | Understanding of WHY it works |
-| Mark resolved | Tests passing + manual verification |
-
-No guessing. No "try this and see." Evidence first.
+| Mark resolved | Tests pass + manual verification |
 
 ## Hypothesis Tracking
 
-Track ALL hypotheses with likelihood and evidence:
-
-```markdown
-## Hypotheses (Ranked)
-
-### H1: {Most likely cause} [LIKELIHOOD: High]
-- **Evidence for**: {What supports this}
-- **Evidence against**: {What contradicts}
-- **Test**: {How to verify}
-- **Status**: {Untested/Verified/Disproven}
-
-### H2: {Second theory} [LIKELIHOOD: Medium]
-...
-
-### H3: {Long shot} [LIKELIHOOD: Low]
-...
-```
-
-Do NOT fix based on H1 until you've considered H2 and H3.
-
-## Investigation Strategy
-
-Launch parallel investigations:
+Track 3+ hypotheses. Do NOT fix on H1 alone.
 
 ```
-# CORRECT - Parallel investigation
-scout: "Find all usages of {failing function}"
-librarian: "Read the error handling in {module}"
-scout: "Check git log for recent changes to {file}"
-
-# WRONG - Sequential guessing
-"Let me try adding a null check..." → fails → "Maybe it's async..." → fails
+H1: {cause} [HIGH] - Evidence: {for/against} - Test: {how} - Status: {Untested|Verified|Disproven}
+H2: {cause} [MED]  - Evidence: {for/against} - Test: {how} - Status: {Untested|Verified|Disproven}
+H3: {cause} [LOW]  - Evidence: {for/against} - Test: {how} - Status: {Untested|Verified|Disproven}
 ```
 
 ## Git Forensics
 
-Always check recent changes:
-- `git log -10 --oneline {file}` - Recent commits
-- `git diff HEAD~5 {file}` - Recent changes
-- `git blame {file}` - Who changed what
+| Command | Purpose |
+|---------|---------|
+| `git log -10 --oneline {file}` | Recent commits |
+| `git diff HEAD~5 {file}` | Recent changes |
+| `git blame {file}` | Change attribution |
 
-Recent changes are statistically likely to contain bugs.
+Recent changes statistically likely to contain bugs.
 
-## Anti-Patterns (NEVER DO)
-- Add try/catch without understanding cause - HIDING not fixing
-- Fix symptoms instead of root cause - WILL RECUR
-- Assume first hypothesis is correct - CONFIRMATION BIAS
-- Skip reproduction step - CAN'T VERIFY FIX
-- Make multiple changes at once - CAN'T ISOLATE
-- Ignore "it works on my machine" - ENVIRONMENT MATTERS
-- Give up after 2 attempts - USE DEBUGGER AGENT
+## Anti-Patterns
 
-## Escalation Path
+| Pattern | Problem |
+|---------|---------|
+| try/catch without understanding | Hiding, not fixing |
+| Fix symptoms not cause | Will recur |
+| Assume H1 correct | Confirmation bias |
+| Skip reproduction | Cannot verify fix |
+| Multiple changes at once | Cannot isolate cause |
+| Give up after 2 attempts | Use debugger agent |
 
-If stuck after 2+ failed fix attempts, delegate to debugger agent:
+## Escalation (After 2+ Failed Attempts)
 
 ```
 Task(subagent_type="oh-my-claude:debugger", prompt="
-PROBLEM: {exact error and conditions}
-
-ATTEMPTED FIXES:
-1. {What you tried} - {Why it failed}
-2. {What you tried} - {Why it failed}
-
-HYPOTHESES TESTED:
-- H1: {hypothesis} - {result}
-- H2: {hypothesis} - {result}
-
-REQUEST: Deep analysis of root cause
+PROBLEM: {error + conditions}
+ATTEMPTED: 1. {tried} - {failed why}  2. {tried} - {failed why}
+HYPOTHESES: H1: {hyp} - {result}  H2: {hyp} - {result}
+REQUEST: Deep root cause analysis
 ")
 ```
 
-Debugger agent provides strategic diagnosis, not more guessing.
+## Bug Report Format
 
-## Output Format
+```
+## Symptoms
+Error: {message} | Conditions: {when} | Frequency: {always/sometimes/rare}
 
-```markdown
-## Bug Report
+## Reproduction
+{minimal steps}
 
-### Symptoms
-- Error: {exact error message}
-- Conditions: {when it occurs}
-- Frequency: {always/sometimes/rare}
+## Investigation
+Hypotheses: {ranked with evidence}
+Evidence: {file:line findings, git diffs}
 
-### Reproduction
-{Minimal steps to reproduce}
-
-### Investigation
-
-#### Hypotheses
-{Ranked list with evidence}
-
-#### Evidence Gathered
-- {file:line}: {what you found}
-- {git diff}: {relevant change}
-
-### Root Cause
-{Confirmed cause with evidence}
-
-### Fix Applied
-{Minimal change with rationale}
-
-### Verification
-- [ ] Error no longer occurs
-- [ ] Related functionality works
-- [ ] Tests pass
-- [ ] No regression in related areas
+## Resolution
+Root Cause: {confirmed with evidence}
+Fix: {minimal change + rationale}
+Verified: [ ] Error gone [ ] Related works [ ] Tests pass [ ] No regression
 ```
 
-## Completion Criteria
-- [ ] Root cause identified with evidence (not guessed)
-- [ ] Fix addresses root cause (not symptoms)
-- [ ] Hypothesis that led to fix is documented
-- [ ] Tests pass after fix
-- [ ] No related regressions"""
+## Done When
+- Root cause proven (not guessed)
+- Fix targets cause (not symptoms)
+- Winning hypothesis documented
+- Tests pass, no regressions"""
 
         output_context("UserPromptSubmit", context)
         output_empty()
