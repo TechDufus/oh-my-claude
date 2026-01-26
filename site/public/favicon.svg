@@ -1,0 +1,46 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <rect width="32" height="32" rx="2" fill="#050810"/>
+  <!-- Pixel squid with actual sunglasses -->
+  <g transform="translate(3, 2)">
+    <!-- Head top -->
+    <rect x="8" y="0" width="10" height="2" fill="#DA7756"/>
+    <rect x="6" y="2" width="14" height="2" fill="#DA7756"/>
+    <rect x="4" y="4" width="18" height="2" fill="#DA7756"/>
+    <rect x="2" y="6" width="22" height="2" fill="#DA7756"/>
+
+    <!-- Face row where glasses sit -->
+    <rect x="2" y="8" width="22" height="6" fill="#DA7756"/>
+
+    <!-- SUNGLASSES - black frame with dark lenses -->
+    <!-- Left lens frame (black outline) -->
+    <rect x="3" y="8" width="8" height="5" fill="#111"/>
+    <!-- Left lens (dark blue tint) -->
+    <rect x="4" y="9" width="6" height="3" fill="#1a3a4a"/>
+
+    <!-- Bridge -->
+    <rect x="11" y="9" width="4" height="2" fill="#111"/>
+
+    <!-- Right lens frame (black outline) -->
+    <rect x="15" y="8" width="8" height="5" fill="#111"/>
+    <!-- Right lens (dark blue tint) -->
+    <rect x="16" y="9" width="6" height="3" fill="#1a3a4a"/>
+
+    <!-- Lens shine/glare -->
+    <rect x="5" y="9" width="2" height="1" fill="#3a6a7a"/>
+    <rect x="17" y="9" width="2" height="1" fill="#3a6a7a"/>
+
+    <!-- Arms extending past face -->
+    <rect x="0" y="9" width="3" height="2" fill="#111"/>
+    <rect x="23" y="9" width="3" height="2" fill="#111"/>
+
+    <!-- Lower face -->
+    <rect x="2" y="14" width="22" height="2" fill="#DA7756"/>
+    <rect x="4" y="16" width="18" height="2" fill="#DA7756"/>
+    <rect x="6" y="18" width="14" height="2" fill="#DA7756"/>
+
+    <!-- Tentacles -->
+    <rect x="6" y="20" width="3" height="5" fill="#DA7756"/>
+    <rect x="11" y="20" width="4" height="6" fill="#DA7756"/>
+    <rect x="17" y="20" width="3" height="5" fill="#DA7756"/>
+  </g>
+</svg>

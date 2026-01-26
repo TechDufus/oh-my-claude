@@ -1,0 +1,133 @@
+---
+import '@/styles/globals.css'
+import TerminalHero from '@/components/TerminalHero'
+import InstallBlock from '@/components/InstallBlock'
+import AgentGrid from '@/components/AgentGrid.astro'
+import Features from '@/components/Features.astro'
+---
+
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Claude Code plugin for context protection, specialized agents, and ultrawork mode. Transform your AI coding assistant.">
+
+  <!-- Open Graph -->
+  <meta property="og:title" content="oh-my-claude">
+  <meta property="og:description" content="Claude Code plugin for context protection, specialized agents, and ultrawork mode.">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://oh-my-claude.techdufus.com">
+
+  <!-- Twitter -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="oh-my-claude">
+  <meta name="twitter:description" content="Claude Code plugin for context protection, specialized agents, and ultrawork mode.">
+
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+  <title>oh-my-claude | Claude Code Plugin</title>
+</head>
+<body class="min-h-screen bg-background text-foreground antialiased">
+  <!-- Hero Section -->
+  <header class="relative overflow-hidden">
+    <div class="absolute inset-0 bg-gradient-to-b from-cyan/5 to-transparent pointer-events-none"></div>
+
+    <div class="container mx-auto px-4 pt-8 pb-4">
+      <nav class="flex items-center justify-between mb-8">
+        <div class="flex items-center gap-2">
+          <span class="text-2xl font-heading font-bold">oh-my-claude</span>
+        </div>
+        <a
+          href="https://github.com/techdufus/oh-my-claude"
+          target="_blank"
+          rel="noopener noreferrer"
+          class="text-muted-foreground hover:text-foreground transition-colors"
+        >
+          GitHub
+        </a>
+      </nav>
+    </div>
+
+    <div class="container mx-auto px-4 py-12">
+      <div class="flex flex-col lg:flex-row items-center justify-center gap-8 lg:gap-12">
+        <!-- Left side: Text content -->
+        <div class="flex-1 flex flex-col items-center justify-center text-center max-w-xl">
+          <h1 class="text-4xl md:text-5xl lg:text-6xl font-heading font-bold mb-6">
+            <span class="text-coral">Context Protection</span> &<br>
+            <span class="text-cyan">Specialized Agents</span>
+          </h1>
+          <p class="text-lg md:text-xl text-muted-foreground mb-8">
+            The definitive Claude Code plugin. Transforms your AI into a structured,
+            context-efficient coding partner by leveraging every capability Claude Code offers.
+          </p>
+          <InstallBlock client:load />
+        </div>
+
+        <!-- Right side: Terminal demo -->
+        <div class="flex-1">
+          <TerminalHero client:load />
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <!-- Features Section -->
+    <Features />
+
+    <!-- Agents Section -->
+    <AgentGrid />
+
+    <!-- Demo Placeholder -->
+    <section id="demo" class="py-20 px-4">
+      <div class="container mx-auto max-w-4xl text-center">
+        <h2 class="text-3xl md:text-4xl font-heading font-bold mb-4">
+          See it in <span class="text-cyan">Action</span>
+        </h2>
+        <p class="text-muted-foreground mb-8">
+          Demo recordings coming soon. For now, try it yourself!
+        </p>
+        <div class="p-8 rounded-xl border border-border/50 bg-card/50">
+          <p class="font-mono text-muted-foreground">
+            $ /plugin install techdufus/oh-my-claude<br>
+            <span class="text-cyan">→ Plugin installed. Context protection active.</span>
+          </p>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- Footer -->
+  <footer class="py-12 px-4 border-t border-border/50">
+    <div class="container mx-auto max-w-6xl">
+      <div class="flex flex-col md:flex-row items-center justify-between gap-4">
+        <div class="flex items-center gap-4">
+          <span class="font-heading font-bold">oh-my-claude</span>
+          <span class="text-muted-foreground text-sm">by techdufus</span>
+        </div>
+        <div class="flex items-center gap-6 text-sm text-muted-foreground">
+          <a
+            href="https://github.com/techdufus/oh-my-claude"
+            target="_blank"
+            rel="noopener noreferrer"
+            class="hover:text-foreground transition-colors"
+          >
+            GitHub
+          </a>
+          <a
+            href="https://github.com/techdufus/oh-my-claude/issues"
+            target="_blank"
+            rel="noopener noreferrer"
+            class="hover:text-foreground transition-colors"
+          >
+            Issues
+          </a>
+        </div>
+      </div>
+    </div>
+  </footer>
+</body>
+</html>

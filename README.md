@@ -6,6 +6,10 @@
   <a href="https://github.com/TechDufus/oh-my-claude/issues"><img src="https://img.shields.io/github/issues/TechDufus/oh-my-claude?style=flat-square" alt="Issues"></a>
 </p>
 
+<p align="center">
+  <img src="site/public/favicon.svg" alt="oh-my-claude mascot" width="80" height="80">
+</p>
+
 <h3 align="center">Turn Claude Code into a relentless parallel execution engine.</h3>
 
 ---

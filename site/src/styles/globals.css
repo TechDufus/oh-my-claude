@@ -1,0 +1,59 @@
+@import './fonts.css';
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* Dark theme by default - clawd.bot inspired */
+    --background: 222 47% 3%; /* #050810 */
+    --foreground: 0 0% 94%; /* #f0f0f0 */
+
+    --card: 222 47% 5%;
+    --card-foreground: 0 0% 94%;
+
+    --popover: 222 47% 5%;
+    --popover-foreground: 0 0% 94%;
+
+    --primary: 0 0% 94%;
+    --primary-foreground: 222 47% 3%;
+
+    --secondary: 222 30% 12%;
+    --secondary-foreground: 0 0% 94%;
+
+    --muted: 222 30% 12%;
+    --muted-foreground: 222 10% 60%;
+
+    --accent: 222 30% 15%;
+    --accent-foreground: 0 0% 94%;
+
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 98%;
+
+    --border: 222 30% 15%;
+    --input: 222 30% 15%;
+    --ring: 168 100% 45%; /* cyan */
+
+    --radius: 0.75rem;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground font-body;
+    font-feature-settings: "rlig" 1, "calt" 1;
+  }
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-heading;
+  }
+}
+
+/* Terminal pulsing line animation */
+@keyframes pulse-slide {
+  0%, 100% { left: -25%; }
+  50% { left: 100%; }
+}
