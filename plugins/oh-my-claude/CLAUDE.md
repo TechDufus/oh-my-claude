@@ -247,6 +247,8 @@ When you approve a plan (ExitPlanMode):
 - **Todo Enforcer** - Prevents stopping with incomplete todos
 - **Subagent Quality Validator** - Validates subagent outputs before completion (v0.3.2)
 - **PreCompact Context** - Preserves session state + semantic patterns before compaction (v0.3.2)
+- **Danger Blocker** - Blocks catastrophic commands (rm -rf /, fork bombs), warns on risky patterns (v0.4.27)
+- **Notification Alert** - Desktop notifications on Stop/Notification events, opt-in via OMC_NOTIFICATIONS=1 (v0.4.27)
 
 ## Configuration
 
@@ -269,3 +271,5 @@ Customize behavior via environment variables in your `settings.json`:
 | `OMC_SAFE_PERMISSIONS` | `1` | Set to `0` to disable auto-approvals |
 | `OMC_TDD_MODE` | `off` | TDD enforcement: `off`, `guided`, `enforced` |
 | `OMC_SUBAGENT_QUALITY` | `1` | Set to `0` to disable subagent output validation |
+| `OMC_DANGER_BLOCK` | `1` | Set to `0` to disable catastrophic command blocking |
+| `OMC_NOTIFICATIONS` | `0` | Set to `1` to enable desktop notifications on Stop |

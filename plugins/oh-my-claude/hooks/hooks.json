@@ -16,6 +16,11 @@
         "hooks": [
           {
             "type": "command",
+            "command": "uv run --script ${CLAUDE_PLUGIN_ROOT}/hooks/danger_blocker.py",
+            "timeout": 5
+          },
+          {
+            "type": "command",
             "command": "uv run --script ${CLAUDE_PLUGIN_ROOT}/hooks/commit_quality_enforcer.py",
             "timeout": 10
           }
@@ -136,6 +141,23 @@
             "type": "command",
             "command": "uv run --script ${CLAUDE_PLUGIN_ROOT}/hooks/openkanban_status.py",
             "timeout": 2
+          },
+          {
+            "type": "command",
+            "command": "uv run --script ${CLAUDE_PLUGIN_ROOT}/hooks/notification_alert.py",
+            "timeout": 5
+          }
+        ]
+      }
+    ],
+    "Notification": [
+      {
+        "matcher": "permission_prompt|idle_prompt",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "uv run --script ${CLAUDE_PLUGIN_ROOT}/hooks/notification_alert.py",
+            "timeout": 5
           }
         ]
       }
