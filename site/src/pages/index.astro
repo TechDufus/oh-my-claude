@@ -15,14 +15,18 @@ import Features from '@/components/Features.astro'
 
   <!-- Open Graph -->
   <meta property="og:title" content="oh-my-claude">
-  <meta property="og:description" content="Claude Code plugin for context protection, specialized agents, and ultrawork mode.">
+  <meta property="og:description" content="The definitive Claude Code plugin. Context protection, specialized agents, and ultrawork mode.">
   <meta property="og:type" content="website">
   <meta property="og:url" content="https://oh-my-claude.techdufus.com">
+  <meta property="og:image" content="https://oh-my-claude.techdufus.com/og-image.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
 
   <!-- Twitter -->
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:title" content="oh-my-claude">
-  <meta name="twitter:description" content="Claude Code plugin for context protection, specialized agents, and ultrawork mode.">
+  <meta name="twitter:description" content="The definitive Claude Code plugin. Context protection, specialized agents, and ultrawork mode.">
+  <meta name="twitter:image" content="https://oh-my-claude.techdufus.com/og-image.png">
 
   <link rel="icon" type="image/svg+xml" href="/favicon.svg">
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -91,7 +95,8 @@ import Features from '@/components/Features.astro'
           Demo recordings coming soon. For now, try it yourself!
         </p>
         <div class="p-8 rounded-xl border border-border/50 bg-card/50">
-          <p class="font-mono text-muted-foreground">
+          <p class="font-mono text-muted-foreground whitespace-nowrap overflow-x-auto">
+            $ curl -LsSf https://astral.sh/uv/install.sh | sh<br>
             $ /plugin install techdufus/oh-my-claude<br>
             <span class="text-cyan">→ Plugin installed. Context protection active.</span>
           </p>
