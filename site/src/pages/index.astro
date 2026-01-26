@@ -2,8 +2,12 @@
 import '@/styles/globals.css'
 import TerminalHero from '@/components/TerminalHero'
 import InstallBlock from '@/components/InstallBlock'
+import GitHubStars from '@/components/GitHubStars'
 import AgentGrid from '@/components/AgentGrid.astro'
 import Features from '@/components/Features.astro'
+import CursorSpotlight from '@/components/CursorSpotlight'
+import CRTEffect from '@/components/CRTEffect'
+import MagneticButton from '@/components/MagneticButton'
 ---
 
 <!DOCTYPE html>
@@ -35,6 +39,10 @@ import Features from '@/components/Features.astro'
   <title>oh-my-claude | Claude Code Plugin</title>
 </head>
 <body class="min-h-screen bg-background text-foreground antialiased">
+  <!-- Visual Effects -->
+  <CursorSpotlight client:load />
+  <CRTEffect client:load />
+
   <!-- Hero Section -->
   <header class="relative overflow-hidden">
     <div class="absolute inset-0 bg-gradient-to-b from-cyan/5 to-transparent pointer-events-none"></div>
@@ -44,14 +52,9 @@ import Features from '@/components/Features.astro'
         <div class="flex items-center gap-2">
           <span class="text-2xl font-heading font-bold">oh-my-claude</span>
         </div>
-        <a
-          href="https://github.com/techdufus/oh-my-claude"
-          target="_blank"
-          rel="noopener noreferrer"
-          class="text-muted-foreground hover:text-foreground transition-colors"
-        >
-          GitHub
-        </a>
+        <MagneticButton client:load>
+          <GitHubStars client:load />
+        </MagneticButton>
       </nav>
     </div>
 
@@ -111,7 +114,12 @@ import Features from '@/components/Features.astro'
       <div class="flex flex-col md:flex-row items-center justify-between gap-4">
         <div class="flex items-center gap-4">
           <span class="font-heading font-bold">oh-my-claude</span>
-          <span class="text-muted-foreground text-sm">by techdufus</span>
+          <a
+            href="https://github.com/techdufus"
+            target="_blank"
+            rel="noopener noreferrer"
+            class="text-muted-foreground text-sm hover:text-foreground transition-colors"
+          >by techdufus</a>
         </div>
         <div class="flex items-center gap-6 text-sm text-muted-foreground">
           <a
@@ -131,6 +139,9 @@ import Features from '@/components/Features.astro'
             Issues
           </a>
         </div>
+      </div>
+      <div class="mt-8 pt-6 border-t border-border/30 text-center">
+        <p class="text-xs text-muted-foreground/70">&copy; {new Date().getFullYear()} techdufus. All rights reserved.</p>
       </div>
     </div>
   </footer>

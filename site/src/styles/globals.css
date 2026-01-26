@@ -57,3 +57,17 @@
   0%, 100% { left: -25%; }
   50% { left: 100%; }
 }
+
+/* CRT screen flicker effect */
+@keyframes flicker {
+  0%, 100% { opacity: 1; }
+  92% { opacity: 1; }
+  93% { opacity: 0.8; }
+  94% { opacity: 1; }
+  97% { opacity: 0.9; }
+  98% { opacity: 1; }
+}
+
+.animate-flicker {
+  animation: flicker 4s infinite;
+}
