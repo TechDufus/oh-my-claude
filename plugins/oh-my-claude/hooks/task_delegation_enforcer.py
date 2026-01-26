@@ -56,6 +56,8 @@ def main():
             "    Task(subagent_type=\"oh-my-claude:worker\", prompt=\"...\")\n"
             "  '''\n"
             ")\n\n"
+            "Tasks should be small and atomic (one file, one concern).\n"
+            "If task is large, split into smaller dependent tasks first.\n\n"
             "After creating, execute the Task() call to delegate the work."
         )
         return

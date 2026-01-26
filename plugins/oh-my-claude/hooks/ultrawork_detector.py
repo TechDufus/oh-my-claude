@@ -181,6 +181,29 @@ TaskCreate(subject="Add validation tests", description="Test coverage for new mi
 TaskUpdate(taskId="2", addBlockedBy=["1"])  # Tests depend on middleware
 ```
 
+### Task Sizing (CRITICAL)
+
+Tasks should be **small and atomic**. If a task touches multiple concerns, split it.
+
+| Good Task | Bad Task |
+|-----------|----------|
+| "Add email validation to signup form" | "Implement user registration" |
+| "Create UserService.getById method" | "Build the user module" |
+| "Write tests for auth middleware" | "Add tests" |
+| "Fix null check in parseConfig" | "Fix bugs in config system" |
+
+**Sizing heuristics:**
+- Single file or tightly coupled pair
+- One logical change (add, fix, refactor - not all three)
+- Completable in one agent turn
+- Clear done/not-done criteria
+
+**When to split:**
+- Task description uses "and" → two tasks
+- Multiple files in different domains → split by domain
+- Mix of implementation + testing → separate tasks
+- Uncertainty about approach → research task first, then implement task
+
 ## PLAN COMPLIANCE
 
 | Allowed | NOT Allowed |
@@ -432,6 +455,29 @@ TaskUpdate(taskId="1", status="completed")  # Status flow: pending->in_progress-
 ```
 
 Launch assigned agents in ONE message for parallelism.
+
+## TASK SIZING (CRITICAL)
+
+Tasks should be **small and atomic**. If a task touches multiple concerns, split it.
+
+| Good Task | Bad Task |
+|-----------|----------|
+| "Add email validation to signup form" | "Implement user registration" |
+| "Create UserService.getById method" | "Build the user module" |
+| "Write tests for auth middleware" | "Add tests" |
+| "Fix null check in parseConfig" | "Fix bugs in config system" |
+
+**Sizing heuristics:**
+- Single file or tightly coupled pair
+- One logical change (add, fix, refactor - not all three)
+- Completable in one agent turn
+- Clear done/not-done criteria
+
+**When to split:**
+- Task description uses "and" → two tasks
+- Multiple files in different domains → split by domain
+- Mix of implementation + testing → separate tasks
+- Uncertainty about approach → research task first, then implement task
 
 ## EXECUTION RULES
 
