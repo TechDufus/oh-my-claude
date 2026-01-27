@@ -146,6 +146,11 @@
             "type": "command",
             "command": "uv run --script ${CLAUDE_PLUGIN_ROOT}/hooks/notification_alert.py",
             "timeout": 5
+          },
+          {
+            "type": "command",
+            "command": "uv run --script ${CLAUDE_PLUGIN_ROOT}/hooks/team_lifecycle_guardian.py",
+            "timeout": 5
           }
         ]
       }
@@ -169,6 +174,16 @@
           {
             "type": "command",
             "command": "uv run --script ${CLAUDE_PLUGIN_ROOT}/hooks/plan_execution_injector.py",
+            "timeout": 5
+          }
+        ]
+      },
+      {
+        "matcher": "Teammate",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "uv run --script ${CLAUDE_PLUGIN_ROOT}/hooks/team_lifecycle_guardian.py",
             "timeout": 5
           }
         ]

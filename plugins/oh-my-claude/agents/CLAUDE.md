@@ -327,6 +327,61 @@ Instruct agents to handle:
 
 See `orchestrator.md` for full Task API reference and coordination patterns.
 
+## Teammate Mode (Swarm Integration)
+
+When agents operate as teammates in a Team/Swarm, they follow additional protocols.
+
+### Agent → Teammate Mapping
+
+oh-my-claude agents are designed to work as persistent teammates:
+
+| Agent | Teammate Role | Swarm Behavior |
+|-------|---------------|----------------|
+| scout | Finder | Claims search/locate tasks |
+| librarian | Reader | Claims file analysis tasks |
+| architect | Planner | Claims design/decomposition tasks |
+| worker | Implementer | Claims code change tasks |
+| validator | Tester | Claims verification tasks |
+| critic | Reviewer | Claims review/feedback tasks |
+| scribe | Documenter | Claims documentation tasks |
+
+### Swarm Worker Protocol
+
+When spawned as a swarm worker, agents self-organize:
+
+1. `TaskList()` → Find pending task with no owner
+2. `TaskUpdate(taskId, owner="my-name", status="in_progress")`
+3. Execute the work
+4. `TaskUpdate(taskId, status="completed")`
+5. `Teammate(operation="write", target="team-lead", value="findings...")`
+6. Repeat until no tasks remain
+7. Request shutdown when work exhausted
+
+### Task Claiming Etiquette
+
+- **Check owner first** - Never claim a task that has an owner
+- **Check blockedBy** - Don't claim blocked tasks
+- **Match specialization** - Scout takes search tasks, worker takes implementation
+- **Report results** - Always write findings back to team lead
+
+### Inbox Patterns
+
+```
+# After completing work, notify team lead
+Teammate(operation="write", target="team-lead", value={
+    "type": "task_complete",
+    "taskId": "...",
+    "summary": "...",
+    "files_changed": [...]
+})
+
+# Request help from specialist
+Teammate(operation="write", target="librarian-1", value={
+    "type": "read_request",
+    "files": ["path/to/large/file.py"]
+})
+```
+
 ## Anti-Patterns
 
 - Don't give read-only agents write tools

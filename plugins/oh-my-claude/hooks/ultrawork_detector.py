@@ -23,6 +23,16 @@ from hook_utils import (
     read_stdin_safe,
 )
 
+
+# =============================================================================
+# Feature detection
+# =============================================================================
+def is_team_feature_available() -> bool:
+    """Check if Team/Swarm feature is available in this Claude Code version."""
+    teams_dir = Path.home() / ".claude" / "teams"
+    return teams_dir.exists()
+
+
 # =============================================================================
 # Plan execution prompt detection
 # =============================================================================
@@ -56,6 +66,13 @@ PATTERNS.add(
 PATTERNS.add(
     "ultradebug",
     r"\b(ultradebug|uld)\b",
+    re.IGNORECASE,
+)
+
+# Ultrateam mode triggers - team/swarm orchestration
+PATTERNS.add(
+    "ultrateam",
+    r"\b(ultrateam|ult(?:\s|$)|team\s*up|swarm\s+mode)\b",
     re.IGNORECASE,
 )
 
@@ -226,6 +243,80 @@ When ALL plan items are done:
 3. Note any deviations from plan (with reasons)
 """
 
+# =============================================================================
+# ULTRATEAM CONTEXT - Team/Swarm orchestration mode
+# =============================================================================
+ULTRATEAM_CONTEXT = """[ULTRATEAM MODE ACTIVE - Team/Swarm Orchestration]
+
+## Team Formation Protocol
+
+### When to Form a Team
+| Scenario | Use Team | Use Subagents |
+|----------|----------|---------------|
+| 3+ parallel independent tasks | YES | Justify why not |
+| Ongoing collaboration needed | YES | No |
+| Quick, one-off search | No | YES |
+| Pipeline with dependencies | YES | No |
+
+### Team Lifecycle (MANDATORY)
+1. `Teammate(operation="spawnTeam", team_name="project-team")`
+2. `TaskCreate` for each work item
+3. `TaskUpdate` to set dependencies (addBlockedBy)
+4. Spawn teammates: `Task(team_name="...", name="worker-1", subagent_type="oh-my-claude:worker", prompt="...")`
+5. Monitor inbox for results
+6. `Teammate(operation="requestShutdown", team_name="...", target="worker-1")` for each
+7. Wait for `shutdown_approved` messages
+8. `Teammate(operation="cleanup")`
+
+### oh-my-claude Teammates
+| Agent | Role in Team |
+|-------|--------------|
+| oh-my-claude:scout | Reconnaissance, file discovery |
+| oh-my-claude:librarian | Deep file reading, summarization |
+| oh-my-claude:architect | Design, planning |
+| oh-my-claude:worker | Implementation |
+| oh-my-claude:validator | Testing, verification |
+| oh-my-claude:critic | Review, feedback |
+
+### Swarm Worker Protocol
+Workers self-organize:
+1. `TaskList()` → find pending task with no owner
+2. `TaskUpdate(taskId, owner="my-name", status="in_progress")`
+3. Do work
+4. `TaskUpdate(taskId, status="completed")`
+5. `Teammate(operation="write", target="team-lead", value="findings...")`
+6. Repeat until no tasks remain
+7. Request shutdown
+
+### Communication Rules
+- Use `write` for specific teammate → O(1)
+- Use `broadcast` only for critical announcements → O(N)
+- Check inbox after spawning teammates
+- Report results to team-lead, not just complete tasks
+
+### Backend Selection
+- `in-process` (default): Fastest, no visibility
+- `tmux`: Visible panes, good for debugging
+- `iterm2`: macOS iTerm2 tabs
+
+### Graceful Shutdown (CRITICAL)
+NEVER leave teammates orphaned. Always:
+1. Request shutdown from each active teammate
+2. Wait for acknowledgment
+3. Call cleanup
+"""
+
+ULTRATEAM_PREVIEW_CONTEXT = """[ULTRATEAM MODE - Preview]
+
+Team/Swarm feature is not yet available in your Claude Code version.
+
+This mode will activate when Claude Code adds the `Teammate` tool.
+Until then, use the standard subagent delegation pattern:
+- Task(subagent_type="oh-my-claude:worker", prompt="...")
+
+Check ~/.claude/teams/ for team state (created after first team spawn).
+"""
+
 
 def check_plan_execution_prompt(prompt: str) -> bool:
     """Check if prompt indicates plan execution (from Accept and clear)."""
@@ -310,6 +401,18 @@ def main() -> None:
     if permission_mode == "plan":
         log_debug("plan mode detected via permission_mode, injecting ultraplan")
         output_context("UserPromptSubmit", ULTRAPLAN_CONTEXT)
+        output_empty()
+
+    # ==========================================================================
+    # ULTRATEAM MODE - Team/Swarm orchestration
+    # Checks feature availability before injecting full context
+    # ==========================================================================
+    if PATTERNS.match("ultrateam", prompt):
+        log_debug("Detected ULTRATEAM trigger")
+        if is_team_feature_available():
+            output_context("UserPromptSubmit", ULTRATEAM_CONTEXT)
+        else:
+            output_context("UserPromptSubmit", ULTRATEAM_PREVIEW_CONTEXT)
         output_empty()
 
     # Detect validation commands with graceful degradation

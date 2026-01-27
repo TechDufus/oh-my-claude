@@ -62,6 +62,36 @@ Each teammate:
 The plan is preserved in Claude Code. If teammates fail:
 1. New session will receive plan content when you click "Accept and clear"
 2. ultrawork_detector injects execution context based on prompt prefix
+
+## TEAM FORMATION GUIDANCE
+
+When your plan has 3+ independent tasks that can run in parallel:
+- Use `Teammate(operation="spawnTeam", team_name="...")` to create a team
+- Spawn specialized workers for each independent task
+- Monitor progress via inbox messages
+- Teams are more efficient than sequential subagent calls for parallel work
+
+Only use subagents (Task tool) for:
+- Quick one-off searches (scout)
+- Single file reads (librarian)
+- Tasks with strict dependencies that must run sequentially
+
+### Shutdown Sequence (CRITICAL)
+
+When work is complete:
+1. `Teammate(operation="requestShutdown", team_name="...", target="worker-1")` for EACH teammate
+2. Check inbox for `shutdown_approved` messages from each
+3. Only after all approved: `Teammate(operation="cleanup")`
+
+NEVER end session with active teammates.
+
+### Result Aggregation
+
+As teammates complete tasks:
+1. Monitor inbox for completion messages
+2. Track which tasks are done vs pending
+3. Aggregate findings before reporting to user
+4. Summarize what each teammate accomplished
 """
 
 # =============================================================================

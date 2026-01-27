@@ -13,6 +13,8 @@ For subagents (when agent_type is set), we skip the SOP since:
 - Their agent .md file provides specific guidance
 """
 
+from pathlib import Path
+
 from hook_utils import (
     get_nested,
     hook_main,
@@ -21,6 +23,14 @@ from hook_utils import (
     parse_hook_input,
     read_stdin_safe,
 )
+
+SESSION_STATE_FILE = Path.home() / ".claude" / "oh-my-claude" / "session_state.json"
+
+
+def clear_session_state():
+    """Clear session state on session start."""
+    if SESSION_STATE_FILE.exists():
+        SESSION_STATE_FILE.unlink()
 
 CONTEXT = """[oh-my-claude: Context Protection ACTIVE]
 
@@ -70,6 +80,16 @@ You are an **orchestrator**, not an implementer. You:
 - VERIFY results before proceeding
 - NEVER implement code yourself when workers can do it
 
+### Orchestration Modes
+
+| Mode | Use When | Pattern |
+|------|----------|---------|
+| Subagent | 1-2 quick tasks | Task(subagent_type="oh-my-claude:*", prompt="...") |
+| Team | 3+ parallel tasks, ongoing work | Teammate(spawnTeam) → Task(team_name, name, ...) |
+| Swarm | Many independent items | Create tasks → Spawn workers → Self-organize |
+
+Default to subagents. Escalate to teams when parallelism benefits.
+
 Subagent context is ISOLATED from yours. Use them freely - it costs you nothing."""
 
 
@@ -82,6 +102,9 @@ def main() -> None:
     - Have their own instructions in their agent .md file
     - Don't need to be told to delegate to themselves
     """
+    # Clear session state at the start of each new session
+    clear_session_state()
+
     raw = read_stdin_safe()
     data = parse_hook_input(raw)
 

@@ -153,6 +153,59 @@ You are the conductor. Agents play the music.
 | Failed 2+ times | Task(debugger) |
 | Multi-agent coordination | Task(orchestrator) |
 
+## Team/Swarm Orchestration (Upcoming)
+
+> **Note:** This feature requires Claude Code with Team/Swarm support (check for `Teammate` tool availability).
+
+### When to Use Teams vs Subagents
+
+| Scenario | Use Team | Use Subagents |
+|----------|----------|---------------|
+| 3+ parallel independent tasks | YES | Justify why not |
+| Ongoing collaboration needed | YES | No |
+| Quick, one-off search | No | YES |
+| Pipeline with dependencies | YES | No |
+| Simple file read/edit | No | YES |
+
+### Team Lifecycle (MANDATORY)
+
+1. **Spawn:** `Teammate(operation="spawnTeam", team_name="...")`
+2. **Create Tasks:** `TaskCreate` for each work item
+3. **Set Dependencies:** `TaskUpdate` to link blocked/blocking tasks
+4. **Spawn Workers:** `Task(team_name="...", name="...", subagent_type="oh-my-claude:worker")`
+5. **Monitor:** Check inbox for teammate results
+6. **Shutdown:** `Teammate(operation="requestShutdown")` for each teammate
+7. **Wait:** For `shutdown_approved` messages in inbox
+8. **Cleanup:** `Teammate(operation="cleanup")`
+
+### oh-my-claude Agents as Teammates
+
+| Agent | Team Role | Best For |
+|-------|-----------|----------|
+| oh-my-claude:scout | Reconnaissance | File discovery, quick searches |
+| oh-my-claude:librarian | Deep Analysis | Large file reading, summarization |
+| oh-my-claude:architect | Design | Planning, decomposition |
+| oh-my-claude:worker | Implementation | Code changes, edits |
+| oh-my-claude:validator | Quality | Tests, lints, type checks |
+| oh-my-claude:critic | Review | Plan review, feedback |
+| oh-my-claude:scribe | Documentation | Docs, changelogs |
+
+### Communication Rules
+
+- Use `write` for specific teammate -> O(1) efficiency
+- Use `broadcast` only for critical team-wide announcements -> O(N)
+- Always check inbox after spawning teammates
+- Report results to team lead, not just complete tasks
+- Prefer targeted messages over broadcasts
+
+### Graceful Shutdown Protocol
+
+**NEVER leave teammates orphaned.** Always:
+1. Request shutdown from each active teammate
+2. Wait for acknowledgment in inbox
+3. Only then call cleanup
+4. If session ends unexpectedly, teams may persist in `~/.claude/teams/`
+
 ## Ultrawork Mode
 
 Context protection is always on. Ultrawork adds execution intensity.
