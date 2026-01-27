@@ -16,7 +16,7 @@ export default function CursorSpotlight() {
     <div
       className="pointer-events-none fixed inset-0 z-30 transition-opacity duration-300"
       style={{
-        background: `radial-gradient(600px circle at ${position.x}px ${position.y}px, rgba(0, 229, 204, 0.06), transparent 40%)`,
+        background: `radial-gradient(350px circle at ${position.x}px ${position.y}px, rgba(0, 229, 204, 0.03), transparent 35%)`,
       }}
     />
   )
