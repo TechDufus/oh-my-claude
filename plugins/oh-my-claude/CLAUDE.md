@@ -69,6 +69,7 @@ overrides that guidance. The user pays for their model tier - use it.
 | **librarian** | READ | Files >100 lines, summarize, extract, git analysis (diffs, changelogs) |
 | **looker** | SEE | PDFs, images, screenshots, diagrams - visual content analysis |
 | **architect** | PLAN | Complex tasks needing decomposition |
+| **advisor** | ANALYZE | Pre-planning gap analysis, hidden requirements, scope risks |
 | **critic** | REVIEW | Review plans critically BEFORE execution |
 | **worker** | BUILD | Single focused implementation task |
 | **scribe** | WRITE | Documentation, READMEs, comments |
@@ -146,6 +147,7 @@ You are the conductor. Agents play the music.
 | Git analysis (diffs, changelogs) | Task(librarian) |
 | Implement feature | Task(worker) with spec |
 | Verify work | Task(validator) |
+| Gap analysis before planning | Task(advisor) |
 | Complex task | Task(architect) first |
 | Review plan before execution | Task(critic) |
 | Analyze PDFs/images/diagrams | Task(looker) |

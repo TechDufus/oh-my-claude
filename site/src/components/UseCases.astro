@@ -1,0 +1,78 @@
+---
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card'
+
+const useCases = [
+  {
+    title: "Exploring a New Codebase",
+    description: "Drop into an unfamiliar repo without flooding your context with every file.",
+    terminal: [
+      "scout finds → 47 files matched",
+      "librarian reads → 3 relevant modules",
+      "architect plans → dependency graph built",
+      '> "Auth lives in src/middleware/, uses JWT"',
+    ],
+    accent: "cyan" as const,
+  },
+  {
+    title: "Implementing a Feature",
+    description: "Describe what you want. The agent swarm handles the rest while you review.",
+    terminal: [
+      "architect → 5-step plan created",
+      "worker[1] → src/routes/auth.ts written",
+      "worker[2] → src/middleware/jwt.ts written",
+      "validator → all 12 tests passing",
+    ],
+    accent: "coral" as const,
+  },
+  {
+    title: "Debugging Production",
+    description: "When you're stuck after two attempts, the debugger agent does deep reasoning you shouldn't burn context on.",
+    terminal: [
+      "debugger → root cause: race condition",
+      "  in useEffect cleanup on unmount",
+      "worker → fix applied to 2 files",
+      "validator → regression suite green",
+    ],
+    accent: "cyan" as const,
+  },
+]
+---
+
+<section class="py-20 px-4 bg-secondary/20">
+  <div class="container mx-auto max-w-6xl">
+    <h2 class="text-3xl md:text-4xl font-heading font-bold text-center mb-4">
+      Built for how you <span class="text-coral">actually work</span>
+    </h2>
+    <p class="text-muted-foreground text-center mb-12 max-w-2xl mx-auto">
+      Real workflows, not marketing demos.
+    </p>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      {useCases.map((useCase) => (
+        <Card className="bg-card/50 backdrop-blur border-border/50">
+          <CardHeader>
+            <CardTitle className="text-lg mb-1">
+              <span class:list={[useCase.accent === "cyan" ? "text-cyan" : "text-coral"]}>
+                {useCase.title}
+              </span>
+            </CardTitle>
+            <CardDescription className="text-sm leading-relaxed">
+              {useCase.description}
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div class="font-mono text-xs p-4 rounded-lg bg-background/80 border border-border/30 space-y-1">
+              {useCase.terminal.map((line) => (
+                <div class:list={[
+                  useCase.accent === "cyan" ? "text-cyan/70" : "text-coral/70"
+                ]}>
+                  {line}
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      ))}
+    </div>
+  </div>
+</section>

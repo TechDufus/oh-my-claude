@@ -1,0 +1,31 @@
+---
+// StatsBar.astro — Key metrics displayed as a visual break between hero and content
+// <!-- Update when plugin changes -->
+const stats = [
+  { value: "11", label: "Specialized Agents" },
+  { value: "6", label: "Built-in Skills" },
+  { value: "27", label: "Lifecycle Hooks" },
+  { value: "1", label: "Plugin Install" },
+]
+---
+
+<section class="py-12 px-4 border-y border-border/30">
+  <div class="container mx-auto max-w-4xl">
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-8 md:gap-0">
+      {stats.map((stat, i) => (
+        <div class:list={[
+          "flex flex-col items-center text-center",
+          i < stats.length - 1 && "md:border-r md:border-border/50"
+        ]}>
+          <span class:list={[
+            "text-4xl md:text-5xl font-heading font-bold",
+            i % 2 === 0 ? "text-cyan" : "text-coral"
+          ]}>
+            {stat.value}
+          </span>
+          <span class="text-sm text-muted-foreground mt-1">{stat.label}</span>
+        </div>
+      ))}
+    </div>
+  </div>
+</section>

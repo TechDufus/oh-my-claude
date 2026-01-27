@@ -1,0 +1,66 @@
+---
+// HowItWorks.astro — 3-step workflow visualization
+const steps = [
+  {
+    step: 1,
+    title: "You ask",
+    description: "Describe what you need. A feature, a bug fix, a refactor — whatever. Type it like you're talking to a senior dev.",
+    snippet: '"Add auth to the API routes"',
+    icon: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>`,
+  },
+  {
+    step: 2,
+    title: "Agents swarm",
+    description: "Scout finds the files. Librarian reads them. Architect plans. Workers implement. Your context window never sees the raw dump.",
+    snippet: "scout → librarian → architect → worker",
+    icon: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>`,
+  },
+  {
+    step: 3,
+    title: "You get results",
+    description: "Clean output lands in your session. Code written, tests passing, files changed. You stayed in reasoning mode the whole time.",
+    snippet: "4 files changed, tests passing",
+    icon: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>`,
+  },
+]
+---
+
+<section class="py-20 px-4">
+  <div class="container mx-auto max-w-6xl">
+    <h2 class="text-3xl md:text-4xl font-heading font-bold text-center mb-4">
+      Three steps. <span class="text-cyan">Zero hand-holding.</span>
+    </h2>
+    <p class="text-muted-foreground text-center mb-12 max-w-2xl mx-auto">
+      You describe the work. Agents handle the rest. Your context window stays clean.
+    </p>
+
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-4 relative">
+      {steps.map((step, i) => (
+        <div class="relative flex flex-col">
+          {/* Arrow connector (hidden on mobile, shown between cards on desktop) */}
+          {i < steps.length - 1 && (
+            <div class="hidden md:flex absolute top-12 -right-4 z-10 text-muted-foreground/40">
+              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="m9 18 6-6-6-6"/>
+              </svg>
+            </div>
+          )}
+
+          <div class="p-6 rounded-xl border border-border/50 bg-card/50 flex-1">
+            <div class="flex items-center gap-3 mb-4">
+              <div class="p-2 rounded-lg bg-cyan/10 text-cyan">
+                <Fragment set:html={step.icon} />
+              </div>
+              <span class="text-xs font-mono text-muted-foreground/60">STEP {step.step}</span>
+            </div>
+            <h3 class="text-xl font-heading font-bold mb-2">{step.title}</h3>
+            <p class="text-sm text-muted-foreground leading-relaxed mb-4">{step.description}</p>
+            <div class="font-mono text-xs p-3 rounded-lg bg-background/80 border border-border/30 text-cyan/80">
+              $ {step.snippet}
+            </div>
+          </div>
+        </div>
+      ))}
+    </div>
+  </div>
+</section>

@@ -121,7 +121,7 @@ Control how the agent handles permission prompts via the `permissionMode` frontm
 **Guidelines:**
 - Read-only agents (scout, librarian, looker): use `plan` or `dontAsk`
 - Implementation agents (worker): use `acceptEdits` for efficiency
-- Review agents (critic, validator): use `plan` to prevent accidental changes
+- Review agents (advisor, critic, validator): use `plan` to prevent accidental changes
 - Never use `bypassPermissions` unless explicitly required by workflow
 
 ```yaml
@@ -211,6 +211,7 @@ Control token limits via `maxTokens` in frontmatter for agents with specific out
 | Critic | 4000-6000 | Focused feedback, not rewrites |
 | Worker | No limit | Implementation varies widely |
 | Validator | 4000-6000 | Results + brief explanation |
+| Advisor | 4000-6000 | Guidance should be concise |
 
 **When to use output constraints:**
 - Agents that tend to over-explain or dump content
@@ -265,7 +266,7 @@ Examples:
 | Planning | architect, critic | Restricted |
 | Coordination | orchestrator | Restricted |
 | Execution | worker, validator | Full |
-| Advisory | debugger, scribe | Varies |
+| Advisory | debugger, scribe, advisor | Varies |
 
 **Note:** Orchestrator is coordination-only (opus-tier by default). It delegates to other agents but cannot implement directly - no Edit, Write, or Bash for builds.
 

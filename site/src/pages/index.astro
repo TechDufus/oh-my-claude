@@ -5,6 +5,10 @@ import InstallBlock from '@/components/InstallBlock'
 import GitHubStars from '@/components/GitHubStars'
 import AgentGrid from '@/components/AgentGrid.astro'
 import Features from '@/components/Features.astro'
+import StatsBar from '@/components/StatsBar.astro'
+import HowItWorks from '@/components/HowItWorks.astro'
+import PlanMode from '@/components/PlanMode.astro'
+import UseCases from '@/components/UseCases.astro'
 import CRTEffect from '@/components/CRTEffect'
 import MagneticButton from '@/components/MagneticButton'
 ---
@@ -61,12 +65,12 @@ import MagneticButton from '@/components/MagneticButton'
         <!-- Left side: Text content -->
         <div class="flex-1 flex flex-col items-center justify-center text-center max-w-xl">
           <h1 class="text-4xl md:text-5xl lg:text-6xl font-heading font-bold mb-6">
-            <span class="text-coral">Context Protection</span> &<br>
-            <span class="text-cyan">Specialized Agents</span>
+            Stop Wasting Your<br>
+            <span class="text-cyan">Context Window</span>
           </h1>
           <p class="text-lg md:text-xl text-muted-foreground mb-8">
-            The definitive Claude Code plugin. Transforms your AI into a structured,
-            context-efficient coding partner by leveraging every capability Claude Code offers.
+            A Claude Code plugin that delegates file reading, searching, and implementation
+            to specialized agents — so your main session stays sharp.
           </p>
           <InstallBlock client:load />
         </div>
@@ -80,24 +84,47 @@ import MagneticButton from '@/components/MagneticButton'
   </header>
 
   <main>
+    <!-- Stats Bar -->
+    <div data-reveal>
+      <StatsBar />
+    </div>
+
+    <!-- How It Works -->
+    <div data-reveal data-reveal-delay="100">
+      <HowItWorks />
+    </div>
+
+    <!-- Plan Mode -->
+    <div data-reveal data-reveal-delay="100">
+      <PlanMode />
+    </div>
+
     <!-- Features Section -->
-    <Features />
+    <div data-reveal data-reveal-delay="100">
+      <Features />
+    </div>
+
+    <!-- Use Cases -->
+    <div data-reveal data-reveal-delay="100">
+      <UseCases />
+    </div>
 
     <!-- Agents Section -->
-    <AgentGrid />
+    <div data-reveal data-reveal-delay="100">
+      <AgentGrid />
+    </div>
 
-    <!-- Demo Placeholder -->
-    <section id="demo" class="py-20 px-4">
+    <!-- CTA / Install -->
+    <section id="install" class="py-20 px-4" data-reveal data-reveal-delay="100">
       <div class="container mx-auto max-w-4xl text-center">
         <h2 class="text-3xl md:text-4xl font-heading font-bold mb-4">
-          See it in <span class="text-cyan">Action</span>
+          One command. <span class="text-cyan">Zero config.</span>
         </h2>
         <p class="text-muted-foreground mb-8">
-          Demo recordings coming soon. For now, try it yourself!
+          Install the plugin. Start a new session. That's it.
         </p>
         <div class="p-8 rounded-xl border border-border/50 bg-card/50">
           <p class="font-mono text-muted-foreground whitespace-nowrap overflow-x-auto">
-            $ curl -LsSf https://astral.sh/uv/install.sh | sh<br>
             $ /plugin install techdufus/oh-my-claude<br>
             <span class="text-cyan">→ Plugin installed. Context protection active.</span>
           </p>
@@ -139,9 +166,23 @@ import MagneticButton from '@/components/MagneticButton'
         </div>
       </div>
       <div class="mt-8 pt-6 border-t border-border/30 text-center">
+        <p class="text-sm text-muted-foreground/50 mb-2 italic">Built by someone who got tired of watching Claude forget what it just read.</p>
         <p class="text-xs text-muted-foreground/70">&copy; {new Date().getFullYear()} techdufus. All rights reserved.</p>
       </div>
     </div>
   </footer>
+<script>
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach((e) => {
+      if (e.isIntersecting) {
+        const delay = e.target.getAttribute('data-reveal-delay');
+        if (delay) (e.target as HTMLElement).style.transitionDelay = `${delay}ms`;
+        e.target.classList.add('revealed');
+        observer.unobserve(e.target);
+      }
+    });
+  }, { threshold: 0.1 });
+  document.querySelectorAll('[data-reveal]').forEach((el) => observer.observe(el));
+</script>
 </body>
 </html>

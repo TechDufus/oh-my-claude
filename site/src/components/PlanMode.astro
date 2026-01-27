@@ -1,0 +1,109 @@
+---
+// PlanMode.astro — Enhanced plan mode pipeline showcase
+const pipeline = [
+  {
+    step: 1,
+    label: "Recon",
+    description: "Scout and librarian gather codebase context before any questions are asked.",
+    agent: "scout + librarian",
+  },
+  {
+    step: 2,
+    label: "Interview",
+    description: "Smart, recon-informed questions via AskUserQuestion. No guessing.",
+    agent: null,
+  },
+  {
+    step: 3,
+    label: "Research",
+    description: "Targeted deep research informed by your answers.",
+    agent: "scout + librarian",
+  },
+  {
+    step: 4,
+    label: "Gap Analysis",
+    description: "Advisor catches hidden assumptions, missing context, and scope risks.",
+    agent: "advisor",
+  },
+  {
+    step: 5,
+    label: "Write Plan",
+    description: "Structured plan with file:line refs, execution waves, decisions, and risks.",
+    agent: null,
+  },
+  {
+    step: 6,
+    label: "Critic Review",
+    description: "Critic must approve before plan exits. Loops until the plan is solid.",
+    agent: "critic",
+  },
+]
+
+const modes = [
+  {
+    keyword: "ultrawork",
+    shortcut: "ulw",
+    description: "Maximum execution intensity. Relentless task tracking and parallel delegation.",
+  },
+  {
+    keyword: "ultraresearch",
+    shortcut: "ulr",
+    description: "Systematic research with parallel searches, cross-referencing, and citations.",
+  },
+  {
+    keyword: "ultradebug",
+    shortcut: "uld",
+    description: "Forensic debugging protocol. Multiple hypotheses, 3-strike escalation.",
+  },
+]
+---
+
+<section class="py-20 px-4">
+  <div class="container mx-auto max-w-6xl">
+    <h2 class="text-3xl md:text-4xl font-heading font-bold text-center mb-4">
+      Plan mode, <span class="text-cyan">supercharged.</span>
+    </h2>
+    <p class="text-muted-foreground text-center mb-12 max-w-2xl mx-auto">
+      Enter plan mode and get a structured 6-step pipeline automatically. No magic words needed — just Shift+Tab.
+    </p>
+
+    <!-- Pipeline steps -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-16">
+      {pipeline.map((item) => (
+        <div class="p-5 rounded-xl border border-border/50 bg-card/50">
+          <div class="flex items-center gap-3 mb-3">
+            <span class="flex items-center justify-center w-8 h-8 rounded-lg bg-cyan/10 text-cyan font-mono text-sm font-bold">
+              {item.step}
+            </span>
+            <h3 class="font-heading font-bold text-lg">{item.label}</h3>
+          </div>
+          <p class="text-sm text-muted-foreground leading-relaxed mb-2">{item.description}</p>
+          {item.agent && (
+            <span class="inline-block font-mono text-xs px-2 py-1 rounded bg-cyan/10 text-cyan/80">
+              {item.agent}
+            </span>
+          )}
+        </div>
+      ))}
+    </div>
+
+    <!-- Optional keyword modes -->
+    <div class="max-w-4xl mx-auto">
+      <h3 class="text-xl font-heading font-bold text-center mb-2">
+        Want more? <span class="text-coral">Say the word.</span>
+      </h3>
+      <p class="text-muted-foreground text-center mb-8 text-sm">
+        Drop a keyword in your prompt to activate specialized execution modes.
+      </p>
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        {modes.map((mode) => (
+          <div class="p-4 rounded-xl border border-border/50 bg-card/50 text-center">
+            <div class="font-mono text-sm font-bold text-coral mb-1">{mode.keyword}</div>
+            <div class="font-mono text-xs text-muted-foreground/60 mb-3">{mode.shortcut}</div>
+            <p class="text-xs text-muted-foreground leading-relaxed">{mode.description}</p>
+          </div>
+        ))}
+      </div>
+    </div>
+  </div>
+</section>

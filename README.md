@@ -41,6 +41,7 @@ Claude will parallelize everything, delegate file reads to subagents, track prog
 - [Magic Keywords](#magic-keywords)
 - [What Ultrawork Actually Does](#what-ultrawork-actually-does)
 - [The Agent Team](#the-agent-team)
+- [Enhanced Plan Mode](#enhanced-plan-mode)
 - [All Components](#all-components)
 - [Integrations](#integrations)
 - [For LLM Agents](#for-llm-agents)
@@ -140,7 +141,7 @@ The hook intercepts your prompt, detects the keyword, and injects execution dire
 
 ## The Agent Team
 
-Ten specialized subagents, all using `model: inherit` (same model as your session):
+Eleven specialized subagents, all using `model: inherit` (same model as your session):
 
 | Agent | What It Does |
 |-------|--------------|
@@ -148,6 +149,7 @@ Ten specialized subagents, all using `model: inherit` (same model as your sessio
 | **librarian** | Smart reading — summarizes large files, git diffs and changelogs |
 | **looker** | Visual analysis — PDFs, images, screenshots, diagrams |
 | **architect** | Planning — decomposes complex tasks, identifies parallelization |
+| **advisor** | Pre-planning gap analysis for hidden requirements and scope risks |
 | **critic** | Plan review — finds flaws and edge cases BEFORE execution |
 | **debugger** | Failure escalation — call after 2+ failed attempts |
 | **worker** | Implementation — executes ONE specific task completely |
@@ -167,6 +169,29 @@ Task(subagent_type="oh-my-claude:worker", prompt="Add password reset endpoint")
 ### Why Subagents Matter
 
 Subagent context is **isolated** from your main context. When a librarian reads a 2000-line file, those lines don't consume your context window — you get a summary. This keeps your main Claude sharp for reasoning instead of drowning in file contents.
+
+---
+
+## Enhanced Plan Mode
+
+Enter plan mode (Shift+Tab) and get a structured 6-step pipeline automatically — no magic words needed:
+
+1. **Recon** — Scout and librarian gather codebase context before questions
+2. **Interview** — Smart, recon-informed questions (not generic prompts)
+3. **Research** — Targeted deep research informed by your answers
+4. **Gap Analysis** — Advisor agent catches hidden assumptions and scope risks
+5. **Write Plan** — Structured plan with file:line refs, execution waves, and risks
+6. **Critic Review** — Critic must approve before plan exits
+
+Cross-session continuity means "Accept and clear" carries the full execution context into the next session automatically.
+
+**Optional keyword modes** — drop these in your prompt for specialized behavior:
+
+| Keyword | Shortcut | What It Does |
+|---------|----------|-------------|
+| `ultrawork` | `ulw` | Maximum execution intensity with relentless task tracking |
+| `ultraresearch` | `ulr` | Systematic parallel research with cross-referencing and citations |
+| `ultradebug` | `uld` | Forensic debugging with multiple hypotheses and 3-strike escalation |
 
 ---
 

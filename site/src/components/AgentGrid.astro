@@ -63,6 +63,12 @@ const agents = [
     description: 'Critical plan reviewer. Reviews plans to find flaws, edge cases, problems BEFORE execution.',
     useCase: 'Reviewing implementation plans',
   },
+  {
+    name: 'advisor',
+    type: 'plan',
+    description: 'Pre-planning gap analysis. Reviews requirements for hidden assumptions, missing context, and scope risks BEFORE plan generation.',
+    useCase: 'Gap analysis before writing plans, catching scope risks',
+  },
 ]
 
 const typeColors: Record<string, 'coral' | 'cyan'> = {
