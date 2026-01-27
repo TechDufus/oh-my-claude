@@ -26,8 +26,12 @@ from hook_utils import (
 # =============================================================================
 # Plan execution prompt detection
 # =============================================================================
-# Claude Code injects this exact prefix when user clicks "Accept and clear"
-PLAN_EXECUTION_PREFIX = "Implement the following plan:"
+# Known prefixes Claude Code uses when executing approved plans.
+# Keep both old and new variants for cross-version compatibility.
+PLAN_EXECUTION_PREFIXES = (
+    "Implement the following plan:",  # Pre-v2.1.20
+    "Plan to implement",              # v2.1.20+
+)
 
 # =============================================================================
 # Pre-compiled regex patterns (module-level cache)
@@ -79,61 +83,156 @@ ACTION_VERBS = [
 # =============================================================================
 ULTRAPLAN_CONTEXT = """[ULTRAPLAN MODE ACTIVE]
 
-Strategic planning mode. Research BEFORE designing.
+STOP. Do NOT write a plan yet. Follow these steps IN ORDER.
 
-## RESEARCH PROTOCOL (MANDATORY)
+## STEP 1: QUICK RECON
 
-| Step | Agent | Action |
-|------|-------|--------|
-| 1 | scout | Find ALL relevant files, patterns, precedents |
-| 2 | librarian | Read architecture, understand constraints |
-| 3 | scout | Map dependencies, integration points |
-| 4 | YOU | Synthesize into design options |
-
-DO NOT write plan until research complete.
-
-## MULTI-PERSPECTIVE ANALYSIS
-
-Every significant decision: compare 2+ approaches.
-
-| Lens | Ask |
-|------|-----|
-| Simplicity | Minimal change that works? |
-| Performance | Scaling implications? |
-| Maintainability | Future change impact? |
-| Consistency | Matches existing patterns? |
-
-Document tradeoffs. Explain WHY, not just WHAT.
-
-## CRITIC REVIEW
-
-**Required if plan touches 3+ files.** Skip for smaller changes.
+Understand the codebase context BEFORE asking questions. Launch scouts to gather
+the lay of the land so you can ask INFORMED questions (not generic ones).
 
 ```
-Task(subagent_type="oh-my-claude:critic", prompt=\"\"\"
-Review plan: {summary}
-Check: edge cases, integration risks, scope creep, unclear reqs
-Respond: APPROVED or NEEDS_REVISION with concerns
+Task(subagent_type="oh-my-claude:scout", prompt="Find files relevant to {request topic}")
+Task(subagent_type="oh-my-claude:librarian", prompt="Summarize architecture/patterns in {area}")
+```
+
+Goal: learn enough to ask smart questions. NOT enough to write a plan.
+
+## STEP 2: INFORMED INTERVIEW
+
+Now that you know the codebase, ask the user INFORMED questions using AskUserQuestion.
+Reference specific files, patterns, or decisions you discovered in Step 1.
+
+**Good questions** (informed by recon):
+- "I found 3 patterns for X in your codebase — {A}, {B}, {C}. Which should this follow?"
+- "This touches {file1} and {file2} which have different conventions. Align to which?"
+- "There's an existing {thing} that does something similar. Extend it or build new?"
+- "The test coverage in {area} is {sparse/good}. What test strategy for this?"
+
+**Bad questions** (generic, uninformed):
+- "What's your objective?" — you should already know from the request
+- "What's out of scope?" — you should infer from recon and confirm
+- "What patterns should I follow?" — you should have FOUND them already
+
+**Intent types** (adapt depth):
+- TRIVIAL → skip interview, go to Step 4
+- REFACTORING → ask about safety: regression risk, rollback, breaking changes
+- BUILD → ask about patterns found, integration points, deliverables
+- MID-SIZED → ask about exact boundaries: "Does this include X? What about Y?"
+- ARCHITECTURE → ask about scale, lifespan, constraints, trade-off preferences
+
+**Clearance gate** — proceed to deep research only when you can answer:
+1. What exactly are we building/changing?
+2. What are we NOT changing?
+3. Which existing patterns/conventions to follow?
+
+Save interview outcomes to `.claude/plans/drafts/{name}.md`:
+```
+## Interview Notes - {name}
+Intent: {classification}
+Objective: {clear statement}
+In Scope: {list}
+Out of Scope: {list}
+Constraints: {list}
+Patterns to follow: {file:line references from recon}
+Test Strategy: {TDD | tests-after | manual-only}
+Effort Estimate: {Quick | Short | Medium | Large | XL}
+```
+
+## STEP 3: DEEP RESEARCH
+
+Now do thorough research informed by both recon AND interview answers:
+
+```
+Task(subagent_type="oh-my-claude:scout", prompt="Find ALL files, deps, call sites for {scope}")
+Task(subagent_type="oh-my-claude:librarian", prompt="Read {specific files} for {specific details}")
+```
+
+This round is targeted — you know what to look for from Steps 1-2.
+
+## STEP 4: GAP ANALYSIS (MANDATORY before writing plan)
+
+After deep research, MUST run the advisor before writing any plan:
+
+```
+Task(subagent_type="oh-my-claude:advisor", prompt=\"\"\"
+Analyze for hidden requirements, scope risks, AI-slop patterns.
+Interview notes: {summary from Step 2}
+Research findings: {key discoveries from Step 3}
+Flag: missing edge cases, unstated assumptions, over-engineering risk.
 \"\"\")
 ```
 
-If NEEDS_REVISION: address concerns, re-submit, repeat until APPROVED.
+If advisor finds CRITICAL gaps → ask user (back to Step 2).
+If advisor finds MINOR gaps → note them and proceed.
 
-## PLAN REQUIREMENTS
+## STEP 5: WRITE THE PLAN
 
-Write to `.claude/plans/{name}.md`. Must include:
+Write to `.claude/plans/{name}.md`. Every plan MUST include:
 
-| Element | Detail |
-|---------|--------|
-| Files | Exact paths with line numbers |
-| Decisions | Rationale (why this over alternatives) |
-| Risks | Known issues + mitigations |
-| Verification | How to test changes |
-| Order | Execution dependencies |
+```markdown
+# Plan: {name}
+
+## TL;DR
+- **Summary:** {one sentence}
+- **Deliverables:** {bullet list}
+- **Effort:** {Quick | Short | Medium | Large | XL}
+- **Critical Path:** {longest dependency chain}
+- **Test Strategy:** {TDD | tests-after | manual-only}
+
+## Must NOT (Guardrails)
+- {thing explicitly excluded from scope}
+- {constraint from interview}
+
+## Tasks
+
+### Task {n}: {title}
+- **Files:** {exact paths with line numbers}
+- **Changes:** {what changes per location}
+- **Must NOT:** {per-task exclusions}
+- **References:**
+  - Pattern: {file:line of existing pattern to follow}
+  - API: {file:line of relevant interfaces}
+  - Tests: {file:line of related test files}
+- **Commit:** {conventional commit message}
+- **Acceptance:** runnable verification command:
+  ```
+  {e.g.: pytest tests/test_auth.py -v}
+  ```
+
+## Execution Waves
+
+| Wave | Tasks | Dependencies |
+|------|-------|--------------|
+| 1 | {no deps} | None |
+| 2 | {depends on wave 1} | Wave 1 |
+
+## Decisions
+{rationale for each choice, why this over alternatives}
+
+## Risks
+{known issues + mitigations}
+```
+
+## STEP 6: CRITIC REVIEW (MANDATORY)
+
+MUST submit plan to critic before ExitPlanMode:
+
+```
+Task(subagent_type="oh-my-claude:critic", prompt=\"\"\"
+Review this plan for clarity, completeness, correctness, executability.
+Interview decisions: {from Step 2}
+Advisor findings: {from Step 4}
+Plan: {plan content or path}
+Respond: APPROVED or NEEDS_REVISION with specific items to fix.
+\"\"\")
+```
+
+If NEEDS_REVISION: fix the items, resubmit. Loop until APPROVED.
+Do NOT skip critic. Do NOT ExitPlanMode without critic approval.
 
 ## SWARM EXECUTION
 
-For 3+ independent tasks, use native parallel execution:
+For 3+ independent tasks in the plan:
 
 ```
 ExitPlanMode:
@@ -141,23 +240,16 @@ ExitPlanMode:
   teammateCount: {independent task count}
 ```
 
-| Use Swarm | Skip Swarm |
-|-----------|------------|
-| 3+ independent tasks | Sequential dependencies |
-| Different file sets | Complex coordination |
-| Clear boundaries | Shared state |
+## RULES
 
-Structure for parallel: self-contained tasks, specify file boundaries, no overlapping edits.
-
-## ANTI-PATTERNS
-
-| Don't | Do |
-|-------|-----|
-| Plan without research | Scout + librarian first |
-| Skip critic (3+ files) | Mandatory review |
-| Vague paths | Exact file:line |
-| Single approach | Compare 2+ |
-| "Straightforward" | Investigate until certain |
+1. Recon FIRST (Step 1) — quick research to understand the landscape
+2. Then INFORMED interview (Step 2) — ask smart questions referencing what you found
+3. Then DEEP research (Step 3) — targeted by interview answers
+4. Advisor is MANDATORY (Step 4) — run gap analysis before writing plan
+5. Critic is MANDATORY (Step 6) — get approval before ExitPlanMode
+6. Use oh-my-claude agents ONLY — never generic Explore/Plan subagent types
+7. Every task needs file:line refs and runnable acceptance commands
+8. Compare 2+ approaches for significant decisions
 """
 
 # =============================================================================
@@ -231,8 +323,8 @@ def check_plan_execution_prompt(prompt: str) -> bool:
     """Check if prompt indicates plan execution (from Accept and clear)."""
     if not prompt:
         return False
-    # Claude Code injects this exact prefix when user clicks "Accept and clear"
-    return prompt.strip().startswith(PLAN_EXECUTION_PREFIX)
+    stripped = prompt.strip()
+    return any(stripped.startswith(prefix) for prefix in PLAN_EXECUTION_PREFIXES)
 
 
 def is_trivial_request(prompt: str) -> bool:
@@ -292,6 +384,8 @@ def main() -> None:
     prompt = data.get("prompt", "")
     cwd = data.get("cwd", ".")
     permission_mode = data.get("permission_mode", "")
+
+    log_debug(f"prompt starts with: {repr(prompt[:100])}")
 
     # ==========================================================================
     # PLAN EXECUTION - Check prompt content (handles Accept and clear)

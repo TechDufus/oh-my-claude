@@ -11,7 +11,7 @@ import pytest
 from ultrawork_detector import (
     PATTERNS,
     PLAN_EXECUTION_CONTEXT,
-    PLAN_EXECUTION_PREFIX,
+    PLAN_EXECUTION_PREFIXES,
     check_plan_execution_prompt,
     detect_validation,
     is_trivial_request,
@@ -426,6 +426,17 @@ class TestPlanExecutionPromptDetection:
         context = get_context(output)
         assert "PLAN EXECUTION" in context
 
+    def test_new_prefix_detected(self, test_home):
+        """New v2.1.20 prefix should inject plan context."""
+        output = run_hook(
+            {"prompt": "Plan to implement\n\n## Plan content", "session_id": "test"},
+            test_home,
+        )
+        context = get_context(output)
+        assert "ULTRAWORK MODE ACTIVE" in context
+        assert "PLAN EXECUTION" in context
+        assert "Create tasks" in context
+
     def test_similar_but_different_prefix_not_detected(self, test_home):
         """User typing similar text should NOT trigger plan execution."""
         output = run_hook(
@@ -522,5 +533,20 @@ class TestCheckPlanExecutionPromptFunction:
         assert check_plan_execution_prompt(None) is False
 
     def test_prefix_constant_value(self):
-        """Verify the prefix constant has expected value."""
-        assert PLAN_EXECUTION_PREFIX == "Implement the following plan:"
+        """Verify the prefixes tuple has expected values."""
+        assert isinstance(PLAN_EXECUTION_PREFIXES, tuple)
+        assert "Implement the following plan:" in PLAN_EXECUTION_PREFIXES
+        assert "Plan to implement" in PLAN_EXECUTION_PREFIXES
+
+    def test_new_prefix_detected(self):
+        """New v2.1.20 prefix should return True."""
+        assert check_plan_execution_prompt("Plan to implement\n\nContent") is True
+
+    def test_new_prefix_with_whitespace(self):
+        """New prefix with leading whitespace should return True."""
+        assert check_plan_execution_prompt("  Plan to implement\nContent") is True
+
+    def test_both_prefixes_independently_trigger(self):
+        """Both old and new prefixes should independently trigger detection."""
+        assert check_plan_execution_prompt("Implement the following plan:\n\nContent") is True
+        assert check_plan_execution_prompt("Plan to implement\n\nContent") is True

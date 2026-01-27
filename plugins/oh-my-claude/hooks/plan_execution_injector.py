@@ -8,9 +8,10 @@ plan_execution_injector.py - Inject execution context after plan approval.
 
 Hook type: PostToolUse (matcher: ExitPlanMode)
 
-When ExitPlanMode completes successfully, this hook injects execution context
-into the same session. This provides immediate guidance for swarm execution
-or manual execution without requiring a new session.
+When ExitPlanMode completes successfully, this hook:
+1. Injects execution context (swarm or manual) into the active session
+2. Writes plan state to .claude/plans/.active-plan.json for cross-session continuity
+3. Cleans up interview draft files that are no longer needed post-approval
 
 The marker file (created by plan_approved.py) serves as a safety net for
 cross-session recovery if the user /clear or restarts before completion.
@@ -18,7 +19,9 @@ cross-session recovery if the user /clear or restarts before completion.
 
 from __future__ import annotations
 
+import json
 import sys
+from datetime import datetime, timezone
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent))
@@ -96,7 +99,47 @@ Your plan has been approved. When you return to execute:
 | Following plan exactly | Adding unplanned features |
 | Minor implementation details | Changing architecture |
 | Asking about ambiguities | Scope expansion |
+
+## STATE TRACKING
+
+Plan state saved to `.claude/plans/.active-plan.json`.
+If you `/clear` or start a new session, check this file for active plan context.
+Draft interview notes in `.claude/plans/drafts/` have been cleaned up.
 """
+
+
+def track_plan_state(data: dict, cwd: str) -> None:
+    """Write active plan state for cross-session continuity."""
+    try:
+        plans_dir = Path(cwd) / ".claude" / "plans"
+        plans_dir.mkdir(parents=True, exist_ok=True)
+
+        state_file = plans_dir / ".active-plan.json"
+        state = {
+            "status": "executing",
+            "approved_at": datetime.now(timezone.utc).isoformat(),
+            "session_id": data.get("session_id", "unknown"),
+        }
+        state_file.write_text(json.dumps(state, indent=2) + "\n")
+        log_debug(f"Wrote plan state to {state_file}")
+    except Exception as e:
+        log_debug(f"Failed to write plan state: {e}")
+
+
+def cleanup_drafts(cwd: str) -> None:
+    """Remove interview draft files after plan approval."""
+    try:
+        drafts_dir = Path(cwd) / ".claude" / "plans" / "drafts"
+        if drafts_dir.is_dir():
+            for draft in drafts_dir.glob("*.md"):
+                draft.unlink()
+                log_debug(f"Cleaned up draft: {draft}")
+            # Remove drafts dir if empty
+            if not any(drafts_dir.iterdir()):
+                drafts_dir.rmdir()
+                log_debug("Removed empty drafts directory")
+    except Exception as e:
+        log_debug(f"Draft cleanup failed: {e}")
 
 
 @hook_main("ExitPlanMode")
@@ -135,6 +178,11 @@ def main() -> None:
         # Execution context injected in next session via prompt prefix detection
         log_debug("Injecting MANUAL_EXECUTION_CONTEXT")
         output_context("PostToolUse", MANUAL_EXECUTION_CONTEXT)
+
+    # Track plan state and clean up drafts
+    cwd = data.get("cwd", ".")
+    track_plan_state(data, cwd)
+    cleanup_drafts(cwd)
 
     log_debug("=== plan_execution_injector.py EXIT ===")
 
