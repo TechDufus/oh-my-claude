@@ -257,7 +257,18 @@ ExitPlanMode:
 # =============================================================================
 PLAN_EXECUTION_CONTEXT = """[ULTRAWORK MODE ACTIVE - PLAN EXECUTION]
 
-You have an APPROVED PLAN to execute. The plan content is already in your context.
+*** MANDATORY FIRST ACTION - CREATE TASKS ***
+
+You have an approved plan. Before ANY implementation:
+
+1. Use TaskCreate for EACH plan item
+2. Use TaskUpdate to set blockedBy dependencies
+3. Run TaskList to confirm tasks exist
+
+DO NOT spawn workers or start implementation until tasks are created.
+
+Claude Code's task system handles execution order, dependencies, and progress tracking.
+Your job is to CREATE the tasks - then execute them in order.
 
 ## EXECUTION PROTOCOL
 
@@ -265,36 +276,6 @@ You have an APPROVED PLAN to execute. The plan content is already in your contex
 2. **Execute in order** - Follow the plan's execution order exactly
 3. **Verify each step** - Run validator after each significant change
 4. **Do NOT deviate** - The plan was researched and approved. Follow it.
-
-### Task Creation from Plan
-```
-TaskCreate(subject="Implement auth middleware", description="Full context from plan")
-TaskCreate(subject="Add validation tests", description="Test coverage for new middleware")
-TaskUpdate(taskId="2", addBlockedBy=["1"])  # Tests depend on middleware
-```
-
-### Task Sizing (CRITICAL)
-
-Tasks should be **small and atomic**. If a task touches multiple concerns, split it.
-
-| Good Task | Bad Task |
-|-----------|----------|
-| "Add email validation to signup form" | "Implement user registration" |
-| "Create UserService.getById method" | "Build the user module" |
-| "Write tests for auth middleware" | "Add tests" |
-| "Fix null check in parseConfig" | "Fix bugs in config system" |
-
-**Sizing heuristics:**
-- Single file or tightly coupled pair
-- One logical change (add, fix, refactor - not all three)
-- Completable in one agent turn
-- Clear done/not-done criteria
-
-**When to split:**
-- Task description uses "and" → two tasks
-- Multiple files in different domains → split by domain
-- Mix of implementation + testing → separate tasks
-- Uncertainty about approach → research task first, then implement task
 
 ## PLAN COMPLIANCE
 
@@ -312,7 +293,7 @@ If you discover the plan has a flaw:
 
 ## COMPLETION
 
-When ALL plan items are done:
+When ALL tasks are done:
 1. Run full validation (tests, lints, type checks)
 2. Summarize what was implemented
 3. Note any deviations from plan (with reasons)
