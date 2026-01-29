@@ -103,7 +103,7 @@ export const planModePipeline = [
   { step: 2, label: "Interview", description: "Smart, recon-informed questions via AskUserQuestion. No guessing.", agent: null },
   { step: 3, label: "Research", description: "Targeted deep research informed by your answers.", agent: "scout + librarian" },
   { step: 4, label: "Gap Analysis", description: "Advisor catches hidden assumptions, missing context, and scope risks.", agent: "advisor" },
-  { step: 5, label: "Write Plan", description: "Structured plan with file:line refs, execution waves, decisions, and risks.", agent: null },
+  { step: 5, label: "Write Plan", description: "Structured plan with file:line refs, decisions, and risks.", agent: null },
   { step: 6, label: "Critic Review", description: "Critic must approve before plan exits. Loops until the plan is solid.", agent: "critic" },
 ]
 export const planModeKeywords = [
