@@ -199,13 +199,6 @@ Write to `.claude/plans/{name}.md`. Every plan MUST include:
   {e.g.: pytest tests/test_auth.py -v}
   ```
 
-## Execution Waves
-
-| Wave | Tasks | Dependencies |
-|------|-------|--------------|
-| 1 | {no deps} | None |
-| 2 | {depends on wave 1} | Wave 1 |
-
 ## Decisions
 {rationale for each choice, why this over alternatives}
 
