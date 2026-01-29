@@ -132,6 +132,30 @@ Before finalizing any plan, verify:
 - [ ] Task count is bounded (not "repeat until done")
 - [ ] Each phase has clear exit criteria
 
+### Zero User Intervention Check
+Every acceptance criterion MUST be agent-executable:
+- [ ] Has a tool call or command that verifies it (Bash, Glob, Read, etc.)
+- [ ] Does NOT include "verify manually", "should work", "check that it looks right"
+- [ ] Executable without human judgment
+
+**Verification by deliverable type:**
+
+| Deliverable | Verification Method |
+|-------------|---------------------|
+| Frontend/UI | Playwright - navigate, assert DOM, screenshot |
+| TUI/CLI | tmux session or direct Bash - run command, validate output |
+| API endpoint | curl/httpie - send request, validate JSON response |
+| Library/module | REPL via Bash - import, call, compare expected |
+| Config change | Shell commands - apply, check state |
+| Data migration | Query before/after state |
+
+**Forbidden patterns in acceptance criteria:**
+- "User manually tests..."
+- "User visually confirms..."
+- "User clicks/interacts..."
+- "Verify it looks correct"
+- "Should work properly"
+
 ### AI-Slop Detection
 
 Reject or flag plans containing these patterns:

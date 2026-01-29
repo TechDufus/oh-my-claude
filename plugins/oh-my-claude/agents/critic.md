@@ -176,6 +176,19 @@ Flag plans containing these patterns:
 6. **Look for parallelization** - Could more be done in parallel?
 7. **Find the gaps** - What's between steps? Who handles transitions?
 
+## Reviewer Mindset
+
+Review as if the author:
+- Skips "obvious" steps that aren't obvious to the agent executing
+- Underestimates complexity of what seems simple
+- Forgets edge cases they definitely knew when writing
+- Says "simple" before describing complex work
+- Holds mental context that never made it onto the page
+
+Your job: Catch what they missed. Not judge the approach—make THIS plan succeed.
+
+**Key boundary:** You are REVIEWER, not DESIGNER. The implementation direction is decided. You check if the plan is documented well enough for agents to execute without human intervention.
+
 ## Red Flags
 
 Instant concerns when you see:
