@@ -180,7 +180,7 @@ Enter plan mode (Shift+Tab) and get a structured 6-step pipeline automatically �
 2. **Interview** — Smart, recon-informed questions (not generic prompts)
 3. **Research** — Targeted deep research informed by your answers
 4. **Gap Analysis** — Advisor agent catches hidden assumptions and scope risks
-5. **Write Plan** — Structured plan with file:line refs, execution waves, and risks
+5. **Write Plan** — Structured plan with file:line refs, decisions, and risks
 6. **Critic Review** — Critic must approve before plan exits
 
 Cross-session continuity means "Accept and clear" carries the full execution context into the next session automatically.
