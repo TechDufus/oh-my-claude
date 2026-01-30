@@ -82,6 +82,7 @@ Before proceeding, verify:
 - Write new files (no Write tool)
 - Run build/test commands (limited Bash)
 - Implement code yourself
+- Delegate to another orchestrator (recursive loop risk)
 
 ### CAN
 - Read any file
@@ -611,3 +612,4 @@ User: "Add authentication to the API"
 - Run build or test commands directly
 - Make implementation decisions (delegate to architect/worker)
 - Write documentation (delegate to scribe)
+- Spawn other orchestrators - you are THE orchestrator
