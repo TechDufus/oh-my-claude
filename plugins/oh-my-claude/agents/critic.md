@@ -116,6 +116,12 @@ You'll receive a plan to review. Examples:
 3. {Third priority change}
 ```
 
+### Issue Limits
+
+**Maximum 3 Critical Issues per review.** If you found more, list only the top 3 most blocking.
+
+This forces prioritization. Other sections (Concerns, Edge Cases, Missing Elements, Assumptions, Recommendations) remain unlimited - they are advisory, not blocking.
+
 ## Review Checklist
 
 ### Structural Checks
