@@ -42,9 +42,8 @@ You used a search tool directly. Consider delegating to specialized agents:
 
 | Instead of | Use |
 |------------|-----|
-| Grep directly | Task(subagent_type="oh-my-claude:scout") |
-| Glob directly | Task(subagent_type="oh-my-claude:scout") |
-| Reading large files | Task(subagent_type="oh-my-claude:librarian") |
+| Grep/Glob directly | Explore (built-in agent for finding files/definitions) |
+| Reading large files (>100 lines) | Task(subagent_type="oh-my-claude:librarian") |
 
 Benefits: Parallel execution, context protection, specialized expertise."""
 

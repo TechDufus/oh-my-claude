@@ -89,7 +89,7 @@ Update draft after each answer.
 Research the codebase before finalizing:
 
 ```
-Agent: oh-my-claude:scout
+Agent: Explore
 Task: Find relevant files for {topic}
 Expected: List of files that will be affected
 ```

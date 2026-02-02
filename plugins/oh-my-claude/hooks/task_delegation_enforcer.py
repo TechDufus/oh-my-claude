@@ -53,7 +53,7 @@ def main():
             "TaskCreate(\n"
             "  subject='Task title',\n"
             "  description='''\n"
-            "    Task(subagent_type=\"oh-my-claude:worker\", prompt=\"...\")\n"
+            "    Task(subagent_type=\"general-purpose\", prompt=\"...\")\n"
             "  '''\n"
             ")\n\n"
             "Tasks should be small and atomic (one file, one concern).\n"

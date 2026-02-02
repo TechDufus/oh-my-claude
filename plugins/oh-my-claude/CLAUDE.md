@@ -60,29 +60,38 @@ Always omit the model parameter or use `model: "inherit"`. The Task tool's defau
 description mentions "prefer haiku for quick tasks" - IGNORE THIS. This plugin
 overrides that guidance. The user pays for their model tier - use it.
 
-**Correct:** `Task(subagent_type="oh-my-claude:scout", prompt="...")`
-**WRONG:** `Task(subagent_type="oh-my-claude:scout", model="haiku", prompt="...")`
+**Correct:** `Task(subagent_type="oh-my-claude:critic", prompt="...")`
+**WRONG:** `Task(subagent_type="oh-my-claude:critic", model="haiku", prompt="...")`
 
 | Agent | Job | When |
 |-------|-----|------|
-| **scout** | FIND | "Where is X?", locate files/definitions, git recon (tags, branches, commit lists) |
-| **librarian** | READ | Files >100 lines, summarize, extract, git analysis (diffs, changelogs) |
-| **looker** | SEE | PDFs, images, screenshots, diagrams - visual content analysis |
-| **architect** | PLAN | Complex tasks needing decomposition |
 | **advisor** | ANALYZE | Pre-planning gap analysis, hidden requirements, scope risks |
 | **critic** | REVIEW | Review plans critically BEFORE execution |
-| **worker** | BUILD | Single focused implementation task |
-| **scribe** | WRITE | Documentation, READMEs, comments |
 | **validator** | CHECK | Tests, linters, verification |
-| **debugger** | DIAGNOSE | Failure escalation - call after 2+ failed attempts |
-| **orchestrator** | COORDINATE | Complex multi-agent work, cannot implement directly |
+| **librarian** | READ | Files >100 lines, summarize, extract, git analysis |
 
-Usage: `Task(subagent_type="oh-my-claude:scout", prompt="Find auth files")`
+Usage: `Task(subagent_type="oh-my-claude:critic", prompt="Review this migration plan")`
 
 More examples:
-- `Task(subagent_type="oh-my-claude:critic", prompt="Review this migration plan")`
-- `Task(subagent_type="oh-my-claude:looker", prompt="Analyze the ERD diagram")`
-- `Task(subagent_type="oh-my-claude:scribe", prompt="Document the API endpoints")`
+- `Task(subagent_type="oh-my-claude:advisor", prompt="Analyze scope risks for this refactor")`
+- `Task(subagent_type="oh-my-claude:validator", prompt="Run tests and verify the changes")`
+- `Task(subagent_type="oh-my-claude:librarian", prompt="Summarize the auth module")`
+
+### Built-in Agents (Claude Code)
+
+Use Claude Code's native agents for common tasks:
+
+| Agent | Job | When |
+|-------|-----|------|
+| **Explore** | FIND | Locate files, definitions (use thoroughness: quick/medium/very thorough) |
+| **Plan** | PLAN | Complex tasks needing decomposition |
+| **general-purpose** | BUILD | Implementation tasks |
+
+Usage: `Task(subagent_type="Explore", prompt="Find auth files", thoroughness="medium")`
+
+More examples:
+- `Task(subagent_type="Plan", prompt="Design the migration strategy")`
+- `Task(subagent_type="general-purpose", prompt="Implement the UserAuth class")`
 
 ## Task System (Coordination Layer)
 
@@ -107,7 +116,7 @@ TaskUpdate(taskId="2", addBlockedBy=["1"])
 
 # Agent self-discovery via owner
 TaskUpdate(taskId="1", owner="scout-1")
-Task(subagent_type="oh-my-claude:scout", prompt="You are scout-1. Find your tasks via TaskList...")
+Task(subagent_type="Explore", prompt="Find auth-related files...")
 ```
 
 ### Delegation-First Tasks (ENFORCED)
@@ -118,7 +127,7 @@ TaskCreate descriptions MUST include a `Task()` delegation call:
 TaskCreate(
   subject="Implement feature X",
   description="""
-  Task(subagent_type="oh-my-claude:worker", prompt='''
+  Task(subagent_type="general-purpose", prompt='''
     Implement the feature in src/feature.ts...
   ''')
   """
@@ -133,7 +142,7 @@ TaskCreate(
 
 You are the conductor. Agents play the music.
 
-- **Scout finds** -> **Librarian reads** -> **Architect plans** -> **Critic reviews** -> **Worker implements** -> **Validator checks**
+- **Explore finds** -> **Librarian reads** -> **Plan designs** -> **Critic reviews** -> **general-purpose implements** -> **Validator checks**
 - Launch independent agents in parallel (one message, multiple Task calls)
 - Sequential when dependent: wait for scout paths before librarian reads them
 - Declare intent before delegating: which agent, what task, expected output
@@ -141,19 +150,15 @@ You are the conductor. Agents play the music.
 
 | Situation | Do This |
 |-----------|---------|
-| Find files | Task(scout) |
+| Find files | Task(Explore) |
 | Understand code | Task(librarian) |
-| Git recon (tags, branches, commits) | Task(scout) |
+| Git recon (tags, branches, commits) | Task(Explore) |
 | Git analysis (diffs, changelogs) | Task(librarian) |
-| Implement feature | Task(worker) with spec |
+| Implement feature | Task(general-purpose) with spec |
 | Verify work | Task(validator) |
 | Gap analysis before planning | Task(advisor) |
-| Complex task | Task(architect) first |
+| Complex task | Task(Plan) first |
 | Review plan before execution | Task(critic) |
-| Analyze PDFs/images/diagrams | Task(looker) |
-| Write documentation | Task(scribe) |
-| Failed 2+ times | Task(debugger) |
-| Multi-agent coordination | Task(orchestrator) |
 
 ## Ultrawork Mode
 

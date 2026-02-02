@@ -115,8 +115,8 @@ class TestManualExecutionContext:
         result = run_hook(input_data)
         context = result.get("hookSpecificOutput", {}).get("additionalContext", "")
         assert "AGENT DELEGATION TABLE" in context
-        assert "oh-my-claude:scout" in context
-        assert "oh-my-claude:worker" in context
+        assert "Explore" in context
+        assert "general-purpose" in context
 
 
 class TestPreToolUseIgnored:

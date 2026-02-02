@@ -86,11 +86,10 @@ Your plan has been approved. When you return to execute:
 
 | Task Type | Agent | When to Use |
 |-----------|-------|-------------|
-| Find files | oh-my-claude:scout | Locating code, definitions |
-| Read content | oh-my-claude:librarian | Summarizing, understanding |
-| Implement | oh-my-claude:worker | Writing actual code changes |
+| Find files | Explore (built-in) | Locating code, definitions |
+| Read content | oh-my-claude:librarian | Summarizing files >100 lines |
+| Implement | general-purpose (built-in) | Writing actual code changes |
 | Validate | oh-my-claude:validator | Running tests, linters |
-| Debug | oh-my-claude:debugger | When stuck after 2+ attempts |
 
 ## PLAN COMPLIANCE
 

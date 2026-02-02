@@ -4,58 +4,16 @@ import { Badge } from '@/components/ui/badge'
 
 const agents = [
   {
-    name: 'scout',
-    type: 'search',
-    description: 'Quick reconnaissance agent. Finds files, locates definitions, checks existence. Returns locations, not content.',
-    useCase: 'Finding files by pattern, locating function definitions',
-  },
-  {
     name: 'librarian',
     type: 'read',
     description: 'Smart file reading agent. Reads intelligently, summarizes large content, extracts relevant sections.',
     useCase: 'Reading large files, Git analysis, summarizing code',
   },
   {
-    name: 'architect',
+    name: 'advisor',
     type: 'plan',
-    description: 'Task decomposition and planning. Breaks down complex tasks, identifies parallelization opportunities.',
-    useCase: 'Planning multi-step implementations',
-  },
-  {
-    name: 'worker',
-    type: 'implement',
-    description: 'Focused implementation agent. Executes ONE specific task completely. Does not decide - implements.',
-    useCase: 'Writing code, making edits, creating files',
-  },
-  {
-    name: 'validator',
-    type: 'verify',
-    description: 'Quality assurance agent. Runs tests, linters, type checks. Reports pass/fail with specific errors.',
-    useCase: 'Running test suites, CI validation',
-  },
-  {
-    name: 'scribe',
-    type: 'document',
-    description: 'Documentation agent. Writes clear documentation for code, APIs, systems. Understands before documenting.',
-    useCase: 'Writing docs, API references, README files',
-  },
-  {
-    name: 'orchestrator',
-    type: 'coordinate',
-    description: 'Coordination-only agent. Can read, search, delegate but CANNOT edit. Multi-agent orchestration.',
-    useCase: 'Complex workflows with multiple agents',
-  },
-  {
-    name: 'looker',
-    type: 'visual',
-    description: 'Visual content analyzer. Reads PDFs, images, screenshots. Extracts text, describes visuals.',
-    useCase: 'Analyzing screenshots, reading diagrams',
-  },
-  {
-    name: 'debugger',
-    type: 'analyze',
-    description: 'Strategic advisor for failure escalation. Call when stuck after 2+ failed attempts. Deep reasoning.',
-    useCase: 'Debugging complex issues, root cause analysis',
+    description: 'Pre-planning gap analysis. Reviews requirements for hidden assumptions, missing context, and scope risks BEFORE plan generation.',
+    useCase: 'Gap analysis before writing plans, catching scope risks',
   },
   {
     name: 'critic',
@@ -64,10 +22,31 @@ const agents = [
     useCase: 'Reviewing implementation plans',
   },
   {
-    name: 'advisor',
+    name: 'validator',
+    type: 'verify',
+    description: 'Quality assurance agent. Runs tests, linters, type checks. Reports pass/fail with specific errors.',
+    useCase: 'Running test suites, CI validation',
+  },
+]
+
+const builtInAgents = [
+  {
+    name: 'Explore',
+    type: 'search',
+    description: 'Claude Code built-in. Finds files, locates definitions, maps dependencies. Automatic codebase reconnaissance.',
+    useCase: 'File discovery, definition lookup, pattern matching',
+  },
+  {
+    name: 'Plan',
     type: 'plan',
-    description: 'Pre-planning gap analysis. Reviews requirements for hidden assumptions, missing context, and scope risks BEFORE plan generation.',
-    useCase: 'Gap analysis before writing plans, catching scope risks',
+    description: 'Claude Code built-in. Structured planning mode with task decomposition and parallel execution strategies.',
+    useCase: 'Multi-step implementations, complex workflows',
+  },
+  {
+    name: 'Task',
+    type: 'implement',
+    description: 'Claude Code built-in. General-purpose implementation agent. Executes specific tasks completely.',
+    useCase: 'Writing code, making edits, creating files',
   },
 ]
 
@@ -77,10 +56,6 @@ const typeColors: Record<string, 'coral' | 'cyan'> = {
   plan: 'coral',
   implement: 'coral',
   verify: 'cyan',
-  document: 'coral',
-  coordinate: 'coral',
-  visual: 'cyan',
-  analyze: 'coral',
   review: 'cyan',
 }
 ---
@@ -91,13 +66,41 @@ const typeColors: Record<string, 'coral' | 'cyan'> = {
       Specialized <span class="text-cyan">Agents</span>
     </h2>
     <p class="text-muted-foreground text-center mb-12 max-w-2xl mx-auto">
-      {agents.length} purpose-built agents that handle specific tasks. Your context window stays clean while they do the heavy lifting.
+      4 custom agents that extend Claude Code's built-in capabilities. Your context window stays clean while they do the heavy lifting.
     </p>
 
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+    <!-- Custom Agents -->
+    <h3 class="text-xl font-heading font-semibold mb-4 text-coral">Custom Agents</h3>
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-12">
       {agents.map((agent) => (
         <div class="group">
           <Card className="h-full transition-all duration-300 hover:border-cyan/50 hover:shadow-[0_0_20px_rgba(0,229,204,0.1)]">
+            <CardHeader className="pb-3">
+              <div class="flex items-center justify-between mb-2">
+                <CardTitle className="font-mono text-lg">{agent.name}</CardTitle>
+                <Badge variant={typeColors[agent.type]}>{agent.type}</Badge>
+              </div>
+              <CardDescription className="text-sm leading-relaxed">
+                {agent.description}
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="pt-0">
+              <p class="text-xs text-muted-foreground">
+                <span class="text-coral font-medium">Use:</span> {agent.useCase}
+              </p>
+            </CardContent>
+          </Card>
+        </div>
+      ))}
+    </div>
+
+    <!-- Built-in Integration -->
+    <h3 class="text-xl font-heading font-semibold mb-4 text-cyan">Built-in Integration</h3>
+    <p class="text-muted-foreground mb-4 text-sm">oh-my-claude leverages Claude Code's native agents for common tasks:</p>
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+      {builtInAgents.map((agent) => (
+        <div class="group">
+          <Card className="h-full transition-all duration-300 hover:border-coral/50 hover:shadow-[0_0_20px_rgba(218,119,86,0.1)] border-dashed">
             <CardHeader className="pb-3">
               <div class="flex items-center justify-between mb-2">
                 <CardTitle className="font-mono text-lg">{agent.name}</CardTitle>

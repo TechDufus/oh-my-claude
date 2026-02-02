@@ -91,7 +91,7 @@ Understand the codebase context BEFORE asking questions. Launch scouts to gather
 the lay of the land so you can ask INFORMED questions (not generic ones).
 
 ```
-Task(subagent_type="oh-my-claude:scout", prompt="Find files relevant to {request topic}")
+Task(subagent_type="Explore", prompt="Find files relevant to {request topic}", thoroughness="quick")
 Task(subagent_type="oh-my-claude:librarian", prompt="Summarize architecture/patterns in {area}")
 ```
 
@@ -143,7 +143,7 @@ Effort Estimate: {Quick | Short | Medium | Large | XL}
 Now do thorough research informed by both recon AND interview answers:
 
 ```
-Task(subagent_type="oh-my-claude:scout", prompt="Find ALL files, deps, call sites for {scope}")
+Task(subagent_type="Explore", prompt="Find ALL files, deps, call sites for {scope}", thoroughness="medium")
 Task(subagent_type="oh-my-claude:librarian", prompt="Read {specific files} for {specific details}")
 ```
 
@@ -187,7 +187,7 @@ Write to `.claude/plans/{name}.md`. Every plan MUST include:
 
 | Tool | Purpose | When to Use |
 |------|---------|-------------|
-| `Task()` | Spawn subagent | Research (scout, librarian), implementation (worker), validation (validator) |
+| `Task()` | Spawn subagent | Research (Explore, librarian), implementation (general-purpose), validation (validator) |
 | `TaskCreate()` | Create tracking item | Building the task list for multi-step work |
 | `TaskUpdate()` | Update task state | Status changes, dependencies, ownership |
 | `TaskList()` | View all tasks | Check progress, find unblocked work |
@@ -226,12 +226,12 @@ Each implementation task SHOULD specify what to validate. The executor decides H
 |-----------|---------------------|---------|
 | Implementation | YES | "Tests pass", "Lint clean", "Type check passes" |
 | Refactoring | YES | "Existing tests still pass", "No behavior change" |
-| Research (scout/librarian) | NO - exempt | Mark as `N/A - research` |
-| Documentation (scribe) | NO - exempt | Mark as `N/A - docs` |
+| Research (Explore/librarian) | NO - exempt | Mark as `N/A - research` |
+| Documentation | NO - exempt | Mark as `N/A - docs` |
 
 **If validation is unclear:** Split the task smaller until each piece has a clear validation criterion.
 
-**Executor pattern (worker + validator tasks with dependency):**
+**Executor pattern (general-purpose + validator tasks with dependency):**
 
     TaskCreate(subject="Implement X", description="...")
     TaskCreate(subject="Validate X", description="...", addBlockedBy=["1"])
@@ -272,9 +272,8 @@ ExitPlanMode:
 3. Then DEEP research (Step 3) — targeted by interview answers
 4. Advisor is MANDATORY (Step 4) — run gap analysis before writing plan
 5. Critic is MANDATORY (Step 6) — get approval before ExitPlanMode
-6. Use oh-my-claude agents ONLY — never generic Explore/Plan subagent types
-7. Every task needs file:line refs and runnable acceptance commands
-8. Compare 2+ approaches for significant decisions
+6. Every task needs file:line refs and runnable acceptance commands
+7. Compare 2+ approaches for significant decisions
 """
 
 # =============================================================================
@@ -448,9 +447,9 @@ Ultrawork mode acknowledged, but full orchestration overhead is unnecessary.
 
 | Step | Agent | Action |
 |------|-------|--------|
-| 1 | scout | Find ALL relevant files |
+| 1 | Explore (quick) | Find ALL relevant files |
 | 2 | librarian | Understand patterns, constraints |
-| 3 | scout | Map dependencies, call sites, tests |
+| 3 | Explore (medium) | Map dependencies, call sites, tests |
 | 4 | YOU | Plan with file:line specifics |
 
 **Plan MUST include:** files (exact paths), functions (line numbers), changes per location, tests to update, execution order.
@@ -470,16 +469,14 @@ Expected: {{deliverable}}
 ```
 
 **Examples:**
-- `scout`: "Find all files implementing rate limiting"
+- `Explore (quick)`: "Find all files implementing rate limiting"
+- `Explore (medium)`: "Map all call sites and dependencies for auth module"
 - `librarian`: "Summarize the auth flow in src/auth/"
 - `critic`: "Review this migration plan for edge cases"
-- `looker`: "Analyze the ERD diagram in docs/schema.png"
-- `worker`: "Implement the retry logic per spec above"
+- `general-purpose`: "Implement the retry logic per spec above"
 - `validator`: "Run tests and lint on changed files"
-- `debugger`: "Investigate auth failure after 2 failed fix attempts"
-- `architect`: "Decompose this feature into parallel work streams"
-- `scribe`: "Document the API endpoints in src/api/"
-- `orchestrator`: "Coordinate 3 workers for parallel implementation"
+- `advisor`: "Analyze for hidden requirements before planning"
+- `Plan`: "Decompose this feature into parallel work streams"
 
 ### Delegation Prompt Structure
 1. TASK - atomic goal
@@ -528,22 +525,20 @@ After EVERY delegation:
 
 NEVER downgrade models. Omit `model` param or use `model="inherit"`.
 
-| Task | Agent |
-|------|-------|
-| Find files/definitions | scout |
-| Read/summarize files | librarian |
-| Analyze images/PDFs | looker |
-| Git recon (tags, branches) | scout |
-| Git analysis (diffs) | librarian |
-| Plan complex work | architect |
-| Review plans | critic |
-| Implement changes | worker |
-| Write docs | scribe |
-| Run tests/lints | validator |
-| Debug (2+ failures) | debugger |
-| Coordinate agents | orchestrator |
+| Task Type | Agent | Thoroughness |
+|-----------|-------|--------------|
+| Find files | Explore | quick |
+| Code search | Explore | medium |
+| Read/summarize files | librarian | N/A |
+| Git analysis | librarian | N/A |
+| Implementation | general-purpose | N/A |
+| Planning | Plan | N/A |
+| Gap analysis | advisor | N/A |
+| Plan review | critic | N/A |
+| Validation | validator | N/A |
+| Large files (>100 lines) | librarian | N/A |
 
-**Parallel patterns:** scout+librarian (research) -> architect->critic->workers (impl) -> validator (verify)
+**Parallel patterns:** Explore+librarian (research) -> Plan->critic->general-purpose (impl) -> validator (verify)
 
 ## TASK TRACKING (3+ Tasks Required)
 
@@ -756,7 +751,7 @@ Forensic investigation, not trial-and-error. Evidence before fixes.
 |------|--------|
 | 1. REPRODUCE | Exact failure: error, conditions, frequency |
 | 2. ISOLATE | Narrow to smallest failing case |
-| 3. TRACE | Follow execution via scout + librarian |
+| 3. TRACE | Follow execution via Explore + librarian |
 | 4. HYPOTHESIZE | Form 3+ theories ranked by likelihood |
 | 5. VERIFY | Test EACH hypothesis with evidence |
 | 6. FIX | MINIMAL change addressing ROOT CAUSE |
@@ -805,12 +800,12 @@ Recent changes statistically likely to contain bugs.
 ## Escalation (After 2+ Failed Attempts)
 
 ```
-Task(subagent_type="oh-my-claude:debugger", prompt="
+Task(subagent_type="Explore", prompt="
 PROBLEM: {error + conditions}
 ATTEMPTED: 1. {tried} - {failed why}  2. {tried} - {failed why}
 HYPOTHESES: H1: {hyp} - {result}  H2: {hyp} - {result}
-REQUEST: Deep root cause analysis
-")
+REQUEST: Find additional evidence - related files, similar patterns, recent changes
+", thoroughness="very thorough")
 ```
 
 ## Bug Report Format

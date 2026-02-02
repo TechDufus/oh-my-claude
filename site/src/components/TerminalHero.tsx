@@ -53,8 +53,8 @@ const PHASES: PhaseConfig[] = [
       { id: 't1', label: 'Explore codebase and find patterns', status: 'pending' }
     ],
     agents: [
-      { id: 'a1', name: 'oh-my-claude:scout', task: 'Find files', toolUses: 12, tokens: 0, status: 'running', statusText: 'Searching...' },
-      { id: 'a2', name: 'oh-my-claude:scout', task: 'Map deps', toolUses: 8, tokens: 0, status: 'running', statusText: 'Mapping...' },
+      { id: 'a1', name: 'Explore', task: 'Find files', toolUses: 12, tokens: 0, status: 'running', statusText: 'Searching...' },
+      { id: 'a2', name: 'Explore', task: 'Map deps', toolUses: 8, tokens: 0, status: 'running', statusText: 'Mapping...' },
       { id: 'a3', name: 'oh-my-claude:librarian', task: 'Read patterns', toolUses: 6, tokens: 0, status: 'running', statusText: 'Reading...' },
     ]
   },
@@ -68,10 +68,10 @@ const PHASES: PhaseConfig[] = [
       { id: 't5', label: 'Wire up error handling', status: 'pending' },
     ],
     agents: [
-      { id: 'a4', name: 'oh-my-claude:worker', task: 'Auth middleware', toolUses: 14, tokens: 0, status: 'running', statusText: 'Writing...' },
-      { id: 'a5', name: 'oh-my-claude:worker', task: 'Validation', toolUses: 10, tokens: 0, status: 'running', statusText: 'Writing...' },
-      { id: 'a6', name: 'oh-my-claude:worker', task: 'API routes', toolUses: 12, tokens: 0, status: 'running', statusText: 'Writing...' },
-      { id: 'a7', name: 'oh-my-claude:worker', task: 'Error handling', toolUses: 8, tokens: 0, status: 'running', statusText: 'Writing...' },
+      { id: 'a4', name: 'Task', task: 'Auth middleware', toolUses: 14, tokens: 0, status: 'running', statusText: 'Writing...' },
+      { id: 'a5', name: 'Task', task: 'Validation', toolUses: 10, tokens: 0, status: 'running', statusText: 'Writing...' },
+      { id: 'a6', name: 'Task', task: 'API routes', toolUses: 12, tokens: 0, status: 'running', statusText: 'Writing...' },
+      { id: 'a7', name: 'Task', task: 'Error handling', toolUses: 8, tokens: 0, status: 'running', statusText: 'Writing...' },
     ]
   },
   {
@@ -84,7 +84,7 @@ const PHASES: PhaseConfig[] = [
     agents: [
       { id: 'a8', name: 'oh-my-claude:validator', task: 'Run tests', toolUses: 4, tokens: 0, status: 'running', statusText: 'Testing...' },
       { id: 'a9', name: 'oh-my-claude:validator', task: 'Run lints', toolUses: 2, tokens: 0, status: 'running', statusText: 'Linting...' },
-      { id: 'a10', name: 'oh-my-claude:worker', task: 'Git commit', toolUses: 3, tokens: 0, status: 'running', statusText: 'Committing...' },
+      { id: 'a10', name: 'Task', task: 'Git commit', toolUses: 3, tokens: 0, status: 'running', statusText: 'Committing...' },
     ]
   }
 ]
@@ -467,12 +467,12 @@ export default function TerminalHero() {
       startTokenGrowth()
     }, 3500))
 
-    // 4500ms - Scout 1 complete
+    // 4500ms - Explore 1 complete
     timeouts.push(setTimeout(() => {
       setAgents(prev => prev.map(a => a.id === 'a1' ? { ...a, status: 'complete' } : a))
     }, 4500))
 
-    // 5000ms - Scout 2 complete
+    // 5000ms - Explore 2 complete
     timeouts.push(setTimeout(() => {
       setAgents(prev => prev.map(a => a.id === 'a2' ? { ...a, status: 'complete' } : a))
     }, 5000))
@@ -530,25 +530,25 @@ export default function TerminalHero() {
       ))
     }, 6700))
 
-    // 8000ms - Worker 1 complete (auth middleware), t2 complete
+    // 8000ms - Task 1 complete (auth middleware), t2 complete
     timeouts.push(setTimeout(() => {
       setAgents(prev => prev.map(a => a.id === 'a4' ? { ...a, status: 'complete' } : a))
       setTasks(prev => prev.map(t => t.id === 't2' ? { ...t, status: 'complete' } : t))
     }, 8000))
 
-    // 8500ms - Worker 3 complete (API routes), t4 complete
+    // 8500ms - Task 3 complete (API routes), t4 complete
     timeouts.push(setTimeout(() => {
       setAgents(prev => prev.map(a => a.id === 'a6' ? { ...a, status: 'complete' } : a))
       setTasks(prev => prev.map(t => t.id === 't4' ? { ...t, status: 'complete' } : t))
     }, 8500))
 
-    // 9000ms - Worker 2 complete (validation), t3 complete
+    // 9000ms - Task 2 complete (validation), t3 complete
     timeouts.push(setTimeout(() => {
       setAgents(prev => prev.map(a => a.id === 'a5' ? { ...a, status: 'complete' } : a))
       setTasks(prev => prev.map(t => t.id === 't3' ? { ...t, status: 'complete' } : t))
     }, 9000))
 
-    // 9500ms - Worker 4 complete (error handling), t5 complete
+    // 9500ms - Task 4 complete (error handling), t5 complete
     timeouts.push(setTimeout(() => {
       setAgents(prev => prev.map(a => a.id === 'a7' ? { ...a, status: 'complete' } : a))
       setTasks(prev => prev.map(t => t.id === 't5' ? { ...t, status: 'complete' } : t))
@@ -612,7 +612,7 @@ export default function TerminalHero() {
       setTasks(prev => prev.map(t => t.id === 't6' ? { ...t, status: 'complete' } : t))
     }, 12000))
 
-    // 12500ms - Worker (git commit) complete, t7 complete
+    // 12500ms - Task (git commit) complete, t7 complete
     timeouts.push(setTimeout(() => {
       setAgents(prev => prev.map(a => a.id === 'a10' ? { ...a, status: 'complete' } : a))
       setTasks(prev => prev.map(t => t.id === 't7' ? { ...t, status: 'complete' } : t))

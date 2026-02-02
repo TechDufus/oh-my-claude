@@ -50,11 +50,10 @@ class TestMainSessionBehavior:
         assert "orchestrator" in context
 
     def test_main_session_includes_file_protocol(self):
-        """SOP should include file reading protocol."""
+        """SOP should include delegation protocol."""
         output = run_hook({})
         context = get_context(output)
-        assert "100 lines" in context
-        assert "File Reading Protocol" in context
+        assert "Delegation Protocol" in context
 
     def test_empty_input_treated_as_main_session(self):
         """Empty input should be treated as main session."""

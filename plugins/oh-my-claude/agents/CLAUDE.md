@@ -96,13 +96,13 @@ in their frontmatter, and the parent session should NEVER override this with a d
 **When spawning agents:**
 ```yaml
 # CORRECT - inherits parent model
-Task(subagent_type="oh-my-claude:scout", prompt="...")
+Task(subagent_type="oh-my-claude:critic", prompt="...")
 
 # CORRECT - explicit inherit
-Task(subagent_type="oh-my-claude:worker", model="inherit", prompt="...")
+Task(subagent_type="oh-my-claude:librarian", model="inherit", prompt="...")
 
 # WRONG - NEVER DO THIS
-Task(subagent_type="oh-my-claude:scout", model="haiku", prompt="...")
+Task(subagent_type="oh-my-claude:critic", model="haiku", prompt="...")
 Task(subagent_type="oh-my-claude:validator", model="sonnet", prompt="...")
 ```
 
@@ -119,9 +119,9 @@ Control how the agent handles permission prompts via the `permissionMode` frontm
 | `bypassPermissions` | Skip all permission checks | Dangerous - use only for fully trusted automation |
 
 **Guidelines:**
-- Read-only agents (scout, librarian, looker): use `plan` or `dontAsk`
-- Implementation agents (worker): use `acceptEdits` for efficiency
-- Review agents (advisor, critic, validator): use `plan` to prevent accidental changes
+- Read-only agents (librarian): use `plan` or `dontAsk`
+- Review agents (advisor, critic): use `plan` to prevent accidental changes
+- Validation agents (validator): use `plan` for safety, full Bash for test execution
 - Never use `bypassPermissions` unless explicitly required by workflow
 
 ```yaml
@@ -262,13 +262,14 @@ Examples:
 
 | Tier | Agents | Bash Access |
 |------|--------|-------------|
-| Read-only | scout, librarian, looker | Restricted |
-| Planning | architect, critic | Restricted |
-| Coordination | orchestrator | Restricted |
-| Execution | worker, validator | Full |
-| Advisory | debugger, scribe, advisor | Varies |
+| Read-only | librarian | Restricted |
+| Review | critic, advisor | Restricted |
+| Execution | validator | Full |
 
-**Note:** Orchestrator is coordination-only (opus-tier by default). It delegates to other agents but cannot implement directly - no Edit, Write, or Bash for builds.
+**Note:** Use Claude Code's built-in agents for common tasks:
+- **Explore** - File/definition discovery (replaces scout)
+- **Plan** - Complex task decomposition (replaces architect)
+- **general-purpose** - Implementation tasks (replaces worker)
 
 ## Adding New Agent
 
@@ -288,7 +289,7 @@ Add Task integration to agents that:
 - Can be parallelized (multiple instances of same agent type)
 - Benefit from self-discovery via owner field
 
-Skip Task integration for advisory agents (architect, critic, debugger) that are called on-demand.
+Skip Task integration for advisory agents (advisor, critic) that are called on-demand.
 
 ### Standard Pattern
 
@@ -307,13 +308,13 @@ If assigned via owner field in a task workflow:
 
 ### Category-Specific Templates
 
-**Discovery agents (scout, librarian, looker):**
-- Report findings (file paths, summaries, observations)
+**Read agents (librarian):**
+- Report findings (summaries, extracted content, observations)
 - May spawn follow-up tasks based on discoveries
 
-**Implementation agents (worker, scribe):**
-- Implement changes described in task
-- Verify before marking complete
+**Review agents (advisor, critic):**
+- Provide analysis and feedback
+- Do not make changes directly
 
 **Validation agents (validator):**
 - Run checks/tests as described
@@ -326,7 +327,7 @@ Instruct agents to handle:
 - Task already in_progress: Skip (another agent may have claimed it)
 - Task blocked: Skip and check for unblocked tasks
 
-See `orchestrator.md` for full Task API reference and coordination patterns.
+See the `task-api` skill for full Task API reference.
 
 ## Anti-Patterns
 

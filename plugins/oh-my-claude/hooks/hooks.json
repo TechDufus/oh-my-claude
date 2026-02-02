@@ -33,6 +33,10 @@
             "type": "command",
             "command": "uv run --script ${CLAUDE_PLUGIN_ROOT}/hooks/tdd_enforcer.py",
             "timeout": 5
+          },
+          {
+            "type": "prompt",
+            "prompt": "Before editing, confirm:\n1. You have READ this file in the current session\n2. You understand the existing code structure\n3. Your changes are minimal and targeted"
           }
         ]
       },

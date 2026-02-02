@@ -8,7 +8,7 @@ export const heroTagline = "A Claude Code plugin that delegates file reading, se
 
 // ── Stats Bar ───────────────────────────────────────────────────
 export const stats = [
-  { value: "11", label: "Specialized Agents" },
+  { value: "4", label: "Custom Agents" },
   { value: "6", label: "Built-in Skills" },
   { value: "27", label: "Lifecycle Hooks" },
   { value: "1", label: "Plugin Install" },
@@ -26,8 +26,8 @@ export const howItWorksSteps = [
   {
     step: 2,
     title: "Agents swarm",
-    description: "Scout finds the files. Librarian reads them. Architect plans. Workers implement. Your context window never sees the raw dump.",
-    snippet: "scout → librarian → architect → worker",
+    description: "Built-in Explore finds files. Librarian reads them. Plan mode designs. Tasks implement. Your context window never sees the raw dump.",
+    snippet: "Explore → librarian → Plan → Task",
   },
   {
     step: 3,
@@ -43,27 +43,27 @@ export const useCases = [
   {
     title: "Exploring a New Codebase",
     description: "Drop into an unfamiliar repo without flooding your context with every file.",
-    terminal: `scout finds → 47 files matched
+    terminal: `Explore finds → 47 files matched
 librarian reads → 3 relevant modules
-architect plans → dependency graph built
+Plan mode → dependency graph built
 > "Auth lives in src/middleware/, uses JWT"`,
     accent: "cyan",
   },
   {
     title: "Implementing a Feature",
     description: "Describe what you want. The agent swarm handles the rest while you review.",
-    terminal: `architect → 5-step plan created
-worker[1] → src/routes/auth.ts written
-worker[2] → src/middleware/jwt.ts written
+    terminal: `Plan mode → 5-step plan created
+Task[1] → src/routes/auth.ts written
+Task[2] → src/middleware/jwt.ts written
 validator → all 12 tests passing`,
     accent: "coral",
   },
   {
     title: "Debugging Production",
-    description: "When you're stuck after two attempts, the debugger agent does deep reasoning you shouldn't burn context on.",
-    terminal: `debugger → root cause: race condition
+    description: "When you're stuck after two attempts, use ultradebug skill for deep reasoning you shouldn't burn context on.",
+    terminal: `ultradebug → root cause: race condition
   in useEffect cleanup on unmount
-worker → fix applied to 2 files
+Task → fix applied to 2 files
 validator → regression suite green`,
     accent: "cyan",
   },
@@ -99,9 +99,9 @@ export const features = [
 export const planModeSectionTitle = "Plan mode, supercharged."
 export const planModeSectionSubtitle = "Enter plan mode and get a structured 6-step pipeline automatically. No magic words needed — just Shift+Tab."
 export const planModePipeline = [
-  { step: 1, label: "Recon", description: "Scout and librarian gather codebase context before any questions are asked.", agent: "scout + librarian" },
+  { step: 1, label: "Recon", description: "Explore and librarian gather codebase context before any questions are asked.", agent: "Explore + librarian" },
   { step: 2, label: "Interview", description: "Smart, recon-informed questions via AskUserQuestion. No guessing.", agent: null },
-  { step: 3, label: "Research", description: "Targeted deep research informed by your answers.", agent: "scout + librarian" },
+  { step: 3, label: "Research", description: "Targeted deep research informed by your answers.", agent: "Explore + librarian" },
   { step: 4, label: "Gap Analysis", description: "Advisor catches hidden assumptions, missing context, and scope risks.", agent: "advisor" },
   { step: 5, label: "Write Plan", description: "Structured plan with file:line refs, decisions, and risks.", agent: null },
   { step: 6, label: "Critic Review", description: "Critic must approve before plan exits. Loops until the plan is solid.", agent: "critic" },
@@ -114,7 +114,7 @@ export const planModeKeywords = [
 
 // ── Agent Grid (updated header) ─────────────────────────────────
 export const agentGridTitle = "Meet the swarm"
-export const agentGridSubtitle = "11 purpose-built agents. Each does one thing well. None of them pollute your context window."
+export const agentGridSubtitle = "4 custom agents that extend Claude's built-in capabilities. Each does one thing well. None of them pollute your context window."
 
 // ── Footer ──────────────────────────────────────────────────────
 export const footerLine = "Built by someone who got tired of watching Claude forget what it just read."

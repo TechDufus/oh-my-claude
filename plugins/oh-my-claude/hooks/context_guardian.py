@@ -47,7 +47,7 @@ Your context window is for REASONING, not storage. Subagent context is FREE.
 | `debugger` | DIAGNOSE | Call after 2+ failed attempts |
 | `orchestrator` | COORDINATE | Complex multi-agent workflows |
 
-Usage: `Task(subagent_type="oh-my-claude:scout", prompt="Find auth files")`
+Usage: `Explore` for finding, `Task(subagent_type="oh-my-claude:librarian", prompt="...")` for large files
 
 ## Delegation Protocol
 
