@@ -33,6 +33,11 @@
             "type": "command",
             "command": "uv run --script ${CLAUDE_PLUGIN_ROOT}/hooks/tdd_enforcer.py",
             "timeout": 5
+          },
+          {
+            "type": "command",
+            "command": "uv run --script ${CLAUDE_PLUGIN_ROOT}/hooks/delegation_enforcer.py",
+            "timeout": 5
           }
         ]
       },
