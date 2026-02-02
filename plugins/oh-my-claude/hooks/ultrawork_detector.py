@@ -183,11 +183,24 @@ Write to `.claude/plans/{name}.md`. Every plan MUST include:
 - {thing explicitly excluded from scope}
 - {constraint from interview}
 
+## Task Tools (Quick Reference)
+
+| Tool | Purpose | When to Use |
+|------|---------|-------------|
+| `Task()` | Spawn subagent | Research (scout, librarian), implementation (worker), validation (validator) |
+| `TaskCreate()` | Create tracking item | Building the task list for multi-step work |
+| `TaskUpdate()` | Update task state | Status changes, dependencies, ownership |
+| `TaskList()` | View all tasks | Check progress, find unblocked work |
+| `TaskGet()` | Get task details | Before starting work on a specific task |
+
+**Key distinction:** `Task()` = spawn agent NOW. `TaskCreate()` = track work for later.
+
 ## Tasks
 
 ### Task {n}: {title}
 - **Files:** {exact paths with line numbers}
 - **Changes:** {what changes per location}
+- **Validation:** {what to check} OR `N/A - research|docs`
 - **Must NOT:** {per-task exclusions}
 - **References:**
   - Pattern: {file:line of existing pattern to follow}
@@ -204,6 +217,25 @@ Write to `.claude/plans/{name}.md`. Every plan MUST include:
 
 ## Risks
 {known issues + mitigations}
+
+## Validation Protocol
+
+Each implementation task SHOULD specify what to validate. The executor decides HOW (batch or per-task).
+
+| Task Type | Validation Required? | Example |
+|-----------|---------------------|---------|
+| Implementation | YES | "Tests pass", "Lint clean", "Type check passes" |
+| Refactoring | YES | "Existing tests still pass", "No behavior change" |
+| Research (scout/librarian) | NO - exempt | Mark as `N/A - research` |
+| Documentation (scribe) | NO - exempt | Mark as `N/A - docs` |
+
+**If validation is unclear:** Split the task smaller until each piece has a clear validation criterion.
+
+**Executor pattern (worker + validator tasks with dependency):**
+
+    TaskCreate(subject="Implement X", description="...")
+    TaskCreate(subject="Validate X", description="...", addBlockedBy=["1"])
+
 ```
 
 ## STEP 6: CRITIC REVIEW (MANDATORY)
