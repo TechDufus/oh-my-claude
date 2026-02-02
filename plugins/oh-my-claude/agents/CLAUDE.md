@@ -113,8 +113,8 @@ Control how the agent handles permission prompts via the `permissionMode` frontm
 | Mode | Behavior | Use Case |
 |------|----------|----------|
 | `default` | Standard permission checking | General-purpose agents, balanced safety |
-| `plan` | Read-only exploration mode | Scout, architect - information gathering only |
-| `acceptEdits` | Auto-accept file edits | Worker, scribe - trusted implementation agents |
+| `plan` | Read-only exploration mode | Read-only agents - information gathering only |
+| `acceptEdits` | Auto-accept file edits | Worker - trusted implementation agent |
 | `dontAsk` | Auto-deny permission prompts | Strict read-only agents, reviewers |
 | `bypassPermissions` | Skip all permission checks | Dangerous - use only for fully trusted automation |
 
@@ -206,7 +206,7 @@ Control token limits via `maxTokens` in frontmatter for agents with specific out
 
 | Agent Type | Recommended Limit | Rationale |
 |------------|-------------------|-----------|
-| Scout | 2000-4000 | Returns locations, not content |
+| Explore | 2000-4000 | Returns locations, not content |
 | Librarian | 4000-8000 | Summaries should be concise |
 | Critic | 4000-6000 | Focused feedback, not rewrites |
 | Worker | No limit | Implementation varies widely |
@@ -269,7 +269,7 @@ Examples:
 **Note:** Use Claude Code's built-in agents for common tasks:
 - **Explore** - File/definition discovery (replaces scout)
 - **Plan** - Complex task decomposition (replaces architect)
-- **general-purpose** - Implementation tasks (replaces worker)
+- **general-purpose** - Implementation tasks
 
 ## Adding New Agent
 

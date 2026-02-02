@@ -35,17 +35,19 @@ Your context window is for REASONING, not storage. Subagent context is FREE.
 
 | Agent | Purpose | When to Use |
 |-------|---------|-------------|
-| `scout` | FIND | Locate files, definitions, git recon (tags, branches) |
-| `librarian` | READ | Summarize files >100 lines, extract sections, git analysis |
-| `looker` | SEE | Analyze PDFs, images, screenshots, diagrams |
-| `architect` | PLAN | Decompose complex tasks into phases |
+| `librarian` | READ | Files >100 lines, summarize, git analysis |
 | `advisor` | ANALYZE | Pre-planning gap analysis, hidden requirements |
 | `critic` | REVIEW | Review plans BEFORE execution |
 | `worker` | BUILD | Implement ONE focused task |
-| `scribe` | DOCUMENT | Write docs, READMEs, comments |
-| `validator` | CHECK | Run tests, linters, type checks |
-| `debugger` | DIAGNOSE | Call after 2+ failed attempts |
-| `orchestrator` | COORDINATE | Complex multi-agent workflows |
+| `validator` | CHECK | Tests, linters, verification |
+
+### Built-in Agents (Claude Code)
+
+| Agent | Job | When |
+|-------|-----|------|
+| **Explore** | FIND | Locate files, definitions |
+| **Plan** | DESIGN | Complex task decomposition |
+| **general-purpose** | BUILD | Implementation tasks |
 
 Usage: `Explore` for finding, `Task(subagent_type="oh-my-claude:librarian", prompt="...")` for large files
 
@@ -53,18 +55,18 @@ Usage: `Explore` for finding, `Task(subagent_type="oh-my-claude:librarian", prom
 
 | Task | Do This |
 |------|---------|
-| Find files/code | scout (not Glob/Grep directly) |
-| Read files >100 lines | librarian (not Read directly) |
-| Read multiple files | librarian (ALWAYS) |
-| Unknown file size | librarian (safe default) |
-| Implement changes | worker with detailed spec |
+| Find files | Explore |
+| Understand code | librarian |
+| Implement changes | worker or general-purpose |
 | Verify work | validator |
-| Complex planning | architect → critic → workers |
+| Review plan | critic |
+| Gap analysis | advisor |
+| Complex planning | Plan agent |
 
 ### The Pattern
 
 ```
-Scout finds → Librarian reads → You reason → Workers implement → Validator checks
+Explore finds → Librarian reads → You reason → Workers implement → Validator checks
 ```
 
 ## Task System (Coordination Layer)
