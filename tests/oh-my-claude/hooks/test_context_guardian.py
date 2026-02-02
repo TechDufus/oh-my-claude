@@ -45,9 +45,9 @@ class TestMainSessionBehavior:
         """SOP should include agent team instructions."""
         output = run_hook({})
         context = get_context(output)
-        assert "scout" in context
+        assert "advisor" in context
         assert "librarian" in context
-        assert "orchestrator" in context
+        assert "validator" in context
 
     def test_main_session_includes_file_protocol(self):
         """SOP should include delegation protocol."""

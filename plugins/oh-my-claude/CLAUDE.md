@@ -103,7 +103,7 @@ Use `TaskCreate`/`TaskUpdate`/`TaskList`/`TaskGet` to:
 - Enable agent self-discovery via owner field
 - Persist state across parallel delegations
 
-See `orchestrator.md` for full API reference (metadata, addBlocks, owner patterns, edge cases).
+Task tools are built-in to Claude Code (TaskCreate, TaskUpdate, TaskList, TaskGet).
 
 ### Quick Reference
 
@@ -115,7 +115,7 @@ TaskCreate(subject="Find auth files", description="...", metadata={"priority": "
 TaskUpdate(taskId="2", addBlockedBy=["1"])
 
 # Agent self-discovery via owner
-TaskUpdate(taskId="1", owner="scout-1")
+TaskUpdate(taskId="1", owner="explore-1")
 Task(subagent_type="Explore", prompt="Find auth-related files...")
 ```
 
@@ -144,7 +144,7 @@ You are the conductor. Agents play the music.
 
 - **Explore finds** -> **Librarian reads** -> **Plan designs** -> **Critic reviews** -> **general-purpose implements** -> **Validator checks**
 - Launch independent agents in parallel (one message, multiple Task calls)
-- Sequential when dependent: wait for scout paths before librarian reads them
+- Sequential when dependent: wait for Explore paths before librarian reads them
 - Declare intent before delegating: which agent, what task, expected output
 - Trust but verify: spot-check critical claims from agents
 
@@ -212,7 +212,7 @@ Auto-activates when entering native plan mode (no keyword needed).
 
 | Phase | Behavior |
 |-------|----------|
-| Research | Mandatory scout + librarian before designing |
+| Research | Mandatory Explore + librarian before designing |
 | Analysis | Must consider 2+ approaches with tradeoffs |
 | Review | Critic agent MUST approve before ExitPlanMode |
 | Handoff | Plan path saved for execution session |

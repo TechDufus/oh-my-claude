@@ -141,29 +141,33 @@ The hook intercepts your prompt, detects the keyword, and injects execution dire
 
 ## The Agent Team
 
-Eleven specialized subagents, all using `model: inherit` (same model as your session):
+Five specialized subagents complement Claude Code's built-in agents:
 
 | Agent | What It Does |
 |-------|--------------|
-| **scout** | Fast recon — finds files, locates definitions, git tag/branch lists |
-| **librarian** | Smart reading — summarizes large files, git diffs and changelogs |
-| **looker** | Visual analysis — PDFs, images, screenshots, diagrams |
-| **architect** | Planning — decomposes complex tasks, identifies parallelization |
 | **advisor** | Pre-planning gap analysis for hidden requirements and scope risks |
 | **critic** | Plan review — finds flaws and edge cases BEFORE execution |
-| **debugger** | Failure escalation — call after 2+ failed attempts |
-| **worker** | Implementation — executes ONE specific task completely |
-| **scribe** | Documentation — writes clear docs for code, APIs, systems |
+| **librarian** | Smart reading — summarizes large files, git diffs and changelogs |
 | **validator** | QA — runs tests, linters, type checks, reports pass/fail |
-| **orchestrator** | Coordination — delegates to agents, cannot implement directly |
+| **worker** | Focused implementation — executes ONE specific task completely |
+
+### Claude Code Built-in Agents
+
+Claude Code provides these agents out of the box, which oh-my-claude leverages:
+
+| Built-in Agent | What It Does |
+|----------------|--------------|
+| **Explore** | Find files, search codebase, locate definitions |
+| **Plan** | Design implementation approaches, decompose complex tasks |
+| **Task** | General-purpose implementation tasks |
 
 ### Usage
 
 ```
-Task(subagent_type="oh-my-claude:scout", prompt="Find all auth-related files")
 Task(subagent_type="oh-my-claude:librarian", prompt="Summarize src/auth/service.ts")
 Task(subagent_type="oh-my-claude:critic", prompt="Review this implementation plan for flaws")
 Task(subagent_type="oh-my-claude:worker", prompt="Add password reset endpoint")
+Task(subagent_type="oh-my-claude:validator", prompt="Run all tests and report results")
 ```
 
 ### Why Subagents Matter
@@ -176,7 +180,7 @@ Subagent context is **isolated** from your main context. When a librarian reads 
 
 Enter plan mode (Shift+Tab) and get a structured 6-step pipeline automatically — no magic words needed:
 
-1. **Recon** — Scout and librarian gather codebase context before questions
+1. **Recon** — Explore and librarian gather codebase context before questions
 2. **Interview** — Smart, recon-informed questions (not generic prompts)
 3. **Research** — Targeted deep research informed by your answers
 4. **Gap Analysis** — Advisor agent catches hidden assumptions and scope risks

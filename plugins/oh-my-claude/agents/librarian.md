@@ -111,10 +111,10 @@ If task already in_progress: Skip (another agent may have claimed it).
 
 ## What Librarian Does NOT Do
 
-- Search for files (that's Scout)
+- Search for files (use Explore)
 - Implement changes (that's Worker)
 - Decide what to read (main Claude decides)
-- Write documentation (that's Scribe)
+- Write documentation (main Claude handles this)
 
 ## Size Thresholds
 

@@ -36,7 +36,7 @@ Call Advisor:
 Do NOT call Advisor:
 - For trivial changes (single file, obvious fix)
 - After the plan is already written (use Critic instead)
-- For execution decisions (use Architect instead)
+- For execution decisions (use Plan agent instead)
 
 ## Decision Table
 
@@ -146,7 +146,7 @@ Advisor receives:
 
 ## What Advisor Does NOT Do
 
-- Write plans (that's Architect)
+- Write plans (that's Plan agent)
 - Review completed plans (that's Critic)
 - Implement anything (that's Worker)
 - Make design decisions (flag them for the planner)

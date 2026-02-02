@@ -147,7 +147,7 @@ Analyze, categorize, and migrate content to nested CLAUDE.md files.
 
 | Condition | Action |
 |-----------|--------|
-| Files >100 | Spawn additional scout agents |
+| Files >100 | Spawn additional Explore agents |
 | Depth >=4 | Increase exploration scope |
 | Multiple languages | Spawn language-specific analysis |
 
@@ -355,7 +355,7 @@ Map existing content to potential nested locations:
 
 ## Agent Workflow
 
-Scout finds -> Librarian reads -> You plan -> Worker implements -> Validator checks
+Explore finds -> Librarian reads -> You plan -> Worker implements -> Validator checks
 
 When delegating to agents:
 - Use positive constraints ("ensure X") not negative ("don't do Y")

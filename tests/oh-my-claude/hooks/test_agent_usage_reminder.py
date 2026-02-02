@@ -41,8 +41,8 @@ class TestGrepTriggersReminder:
         context = get_context(output)
         assert "Agent Usage Reminder" in context
 
-    def test_grep_includes_scout_suggestion(self):
-        """Reminder should suggest using scout agent for Grep."""
+    def test_grep_includes_explore_suggestion(self):
+        """Reminder should suggest using Explore agent for Grep."""
         output = run_hook({"tool_name": "Grep", "session_id": "test-grep-2"})
         context = get_context(output)
         assert "Explore" in context
@@ -70,8 +70,8 @@ class TestGlobTriggersReminder:
         context = get_context(output)
         assert "Agent Usage Reminder" in context
 
-    def test_glob_includes_scout_suggestion(self):
-        """Reminder should suggest using scout agent for Glob."""
+    def test_glob_includes_explore_suggestion(self):
+        """Reminder should suggest using Explore agent for Glob."""
         output = run_hook({"tool_name": "Glob", "session_id": "test-glob-2"})
         context = get_context(output)
         assert "Explore" in context

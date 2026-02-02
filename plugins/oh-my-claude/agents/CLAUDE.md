@@ -267,8 +267,8 @@ Examples:
 | Execution | validator | Full |
 
 **Note:** Use Claude Code's built-in agents for common tasks:
-- **Explore** - File/definition discovery (replaces scout)
-- **Plan** - Complex task decomposition (replaces architect)
+- **Explore** - File/definition discovery
+- **Plan** - Complex task decomposition
 - **general-purpose** - Implementation tasks
 
 ## Adding New Agent

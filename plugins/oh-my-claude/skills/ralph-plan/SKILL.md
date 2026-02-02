@@ -22,7 +22,7 @@ Structured PRD generation. Interview, research, plan, approve.
 Ralph Plan creates comprehensive Product Requirements Documents through a deliberate process:
 
 1. **Interview Phase** - Understand requirements through focused questions
-2. **Research Phase** - Analyze codebase via scout/librarian
+2. **Research Phase** - Analyze codebase via Explore/librarian
 3. **Planning Phase** - Generate structured plan with clear steps
 4. **Approval Gate** - User reviews, modifies, and approves the final PRD
 
@@ -62,7 +62,7 @@ Started: {timestamp}
 - [choices made during interview]
 
 ## Research Findings
-- [results from scout/librarian]
+- [results from Explore/librarian]
 
 ## Open Questions
 - [unanswered items]
@@ -236,7 +236,7 @@ Files Affected: {count}
 - A: "Must use existing user model, no OAuth"
 
 **Research Phase:**
-- Scout finds: `src/models/User.ts`, `src/routes/index.ts`
+- Explore finds: `src/models/User.ts`, `src/routes/index.ts`
 - Librarian summarizes: Uses Express, no existing auth middleware
 
 **Plan Generated:**
@@ -269,7 +269,7 @@ PRD finalized at .claude/plans/user-authentication-jwt.md
 - A: "Should make mocking easier"
 
 **Research Phase:**
-- Scout finds: 8 service files, current instantiation patterns
+- Explore finds: 8 service files, current instantiation patterns
 - Librarian summarizes: Direct instantiation, no DI container
 
 **Plan Generated:**
@@ -302,7 +302,7 @@ create prd for adding test coverage to src/services/
 - A: "80% minimum"
 
 **Research Phase:**
-- Scout finds: 6 service files, existing test patterns
+- Explore finds: 6 service files, existing test patterns
 - Librarian summarizes: Jest setup exists, 2 services have tests
 
 **Plan Generated:**

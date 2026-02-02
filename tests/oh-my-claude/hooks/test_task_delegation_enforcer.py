@@ -23,7 +23,7 @@ class TestHasDelegationPattern:
 
     def test_case_insensitive_pattern(self):
         """Pattern matching should be case-insensitive."""
-        text = 'TASK(Subagent_Type="oh-my-claude:scout", prompt="Find files")'
+        text = 'TASK(Subagent_Type="Explore", prompt="Find files")'
         assert has_delegation_pattern(text) is True
 
     def test_partial_task_only(self):

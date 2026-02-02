@@ -87,7 +87,7 @@ STOP. Do NOT write a plan yet. Follow these steps IN ORDER.
 
 ## STEP 1: QUICK RECON
 
-Understand the codebase context BEFORE asking questions. Launch scouts to gather
+Understand the codebase context BEFORE asking questions. Launch Explore agents to gather
 the lay of the land so you can ask INFORMED questions (not generic ones).
 
 ```
@@ -545,7 +545,7 @@ NEVER downgrade models. Omit `model` param or use `model="inherit"`.
 ```
 TaskCreate(subject="Action verb: description", description="Full context")
 TaskUpdate(taskId="2", addBlockedBy=["1"])  # Dependencies
-TaskUpdate(taskId="1", owner="scout-1")     # Agent assignment
+TaskUpdate(taskId="1", owner="explore-1")   # Agent assignment
 TaskUpdate(taskId="1", status="completed")  # Status flow: pending->in_progress->completed
 ```
 
@@ -588,9 +588,9 @@ Tasks should be **small and atomic**. If a task touches multiple concerns, split
 |--------|--------|
 | 1st | Adjust, retry |
 | 2nd | Re-examine assumptions, retry |
-| 3rd | STOP -> REVERT -> DOCUMENT -> ESCALATE to debugger |
+| 3rd | STOP -> REVERT -> DOCUMENT -> ESCALATE to user |
 
-After debugger guidance: reset counter, new approach.
+After user guidance: reset counter, new approach.
 
 ## AUTONOMOUS EXECUTION
 
@@ -795,7 +795,7 @@ Recent changes statistically likely to contain bugs.
 | Assume H1 correct | Confirmation bias |
 | Skip reproduction | Cannot verify fix |
 | Multiple changes at once | Cannot isolate cause |
-| Give up after 2 attempts | Use debugger agent |
+| Give up after 2 attempts | Escalate to user |
 
 ## Escalation (After 2+ Failed Attempts)
 

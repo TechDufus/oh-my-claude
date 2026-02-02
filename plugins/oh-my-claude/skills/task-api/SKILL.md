@@ -21,7 +21,7 @@ TaskCreate(
 TaskUpdate(
   taskId="3",
   status="in_progress",        # pending | in_progress | completed
-  owner="scout-1",             # Agent assignment for self-discovery
+  owner="explore-1",           # Agent assignment for self-discovery
   addBlockedBy=["1", "2"],     # Tasks that must complete BEFORE this one
   addBlocks=["4"]              # Tasks that CANNOT start until this completes
 )
