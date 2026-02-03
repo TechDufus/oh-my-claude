@@ -108,6 +108,7 @@ If assigned via owner field in a task workflow:
 
 If no tasks found for your owner: Report "No tasks assigned to {owner}" and exit.
 If task already in_progress: Skip (another agent may have claimed it).
+If task is blocked: Skip and check for unblocked tasks.
 
 ## What Librarian Does NOT Do
 

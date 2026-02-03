@@ -119,22 +119,25 @@ TaskUpdate(taskId="1", owner="explore-1")
 Task(subagent_type="Explore", prompt="Find auth-related files...")
 ```
 
-### Delegation-First Tasks (ENFORCED)
+### Task System: Tracking vs Execution
 
-TaskCreate descriptions MUST include a `Task()` delegation call:
+**Key distinction:** `Task()` = spawn agent NOW. `TaskCreate()` = track work for later.
 
 ```python
-TaskCreate(
-  subject="Implement feature X",
-  description="""
-  Task(subagent_type="general-purpose", prompt='''
-    Implement the feature in src/feature.ts...
-  ''')
-  """
-)
+# TRACKING: Create items to track progress
+TaskCreate(subject="Implement auth", description="Add JWT middleware to API routes")
+TaskCreate(subject="Write tests", description="Unit tests for auth middleware")
+TaskUpdate(taskId="2", addBlockedBy=["1"])  # Tests blocked by implementation
+
+# EXECUTION: Spawn agents to do work (parallel when independent)
+Task(subagent_type="general-purpose", prompt="Implement JWT middleware...")
+Task(subagent_type="oh-my-claude:validator", prompt="Run auth tests...")
+
+# UPDATE: Mark complete after verification
+TaskUpdate(taskId="1", status="completed")
 ```
 
-**After creating:** Execute the Task() call to spawn the worker.
+**Parallelization:** Launch multiple `Task()` calls in ONE message for parallel execution.
 
 **Escape hatch:** Add `[NO-DELEGATE]` for tasks main agent handles directly.
 
@@ -173,7 +176,7 @@ Context protection is always on. Ultrawork adds execution intensity.
 | Aspect | Default | Ultrawork |
 |--------|---------|-----------|
 | Parallelization | When sensible | AGGRESSIVE |
-| Task Tracking | When helpful | MANDATORY (3+ tasks via TaskCreate) |
+| Task Tracking | When helpful | Recommended |
 | Stopping | After milestones | NEVER until ALL complete |
 | Questions | When unclear | NEVER - decide and document |
 | Validation | When appropriate | REQUIRED before stopping |

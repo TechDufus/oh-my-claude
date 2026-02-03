@@ -257,7 +257,7 @@ Do NOT skip critic. Do NOT ExitPlanMode without critic approval.
 
 ## SWARM EXECUTION
 
-For 3+ independent tasks in the plan:
+For independent tasks in the plan:
 
 ```
 ExitPlanMode:
@@ -288,6 +288,8 @@ You have an approved plan. Before ANY implementation:
 1. Use TaskCreate for EACH plan item
 2. Use TaskUpdate to set blockedBy dependencies
 3. Run TaskList to confirm tasks exist
+
+**Key distinction:** `Task()` = spawn agent NOW. `TaskCreate()` = track work for later.
 
 DO NOT spawn workers or start implementation until tasks are created.
 
@@ -540,7 +542,9 @@ NEVER downgrade models. Omit `model` param or use `model="inherit"`.
 
 **Parallel patterns:** Explore+librarian (research) -> Plan->critic->general-purpose (impl) -> validator (verify)
 
-## TASK TRACKING (3+ Tasks Required)
+## TASK TRACKING
+
+**Key distinction:** `Task()` = spawn agent NOW. `TaskCreate()` = track work for later.
 
 ```
 TaskCreate(subject="Action verb: description", description="Full context")
@@ -577,7 +581,7 @@ Tasks should be **small and atomic**. If a task touches multiple concerns, split
 ## EXECUTION RULES
 
 1. PARALLELIZE - Multiple Task() calls in ONE message
-2. TRACK - 3+ tasks minimum, update status real-time
+2. TRACK - Use TaskCreate for multi-step work, update status real-time
 3. NEVER STOP - Stopping requires passing checklist
 4. NO QUESTIONS - Decide and document
 5. DELEGATE - You plan, agents implement

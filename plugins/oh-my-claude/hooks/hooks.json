@@ -42,16 +42,6 @@
         ]
       },
       {
-        "matcher": "TaskCreate",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "uv run --script ${CLAUDE_PLUGIN_ROOT}/hooks/task_delegation_enforcer.py",
-            "timeout": 5
-          }
-        ]
-      },
-      {
         "matcher": ".*",
         "hooks": [
           {
