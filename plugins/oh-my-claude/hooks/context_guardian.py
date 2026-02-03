@@ -71,17 +71,14 @@ Explore finds → Librarian reads → You reason → Workers implement → Valid
 
 ## Task System (Coordination Layer)
 
-For multi-step work (3+ tasks), use the builtin Task system:
+**Key distinction:** `Task()` = spawn agent NOW. `TaskCreate()` = track work for later.
 
-```
-TaskCreate(subject="Find auth files", description="...", activeForm="Finding auth files")
-TaskUpdate(taskId="1", status="in_progress")
-TaskUpdate(taskId="2", addBlockedBy=["1"])  # Dependencies
-TaskUpdate(taskId="1", status="completed")
-TaskList()  # Check progress, find next task
-```
+For multi-step work, use TaskCreate/TaskUpdate/TaskList to coordinate:
 
-**Why:** Tracks progress, models dependencies, enables parallel delegation, persists state.
+- **Small tasks:** Each task should be atomic and independently validateable
+- **Delegate:** Spawn agents via Task() to do the actual work
+- **Parallelize:** Launch independent Task() calls in ONE message
+- **Dependencies:** Use addBlockedBy/addBlocks to model task ordering
 
 ## Hard Constraints
 

@@ -327,7 +327,7 @@ Instruct agents to handle:
 - Task already in_progress: Skip (another agent may have claimed it)
 - Task blocked: Skip and check for unblocked tasks
 
-See the `task-api` skill for full Task API reference.
+Claude Code has built-in Task API documentation. Focus on small, validateable tasks.
 
 ## Anti-Patterns
 
