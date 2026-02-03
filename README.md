@@ -10,7 +10,7 @@
   <img src="site/public/favicon.svg" alt="oh-my-claude mascot" width="80" height="80">
 </p>
 
-<h3 align="center">Turn Claude Code into a relentless parallel execution engine.</h3>
+<h3 align="center">Enhance Claude Code with context protection and specialized quality gates.</h3>
 
 ---
 
@@ -53,17 +53,14 @@ Claude will parallelize everything, delegate file reads to subagents, track prog
 
 ## Why This Exists
 
-Claude Code is powerful, but it's polite. Too polite. It asks permission. It implements things one at a time. It stops to check if you're happy.
+Claude Code is already intelligent. oh-my-claude makes it even better by:
 
-Sometimes you don't want a conversation. You want a task force.
+- **Protecting your context** — Delegates file reading to subagents so your main session stays sharp
+- **Adding quality gates** — Specialized agents for gap analysis, plan review, and validation
+- **Working invisibly** — Hooks run in the background; you get a better experience just for having it installed
+- **Staying out of the way** — Enhances Claude's capabilities without conflicting with its built-in intelligence
 
-**oh-my-claude** transforms Claude from a helpful assistant into an autonomous execution engine:
-- **Parallel by default** — Launch multiple subagents in a single message
-- **Context-aware** — Delegates bulk reads to subagents so your main context stays sharp
-- **Relentless** — Won't stop until all todos are complete and tests pass
-- **Zero tolerance** — No "simplified versions," no "leaving as exercise," no scope reduction
-
-One keyword. Total transformation.
+Install it and forget it. Your context is protected. Your plans get reviewed. Your work gets validated.
 
 ---
 
@@ -135,7 +132,7 @@ When you prefix a prompt with **ultrawork**, Claude's behavior changes fundament
 | Partial solutions | Accepted | **Zero tolerance** — full implementation or nothing |
 | Asking permission | Frequent | **Never** — makes reasonable decisions, documents them |
 
-The hook intercepts your prompt, detects the keyword, and injects execution directives that override Claude's default politeness.
+The hook intercepts your prompt, detects the keyword, and injects context that guides Claude toward quality gates and parallel execution.
 
 ---
 
@@ -226,10 +223,11 @@ Cross-session continuity means "Accept and clear" carries the full execution con
 |-------|---------|
 | **git-commit-validator** | Commit requests — "commit", "ship it", "push this" |
 | **pr-creation** | PR requests — "create PR", "open PR", "ready for review" |
-| **plan** | `/plan <topic>` — Structured planning with draft management |
 | **worktree** | `/worktree` — Git worktree automation for isolated development |
 | **init-deep** | `/init-deep` — Initialize nested CLAUDE.md structure |
 | **ralph-plan** | `/ralph-plan <topic>` — Structured PRD generation with interview and research |
+| **ralph-loop-init** | `/ralph-loop-init` — Transform approved plans into ralph loop infrastructure |
+| **debugger** | `/debugger` — Systematic debugging methodology guidance |
 
 ---
 
@@ -276,13 +274,13 @@ After restart, use **ultrawork** in any prompt to activate parallel execution mo
 
 ## Philosophy
 
-> **Your context is for reasoning, not storage.**
+> **Enhance, don't replace.**
 
-- Delegate bulk reads to subagents — their context is free
-- Launch parallel tasks in single messages — sequential is failure
-- Track everything with TodoWrite — no task forgotten
-- Never stop until done — incomplete todos mean keep working
-- No partial solutions — deliver exactly what was asked
+- Claude Code is already smart — add quality gates, not overrides
+- Your context is for reasoning — delegate storage to subagents
+- Hooks work invisibly — better experience without extra commands
+- Specialized agents fill gaps — advisor, critic, validator, worker
+- Stay out of the way — let Claude do what it does well
 
 ---
 

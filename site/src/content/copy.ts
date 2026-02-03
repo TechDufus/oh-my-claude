@@ -8,9 +8,9 @@ export const heroTagline = "A Claude Code plugin that delegates file reading, se
 
 // ── Stats Bar ───────────────────────────────────────────────────
 export const stats = [
-  { value: "4", label: "Custom Agents" },
-  { value: "6", label: "Built-in Skills" },
-  { value: "27", label: "Lifecycle Hooks" },
+  { value: "5", label: "Custom Agents" },
+  { value: "7", label: "Built-in Skills" },
+  { value: "18", label: "Lifecycle Hooks" },
   { value: "1", label: "Plugin Install" },
 ]
 
@@ -114,7 +114,7 @@ export const planModeKeywords = [
 
 // ── Agent Grid (updated header) ─────────────────────────────────
 export const agentGridTitle = "Meet the swarm"
-export const agentGridSubtitle = "4 custom agents that extend Claude's built-in capabilities. Each does one thing well. None of them pollute your context window."
+export const agentGridSubtitle = "5 custom agents that extend Claude's built-in capabilities. Each does one thing well. None of them pollute your context window."
 
 // ── Footer ──────────────────────────────────────────────────────
 export const footerLine = "Built by someone who got tired of watching Claude forget what it just read."

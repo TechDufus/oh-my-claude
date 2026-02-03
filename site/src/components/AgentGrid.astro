@@ -27,6 +27,12 @@ const agents = [
     description: 'Quality assurance agent. Runs tests, linters, type checks. Reports pass/fail with specific errors.',
     useCase: 'Running test suites, CI validation',
   },
+  {
+    name: 'worker',
+    type: 'implement',
+    description: 'Focused implementation agent. Executes ONE specific task completely with full context isolation.',
+    useCase: 'Single-task implementation, focused file edits',
+  },
 ]
 
 const builtInAgents = [
@@ -66,7 +72,7 @@ const typeColors: Record<string, 'coral' | 'cyan'> = {
       Specialized <span class="text-cyan">Agents</span>
     </h2>
     <p class="text-muted-foreground text-center mb-12 max-w-2xl mx-auto">
-      4 custom agents that extend Claude Code's built-in capabilities. Your context window stays clean while they do the heavy lifting.
+      5 custom agents that extend Claude Code's built-in capabilities. Your context window stays clean while they do the heavy lifting.
     </p>
 
     <!-- Custom Agents -->
