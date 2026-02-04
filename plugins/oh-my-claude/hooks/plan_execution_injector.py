@@ -52,6 +52,23 @@ Workers operate independently. Your role is orchestration:
 3. **Verify completion** - When all teammates finish, validate results
 4. **Aggregate results** - Ensure all plan items were addressed
 
+### TeammateTool Communication
+
+| Operation | Use For |
+|-----------|---------|
+| `write(target_agent_id, message)` | Message one specific teammate |
+| `broadcast(message)` | Message all teammates at once |
+
+### TeammateTool Coordination
+
+| Operation | Use For |
+|-----------|---------|
+| `approvePlan(agent_id, request_id)` | Accept teammate's proposed plan |
+| `rejectPlan(agent_id, request_id, reason)` | Reject with feedback |
+| `requestShutdown(agent_id, reason)` | Ask teammate to exit when done |
+
+Messages use file-based inbox system (`~/.claude/teams/{team}/inboxes/`).
+
 ## TEAMMATE BEHAVIOR
 
 Each teammate:
