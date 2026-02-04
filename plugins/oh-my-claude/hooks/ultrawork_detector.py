@@ -257,13 +257,38 @@ Do NOT skip critic. Do NOT ExitPlanMode without critic approval.
 
 ## SWARM EXECUTION
 
-For independent tasks in the plan:
+For plans with independent parallel tasks, request a team:
 
 ```
 ExitPlanMode:
   launchSwarm: true
-  teammateCount: {independent task count}
+  teammateCount: {number of parallel workers needed}
 ```
+
+This triggers TeammateTool operations for team coordination.
+
+### TeammateTool Operations (when available)
+
+| Category | Operation | Purpose |
+|----------|-----------|---------|
+| **Lifecycle** | `spawnTeam` | Create team with name/description |
+| | `discoverTeams` | List joinable teams |
+| | `requestJoin` | Agent requests membership |
+| | `approveJoin` | Leader accepts agent |
+| | `cleanup` | Remove team resources |
+| **Communication** | `write` | Message one teammate |
+| | `broadcast` | Message all teammates |
+| **Coordination** | `approvePlan` | Accept agent's proposed plan |
+| | `rejectPlan` | Reject with feedback |
+| | `requestShutdown` | Ask agent to exit when done |
+| | `approveShutdown` | Confirm termination |
+
+### Team Coordination
+
+- **launchSwarm spawns the team** - ExitPlanMode handles team creation
+- **Use write/broadcast for messaging** - Targeted vs all-teammates communication
+- **Approve/reject teammate plans** - Review before they execute
+- **Request shutdown when complete** - Clean team termination
 
 ## RULES
 
