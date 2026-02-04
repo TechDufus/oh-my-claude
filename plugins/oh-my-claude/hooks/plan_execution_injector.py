@@ -67,7 +67,7 @@ Workers operate independently. Your role is orchestration:
 | `rejectPlan(agent_id, request_id, reason)` | Reject with feedback |
 | `requestShutdown(agent_id, reason)` | Ask teammate to exit when done |
 
-Messages use file-based inbox system (`~/.claude/teams/{team}/inboxes/`).
+Messages use file-based inbox system (`~/.claude/teams/{{team}}/inboxes/`).
 
 ## TEAMMATE BEHAVIOR
 
