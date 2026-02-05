@@ -179,6 +179,17 @@ Write to `.claude/plans/{name}.md`. Every plan MUST include:
 - **Critical Path:** {longest dependency chain}
 - **Test Strategy:** {TDD | tests-after | manual-only}
 
+## Big Picture Intent
+
+> **When facing unexpected decisions during execution, align with this intent.**
+
+- **Original Problem:** {summarize user's first message - what triggered this work}
+- **Why This Matters:** {business/user impact if not done}
+- **Key Constraints:** {non-negotiable requirements from interview}
+- **Primary Driver:** {single most important factor guiding tradeoffs}
+
+Populate the Big Picture Intent section by pulling from your interview notes (Original Problem from user's first message, Key Constraints from interview Constraints field).
+
 ## Must NOT (Guardrails)
 - {thing explicitly excluded from scope}
 - {constraint from interview}
@@ -341,6 +352,13 @@ If you discover the plan has a flaw:
 1. STOP implementation
 2. Explain the issue to the user
 3. Get approval before changing approach
+
+## DECISION ALIGNMENT
+
+When facing unexpected choices during execution, refer to the plan's "Big Picture Intent" section:
+- Does this align with the original problem being solved?
+- Does this respect the key constraints?
+- Does this optimize for the stated primary driver?
 
 ## COMPLETION
 
