@@ -206,6 +206,8 @@ Populate the Big Picture Intent section by pulling from your interview notes (Or
 
 **Key distinction:** `Task()` = spawn agent NOW. `TaskCreate()` = track work for later.
 
+**Note:** If Agent Teams are enabled (`CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1`), consider whether independent tasks benefit from inter-agent discussion. See EXECUTION STRATEGY below.
+
 ## Tasks
 
 ### Task {n}: {title}
@@ -266,40 +268,40 @@ Respond: APPROVED or NEEDS_REVISION with specific items to fix.
 If NEEDS_REVISION: fix the items, resubmit. Loop until APPROVED.
 Do NOT skip critic. Do NOT ExitPlanMode without critic approval.
 
-## SWARM EXECUTION
+## EXECUTION STRATEGY
 
-For plans with independent parallel tasks, request a team:
+Choose the right execution approach based on task characteristics:
 
-```
-ExitPlanMode:
-  launchSwarm: true
-  teammateCount: {number of parallel workers needed}
-```
+| Signal | Use Subagents (default) | Consider Agent Teams |
+|--------|------------------------|---------------------|
+| Tasks are sequential | YES | no |
+| Tasks touch same files | YES | no |
+| Only need results back | YES | no |
+| Tasks need inter-agent discussion | no | YES |
+| Independent modules in parallel | no | YES |
+| Competing hypotheses/review | no | YES |
+| Cross-layer coordination | no | YES |
 
-This triggers TeammateTool operations for team coordination.
+### Default: Subagents (Task tool)
 
-### TeammateTool Operations (when available)
+Most plans execute best with subagents. Each `Task()` call spawns a focused worker
+that reports results back. Lower token cost, simpler coordination.
 
-| Category | Operation | Purpose |
-|----------|-----------|---------|
-| **Lifecycle** | `spawnTeam` | Create team with name/description |
-| | `discoverTeams` | List joinable teams |
-| | `requestJoin` | Agent requests membership |
-| | `approveJoin` | Leader accepts agent |
-| | `cleanup` | Remove team resources |
-| **Communication** | `write` | Message one teammate |
-| | `broadcast` | Message all teammates |
-| **Coordination** | `approvePlan` | Accept agent's proposed plan |
-| | `rejectPlan` | Reject with feedback |
-| | `requestShutdown` | Ask agent to exit when done |
-| | `approveShutdown` | Confirm termination |
+### Agent Teams (Experimental, Opt-in)
 
-### Team Coordination
+**Do NOT plan around agent teams unless confirmed available in the user's environment.**
 
-- **launchSwarm spawns the team** - ExitPlanMode handles team creation
-- **Use write/broadcast for messaging** - Targeted vs all-teammates communication
-- **Approve/reject teammate plans** - Review before they execute
-- **Request shutdown when complete** - Clean team termination
+Requires: `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1` in environment or settings.json.
+
+When available, request a team using natural language:
+- "Create an agent team to implement these 3 modules in parallel"
+- "Spawn teammates: one for frontend, one for backend, one for tests"
+
+Agent teams create full Claude Code sessions that communicate via shared task list
+and mailbox messaging. Higher token cost but enables inter-agent collaboration.
+
+Good fits: research/review, new modules, competing hypotheses, cross-layer changes.
+Bad fits: sequential tasks, same-file edits, dependency chains.
 
 ## RULES
 
@@ -310,6 +312,7 @@ This triggers TeammateTool operations for team coordination.
 5. Critic is MANDATORY (Step 6) — get approval before ExitPlanMode
 6. Every task needs file:line refs and runnable acceptance commands
 7. Compare 2+ approaches for significant decisions
+8. Agent teams are opt-in — only suggest when confirmed enabled in environment
 """
 
 # =============================================================================
@@ -584,6 +587,8 @@ NEVER downgrade models. Omit `model` param or use `model="inherit"`.
 | Large files (>100 lines) | librarian | N/A |
 
 **Parallel patterns:** Explore+librarian (research) -> Plan->critic->general-purpose (impl) -> validator (verify)
+
+**Agent teams:** When `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1`, consider teams for tasks needing inter-agent discussion. Use natural language to create teams. Subagents remain the default for focused work.
 
 ## TASK TRACKING
 
