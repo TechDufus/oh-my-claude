@@ -43,6 +43,27 @@ def log_error(msg: str) -> None:
 
 
 # =============================================================================
+# Environment variable parsing
+# =============================================================================
+
+
+def parse_bool_env(var_name: str, default: bool = True) -> bool:
+    """Parse boolean environment variable consistently.
+
+    Args:
+        var_name: Name of the environment variable.
+        default: Default value if the variable is not set or empty.
+
+    Returns:
+        Parsed boolean value.
+    """
+    val = os.environ.get(var_name, "")
+    if not val:
+        return default
+    return val.lower() not in ("0", "false", "no", "off")
+
+
+# =============================================================================
 # Safe stdin reading
 # =============================================================================
 

@@ -18,22 +18,44 @@ sys.path.insert(0, str(Path(__file__).parent))
 from hook_utils import hook_main, log_debug, output_empty, parse_hook_input, read_stdin_safe
 
 
+def _sanitize_applescript(value: str) -> str:
+    """Sanitize string for safe AppleScript interpolation.
+
+    Security fix: prevents command injection via backslash and quote escaping.
+    """
+    return value.replace("\\", "\\\\").replace('"', '\\"')
+
+
+def _sanitize_powershell(value: str) -> str:
+    """Sanitize string for safe PowerShell single-quoted interpolation.
+
+    Security fix: doubles single quotes, which is PowerShell's escape for them.
+    """
+    return value.replace("'", "''")
+
+
 def get_notifier_command(title: str, message: str) -> list[str] | None:
     """Get platform-appropriate notification command."""
 
     if sys.platform == "darwin":
         # macOS - osascript always available
-        script = f'display notification "{message}" with title "{title}"'
+        # Security: sanitize to prevent AppleScript injection
+        safe_title = _sanitize_applescript(title)
+        safe_message = _sanitize_applescript(message)
+        script = f'display notification "{safe_message}" with title "{safe_title}"'
         return ["osascript", "-e", script]
 
     elif sys.platform == "win32":
         # Windows - PowerShell toast
+        # Security: sanitize and use single-quoted strings to prevent injection
+        safe_title = _sanitize_powershell(title)
+        safe_message = _sanitize_powershell(message)
         ps_script = f'''
         [Windows.UI.Notifications.ToastNotificationManager, Windows.UI.Notifications, ContentType = WindowsRuntime] | Out-Null
         $template = [Windows.UI.Notifications.ToastTemplateType]::ToastText02
         $xml = [Windows.UI.Notifications.ToastNotificationManager]::GetTemplateContent($template)
-        $xml.GetElementsByTagName("text")[0].AppendChild($xml.CreateTextNode("{title}")) | Out-Null
-        $xml.GetElementsByTagName("text")[1].AppendChild($xml.CreateTextNode("{message}")) | Out-Null
+        $xml.GetElementsByTagName("text")[0].AppendChild($xml.CreateTextNode('{safe_title}')) | Out-Null
+        $xml.GetElementsByTagName("text")[1].AppendChild($xml.CreateTextNode('{safe_message}')) | Out-Null
         $toast = [Windows.UI.Notifications.ToastNotification]::new($xml)
         [Windows.UI.Notifications.ToastNotificationManager]::CreateToastNotifier("Claude Code").Show($toast)
         '''
@@ -46,12 +68,15 @@ def get_notifier_command(title: str, message: str) -> list[str] | None:
             version_info = Path("/proc/version").read_text().lower()
             if "microsoft" in version_info or "wsl" in version_info:
                 # WSL - use Windows PowerShell
+                # Security: sanitize and use single-quoted strings to prevent injection
+                safe_title = _sanitize_powershell(title)
+                safe_message = _sanitize_powershell(message)
                 ps_script = f'''
                 Add-Type -AssemblyName System.Windows.Forms
                 $balloon = New-Object System.Windows.Forms.NotifyIcon
                 $balloon.Icon = [System.Drawing.SystemIcons]::Information
-                $balloon.BalloonTipTitle = "{title}"
-                $balloon.BalloonTipText = "{message}"
+                $balloon.BalloonTipTitle = '{safe_title}'
+                $balloon.BalloonTipText = '{safe_message}'
                 $balloon.Visible = $true
                 $balloon.ShowBalloonTip(5000)
                 Start-Sleep -Milliseconds 5100

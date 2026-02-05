@@ -1,7 +1,10 @@
 """Shared fixtures for hook tests."""
 
+import json
+import subprocess
 import sys
 from pathlib import Path
+from typing import Any
 
 import pytest
 
@@ -11,6 +14,43 @@ import pytest
 REPO_ROOT = Path(__file__).parent.parent.parent.parent
 HOOKS_DIR = REPO_ROOT / "plugins" / "oh-my-claude" / "hooks"
 sys.path.insert(0, str(HOOKS_DIR))
+
+
+# =============================================================================
+# Shared helpers for integration tests
+# =============================================================================
+
+
+def run_hook(hook_path: Path, input_data: dict, env: dict[str, str] | None = None) -> dict:
+    """Run a hook script via subprocess and return parsed JSON output.
+
+    Args:
+        hook_path: Absolute path to the hook script.
+        input_data: Dictionary to pass as JSON on stdin.
+        env: Optional environment variables. If None, inherits current env.
+
+    Returns:
+        Parsed JSON output, or empty dict if no output.
+    """
+    result = subprocess.run(
+        [sys.executable, str(hook_path)],
+        input=json.dumps(input_data),
+        capture_output=True,
+        text=True,
+        env=env,
+    )
+    if result.returncode != 0:
+        pytest.fail(f"Hook failed: {result.stderr}")
+
+    if not result.stdout.strip():
+        return {}
+
+    return json.loads(result.stdout)
+
+
+def get_context(output: dict) -> str:
+    """Extract additionalContext from hook output."""
+    return output.get("hookSpecificOutput", {}).get("additionalContext", "")
 
 
 @pytest.fixture

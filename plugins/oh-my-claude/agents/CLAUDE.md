@@ -264,7 +264,7 @@ Examples:
 |------|--------|-------------|
 | Read-only | librarian | Restricted |
 | Review | critic, advisor | Restricted |
-| Execution | validator | Full |
+| Execution | validator, worker | Full |
 
 **Note:** Use Claude Code's built-in agents for common tasks:
 - **Explore** - File/definition discovery

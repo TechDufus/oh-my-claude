@@ -22,6 +22,7 @@ from hook_utils import (
     log_debug,
     output_empty,
     output_stop_block,
+    parse_bool_env,
     parse_hook_input,
     read_stdin_safe,
 )
@@ -147,7 +148,7 @@ def count_tasks_by_status(task_list: list[dict[str, Any]] | None) -> tuple[int, 
 
 def should_use_task_system() -> bool:
     """Check if Task system is enabled (default: True)."""
-    return os.environ.get("OMC_USE_TASK_SYSTEM", "1").lower() not in ("0", "false", "no")
+    return parse_bool_env("OMC_USE_TASK_SYSTEM", default=True)
 
 
 def has_uncommitted_changes(cwd: str) -> bool:
@@ -193,12 +194,12 @@ def check_active_plans(cwd: str | None = None) -> list[str]:
 
 def should_check_git() -> bool:
     """Check if git check is enabled via env var."""
-    return os.environ.get("OMC_STOP_CHECK_GIT", "0") == "1"
+    return parse_bool_env("OMC_STOP_CHECK_GIT", default=False)
 
 
 def should_check_plans() -> bool:
     """Check if plan check is enabled via env var."""
-    return os.environ.get("OMC_STOP_CHECK_PLANS", "1") == "1"  # Default enabled
+    return parse_bool_env("OMC_STOP_CHECK_PLANS", default=True)
 
 
 def do_output_block(reason: str, context: str) -> None:

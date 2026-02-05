@@ -1,3 +1,8 @@
+---
+name: debugger
+description: "Systematic debugging methodology for diagnosing failures and root cause analysis. Triggers on: 2+ failed fix attempts, 'ultradebug', 'uld', debugging in circles, complex system failures, intermittent bugs."
+---
+
 # Debugger Skill
 
 Systematic debugging methodology for diagnosing failures and root cause analysis.

@@ -69,6 +69,7 @@ overrides that guidance. The user pays for their model tier - use it.
 | **critic** | REVIEW | Review plans critically BEFORE execution |
 | **validator** | CHECK | Tests, linters, verification |
 | **librarian** | READ | Files >100 lines, summarize, extract, git analysis |
+| **worker** | IMPLEMENT | Specific implementation tasks with bounded scope |
 
 Usage: `Task(subagent_type="oh-my-claude:critic", prompt="Review this migration plan")`
 
@@ -280,22 +281,38 @@ See [official docs](https://code.claude.com/docs/en/agent-teams) for full refere
 
 ## Skills
 
-| Skill | Trigger |
-|-------|---------|
-| `git-commit-validator` | Any git workflow: "commit", "ship it", "push this", "let's merge", finishing work |
-| `pr-creation` | Creating PRs: "create PR", "open PR", "ready for review", "push for PR" |
+| Skill | Description | Trigger |
+|-------|-------------|---------|
+| `git-commit-validator` | Commit message validation and conventional commit format enforcement | "commit", "ship it", "push this", "let's merge", finishing work |
+| `pr-creation` | PR creation with conventional format, context gathering, draft by default | "create PR", "open PR", "ready for review", "push for PR" |
+| `worktree` | Git worktree automation for isolated feature development | `/worktree create`, `/worktree list`, `/worktree remove` |
+| `init-deep` | Initialize or migrate to nested CLAUDE.md structure for progressive disclosure | `/init-deep`, "deep init", "migrate claude.md", "nested claude" |
+| `ralph-plan` | Structured PRD generation with interview, research, and approval workflow | `/ralph-plan <topic>`, "create prd", "generate prd", "plan this" |
+| `ralph-loop-init` | Transform approved plans into executable ralph loop infrastructure | `/ralph-loop-init`, `/ralph-init`, "setup ralph loop" |
+| `debugger` | Systematic debugging methodology for diagnosing failures and root cause analysis | 2+ failed fix attempts, "ultradebug", "uld", debugging in circles |
 
 ## Hooks (Automatic)
 
-- **Context Guardian** - Injects protection rules at session start
-- **Ultrawork Detector** - Detects keywords, adjusts intensity
-- **Context Protector** - Blocks large file reads (>100 lines), forces librarian delegation
-- **Safe Permissions** - Auto-approves safe commands (tests, linters, readonly git)
-- **Context Monitor** - Warns at 70%+ context usage, critical at 85%
-- **Todo Enforcer** - Prevents stopping with incomplete todos
-- **PreCompact Context** - Preserves session state + semantic patterns before compaction (v0.3.2)
-- **Danger Blocker** - Blocks catastrophic commands (rm -rf /, fork bombs), warns on risky patterns (v0.4.27)
-- **Notification Alert** - Desktop notifications on Stop/Notification events, opt-in via OMC_NOTIFICATIONS=1 (v0.4.27)
+| Hook | Event | Matcher | Description |
+|------|-------|---------|-------------|
+| **Context Guardian** | SessionStart | `*` | Injects context protection rules at session start |
+| **CLAUDE.md Health** | SessionStart | `*` | Checks CLAUDE.md health, warns about size/staleness issues |
+| **OpenKanban Status** | SessionStart, PreToolUse, PermissionRequest, UserPromptSubmit, Stop | `*` | Writes agent status when in OpenKanban terminal (via OPENKANBAN_SESSION) |
+| **Ultrawork Detector** | UserPromptSubmit | `*` | Detects ultrawork/ultradebug/ultraresearch keywords, adjusts intensity |
+| **Context Protector** | PreToolUse | `Read` | Blocks large file reads (>100 lines), forces librarian delegation |
+| **Danger Blocker** | PreToolUse | `Bash` | Blocks catastrophic commands (rm -rf /, fork bombs), warns on risky patterns |
+| **Commit Quality Enforcer** | PreToolUse | `Bash` | Enforces commit message quality and conventional commit format |
+| **TDD Enforcer** | PreToolUse | `Edit\|Write` | Enforces TDD by requiring test files before source edits (via OMC_TDD_MODE) |
+| **Delegation Enforcer** | PreToolUse | `Edit\|Write` | Context guidance encouraging delegation to worker agents |
+| **Safe Permissions** | PermissionRequest | `Bash`, `Read\|Glob\|Grep` | Auto-approves safe commands (tests, linters, readonly git) |
+| **Plan Execution Injector** | PostToolUse | `ExitPlanMode` | Injects execution context and agent teams guidance after plan approval |
+| **Context Monitor** | PostToolUse | `*` | Warns at 70%+ context usage, critical at 85% |
+| **Edit Error Recovery** | PostToolUse | `*` | Detects Edit tool failures, injects recovery guidance |
+| **Agent Usage Reminder** | PostToolUse | `*` | Reminds to delegate to agents instead of using search tools directly |
+| **Verification Reminder** | PostToolUse | `*` | Reminds to verify agent claims after Task completion |
+| **Todo Enforcer** | Stop | `*` | Prevents stopping when todos are incomplete |
+| **Notification Alert** | Stop, Notification | `*`, `permission_prompt\|idle_prompt` | Desktop notifications, opt-in via OMC_NOTIFICATIONS=1 |
+| **PreCompact Context** | PreCompact | `*` | Preserves session state + semantic patterns before compaction |
 
 ## Configuration
 
@@ -319,3 +336,8 @@ Customize behavior via environment variables in your `settings.json`:
 | `OMC_TDD_MODE` | `off` | TDD enforcement: `off`, `guided`, `enforced` |
 | `OMC_DANGER_BLOCK` | `1` | Set to `0` to disable catastrophic command blocking |
 | `OMC_NOTIFICATIONS` | `0` | Set to `1` to enable desktop notifications on Stop |
+| `OMC_USE_TASK_SYSTEM` | `1` | Enable Task system checking for incomplete todos on Stop |
+| `OMC_STOP_CHECK_GIT` | `0` | Set to `1` to check for uncommitted git changes on Stop |
+| `OMC_STOP_CHECK_PLANS` | `1` | Check for incomplete plans on Stop |
+| `OPENKANBAN_SESSION` | (unset) | OpenKanban terminal session ID for status integration |
+| `HOOK_DEBUG` | (unset) | Set to `1` to enable hook debug logging to stderr |

@@ -378,14 +378,14 @@ class TestEdgeCases:
         assert is_safe is False
 
     def test_pipe_command_not_auto_approved(self):
-        """Piped commands should not be auto-approved (complex)."""
+        """Piped commands should not be auto-approved due to shell operator risk."""
         is_safe, _ = is_safe_command("npm test | grep error")
-        assert is_safe is True  # Still matches npm test at start
+        assert is_safe is False  # Shell operators block auto-approval
 
     def test_chained_commands_not_auto_approved(self):
         """Chained commands should not be auto-approved."""
         is_safe, _ = is_safe_command("npm test && rm -rf /")
-        assert is_safe is True  # Matches npm test, but user should review chains
+        assert is_safe is False  # Shell operators block auto-approval
 
 
 class TestPluginInternalScripts:
@@ -451,15 +451,14 @@ class TestPluginInternalScripts:
         assert is_safe is True
         assert pattern == "plugin_internal_script"
 
-    def test_plugin_script_fallback_pattern(self, monkeypatch):
-        """Plugin scripts match via fallback pattern when CLAUDE_PLUGIN_ROOT unset."""
+    def test_plugin_script_no_fallback_without_root(self, monkeypatch):
+        """Plugin scripts are NOT auto-approved when CLAUDE_PLUGIN_ROOT unset (no spoofable fallback)."""
         monkeypatch.delenv("CLAUDE_PLUGIN_ROOT", raising=False)
 
-        # Cached plugin skill script should match fallback pattern
+        # Without CLAUDE_PLUGIN_ROOT, plugin scripts cannot be verified
         command = "/Users/test/.claude/plugins/cache/oh-my-claude/oh-my-claude/0.2.0/skills/git-commit-validator/scripts/git-commit-helper.sh 'test'"
         is_safe, pattern = is_safe_command(command)
-        assert is_safe is True
-        assert pattern == "plugin_internal_script"
+        assert is_safe is False
 
     def test_fallback_pattern_requires_skills_path(self, monkeypatch):
         """Fallback pattern requires /skills/ in path for security."""

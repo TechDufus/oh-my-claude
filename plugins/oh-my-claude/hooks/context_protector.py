@@ -28,6 +28,7 @@ from hook_utils import (
     hook_main,
     log_debug,
     output_empty,
+    parse_bool_env,
     parse_hook_input,
     read_stdin_safe,
 )
@@ -49,7 +50,8 @@ def get_threshold() -> int:
 
 def is_blocking_disabled() -> bool:
     """Check if large read blocking is disabled via env var."""
-    return os.environ.get("OMC_ALLOW_LARGE_READS", "").lower() in ("1", "true", "yes")
+    # Note: inverted logic - default is False (blocking enabled), True means disabled
+    return parse_bool_env("OMC_ALLOW_LARGE_READS", default=False)
 
 
 def is_allowlisted(file_path: str) -> bool:

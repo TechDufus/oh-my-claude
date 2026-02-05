@@ -17,7 +17,7 @@ from pathlib import Path
 
 # Add parent for hook_utils
 sys.path.insert(0, str(Path(__file__).parent))
-from hook_utils import hook_main, log_debug, output_empty, parse_hook_input, read_stdin_safe
+from hook_utils import hook_main, log_debug, output_empty, parse_bool_env, parse_hook_input, read_stdin_safe
 
 # Catastrophic patterns - must block with JSON deny
 CATASTROPHIC_PATTERNS = [
@@ -70,8 +70,8 @@ def output_warn(message: str) -> None:
 @hook_main("PreToolUse")
 def main() -> None:
     # Check if disabled
-    if os.environ.get("OMC_DANGER_BLOCK", "1") == "0":
-        log_debug("Danger blocker disabled via OMC_DANGER_BLOCK=0")
+    if not parse_bool_env("OMC_DANGER_BLOCK", default=True):
+        log_debug("Danger blocker disabled via OMC_DANGER_BLOCK")
         output_empty()
         return
 

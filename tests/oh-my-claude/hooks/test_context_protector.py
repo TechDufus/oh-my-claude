@@ -103,11 +103,16 @@ class TestIsBlockingDisabled:
         monkeypatch.setenv("OMC_ALLOW_LARGE_READS", value)
         assert is_blocking_disabled() is True
 
-    @pytest.mark.parametrize("value", ["0", "false", "no", "", "other"])
+    @pytest.mark.parametrize("value", ["0", "false", "no", "off", ""])
     def test_enabled_values(self, monkeypatch, value):
         """Various falsy values should keep blocking enabled."""
         monkeypatch.setenv("OMC_ALLOW_LARGE_READS", value)
         assert is_blocking_disabled() is False
+
+    def test_unrecognized_value_treated_as_truthy(self, monkeypatch):
+        """Unrecognized non-empty values are treated as truthy (disables blocking)."""
+        monkeypatch.setenv("OMC_ALLOW_LARGE_READS", "other")
+        assert is_blocking_disabled() is True
 
 
 class TestThresholdBehavior:
