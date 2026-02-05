@@ -9,9 +9,10 @@ plan_execution_injector.py - Inject execution context after plan approval.
 Hook type: PostToolUse (matcher: ExitPlanMode)
 
 When ExitPlanMode completes successfully, this hook:
-1. Injects execution context (swarm or manual) into the active session
-2. Writes plan state to .claude/plans/.active-plan.json for cross-session continuity
-3. Cleans up interview draft files that are no longer needed post-approval
+1. Injects execution context into the active session
+2. Optionally includes Agent Teams guidance when enabled via env var
+3. Writes plan state to .claude/plans/.active-plan.json for cross-session continuity
+4. Cleans up interview draft files that are no longer needed post-approval
 
 The marker file (created by plan_approved.py) serves as a safety net for
 cross-session recovery if the user /clear or restarts before completion.
@@ -20,6 +21,7 @@ cross-session recovery if the user /clear or restarts before completion.
 from __future__ import annotations
 
 import json
+import os
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
@@ -27,7 +29,6 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent))
 
 from hook_utils import (
-    get_nested,
     hook_main,
     log_debug,
     output_context,
@@ -37,57 +38,51 @@ from hook_utils import (
 )
 
 # =============================================================================
-# SWARM EXECUTION CONTEXT - When launchSwarm=true
+# AGENT TEAMS SECTION - Only included when env var is enabled
 # =============================================================================
-SWARM_EXECUTION_CONTEXT = """[PLAN APPROVED - SWARM EXECUTION ACTIVE]
+AGENT_TEAMS_SECTION = """
+## AGENT TEAMS (Available)
 
-Your plan is being executed by {teammateCount} parallel workers.
+Agent teams are enabled in this environment. Consider using them when the plan
+has independent parallel tasks that benefit from inter-agent discussion.
 
-## SWARM COORDINATION PROTOCOL
+**Good fits:** research/review, new modules, competing hypotheses, cross-layer changes
+**Bad fits:** sequential tasks, same-file edits, dependency chains
 
-Workers operate independently. Your role is orchestration:
+### How to Use
 
-1. **Monitor progress** - Use TaskList to track teammate work
-2. **Handle escalations** - Workers may need decisions or clarification
-3. **Verify completion** - When all teammates finish, validate results
-4. **Aggregate results** - Ensure all plan items were addressed
+Tell Claude to create a team in natural language:
+- "Create an agent team with 3 teammates to implement these modules in parallel"
+- "Spawn a team: one for frontend, one for backend, one for tests"
 
-### TeammateTool Communication
+### Key Properties
 
-| Operation | Use For |
-|-----------|---------|
-| `write(target_agent_id, message)` | Message one specific teammate |
-| `broadcast(message)` | Message all teammates at once |
+- Each teammate is a full Claude Code session with its own context
+- Teammates communicate via shared task list and mailbox messaging
+- The lead coordinates; teammates self-claim unblocked tasks
+- Teammates load project CLAUDE.md but NOT the lead's conversation history
+- Token cost scales with teammate count - use only when parallel value justifies it
 
-### TeammateTool Coordination
+### Rules
 
-| Operation | Use For |
-|-----------|---------|
-| `approvePlan(agent_id, request_id)` | Accept teammate's proposed plan |
-| `rejectPlan(agent_id, request_id, reason)` | Reject with feedback |
-| `requestShutdown(agent_id, reason)` | Ask teammate to exit when done |
-
-Messages use file-based inbox system (`~/.claude/teams/{{team}}/inboxes/`).
-
-## TEAMMATE BEHAVIOR
-
-Each teammate:
-- Executes assigned plan tasks independently
-- Uses own isolated context window
-- Reports completion via task status updates
-- Cannot see other teammates' work directly
-
-## IF SWARM FAILS
-
-The plan is preserved in Claude Code. If teammates fail:
-1. New session will receive plan content when you click "Accept and clear"
-2. ultrawork_detector injects execution context based on prompt prefix
+- Avoid assigning the same file to multiple teammates (causes overwrites)
+- Include task-specific context in spawn prompts (teammates don't inherit history)
+- Monitor progress and redirect approaches that aren't working
+- Use subagents (Task tool) for focused work that only needs results back
 """
 
-# =============================================================================
-# MANUAL EXECUTION CONTEXT - When no swarm (user will click "Accept and clear")
-# =============================================================================
-MANUAL_EXECUTION_CONTEXT = """[PLAN APPROVED - READY FOR EXECUTION]
+
+def _is_agent_teams_enabled() -> bool:
+    """Check if Agent Teams feature is enabled via env var."""
+    val = os.environ.get("CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS", "")
+    return val.lower() in ("1", "true", "yes")
+
+
+def build_execution_context() -> str:
+    """Build execution context, optionally including Agent Teams guidance."""
+    sections = []
+
+    sections.append("""[PLAN APPROVED - READY FOR EXECUTION]
 
 Your plan has been approved. When you return to execute:
 
@@ -106,9 +101,12 @@ Your plan has been approved. When you return to execute:
 | Find files | Explore (built-in) | Locating code, definitions |
 | Read content | oh-my-claude:librarian | Summarizing files >100 lines |
 | Implement | general-purpose (built-in) | Writing actual code changes |
-| Validate | oh-my-claude:validator | Running tests, linters |
+| Validate | oh-my-claude:validator | Running tests, linters |""")
 
-## PLAN COMPLIANCE
+    if _is_agent_teams_enabled():
+        sections.append(AGENT_TEAMS_SECTION)
+
+    sections.append("""## PLAN COMPLIANCE
 
 | Allowed | NOT Allowed |
 |---------|-------------|
@@ -120,8 +118,9 @@ Your plan has been approved. When you return to execute:
 
 Plan state saved to `.claude/plans/.active-plan.json`.
 If you `/clear` or start a new session, check this file for active plan context.
-Draft interview notes in `.claude/plans/drafts/` have been cleaned up.
-"""
+Draft interview notes in `.claude/plans/drafts/` have been cleaned up.""")
+
+    return "\n".join(sections)
 
 
 def track_plan_state(data: dict, cwd: str) -> None:
@@ -177,23 +176,9 @@ def main() -> None:
         output_empty()
         return
 
-    tool_input = get_nested(data, "tool_input", default={})
-    swarm_launched = tool_input.get("launchSwarm", False)
-    teammate_count = tool_input.get("teammateCount", 0)
-
-    log_debug(f"launchSwarm: {swarm_launched}, teammateCount: {teammate_count}")
-
-    if swarm_launched and teammate_count > 0:
-        # Swarm teammates will execute - provide coordination guidance
-        context = SWARM_EXECUTION_CONTEXT.format(teammateCount=teammate_count)
-        log_debug("Injecting SWARM_EXECUTION_CONTEXT")
-        output_context("PostToolUse", context)
-    else:
-        # No swarm - user will likely "Accept and clear"
-        # This context appears before the dialog, can influence Claude's summary
-        # Execution context injected in next session via prompt prefix detection
-        log_debug("Injecting MANUAL_EXECUTION_CONTEXT")
-        output_context("PostToolUse", MANUAL_EXECUTION_CONTEXT)
+    context = build_execution_context()
+    log_debug("Injecting execution context")
+    output_context("PostToolUse", context)
 
     # Track plan state and clean up drafts
     cwd = data.get("cwd", ".")

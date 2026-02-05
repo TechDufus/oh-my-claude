@@ -1,6 +1,7 @@
 """Tests for plan_execution_injector.py PostToolUse hook."""
 
 import json
+import os
 import subprocess
 import sys
 from pathlib import Path
@@ -13,13 +14,19 @@ HOOK_PATH = (
 )
 
 
-def run_hook(input_data: dict) -> dict:
-    """Run the hook with given input and return parsed output."""
+def run_hook(input_data: dict, env: dict | None = None) -> dict:
+    """Run the hook with given input and return parsed output.
+
+    Args:
+        input_data: Hook input payload.
+        env: Optional environment dict for subprocess. If None, inherits current env.
+    """
     result = subprocess.run(
         [sys.executable, str(HOOK_PATH)],
         input=json.dumps(input_data),
         capture_output=True,
         text=True,
+        env=env,
     )
     if result.returncode != 0:
         pytest.fail(f"Hook failed: {result.stderr}")
@@ -30,50 +37,11 @@ def run_hook(input_data: dict) -> dict:
     return json.loads(result.stdout)
 
 
-class TestSwarmExecutionContext:
-    """Tests for swarm execution context injection."""
+class TestExecutionContext:
+    """Tests for execution context injection."""
 
-    def test_swarm_context_when_launch_swarm_true(self):
-        """PostToolUse with launchSwarm=true returns swarm context."""
-        input_data = {
-            "tool_name": "ExitPlanMode",
-            "tool_result": {},
-            "tool_input": {"launchSwarm": True, "teammateCount": 3},
-        }
-        result = run_hook(input_data)
-        context = result.get("hookSpecificOutput", {}).get("additionalContext", "")
-        assert "SWARM EXECUTION ACTIVE" in context
-        assert "3 parallel workers" in context
-
-    def test_swarm_context_with_different_teammate_count(self):
-        """Swarm context should reflect actual teammate count."""
-        input_data = {
-            "tool_name": "ExitPlanMode",
-            "tool_result": {},
-            "tool_input": {"launchSwarm": True, "teammateCount": 5},
-        }
-        result = run_hook(input_data)
-        context = result.get("hookSpecificOutput", {}).get("additionalContext", "")
-        assert "5 parallel workers" in context
-
-    def test_swarm_context_includes_coordination_protocol(self):
-        """Swarm context should include coordination guidance."""
-        input_data = {
-            "tool_name": "ExitPlanMode",
-            "tool_result": {},
-            "tool_input": {"launchSwarm": True, "teammateCount": 3},
-        }
-        result = run_hook(input_data)
-        context = result.get("hookSpecificOutput", {}).get("additionalContext", "")
-        assert "SWARM COORDINATION PROTOCOL" in context
-        assert "TaskList" in context
-
-
-class TestManualExecutionContext:
-    """Tests for manual execution context injection."""
-
-    def test_manual_context_when_no_swarm(self):
-        """PostToolUse without launchSwarm returns manual context."""
+    def test_context_when_no_tool_input(self):
+        """PostToolUse without tool_input returns execution context."""
         input_data = {
             "tool_name": "ExitPlanMode",
             "tool_result": {},
@@ -83,30 +51,8 @@ class TestManualExecutionContext:
         context = result.get("hookSpecificOutput", {}).get("additionalContext", "")
         assert "READY FOR EXECUTION" in context
 
-    def test_manual_context_when_launch_swarm_false(self):
-        """Explicit launchSwarm=false returns manual context."""
-        input_data = {
-            "tool_name": "ExitPlanMode",
-            "tool_result": {},
-            "tool_input": {"launchSwarm": False},
-        }
-        result = run_hook(input_data)
-        context = result.get("hookSpecificOutput", {}).get("additionalContext", "")
-        assert "READY FOR EXECUTION" in context
-
-    def test_manual_context_when_teammate_count_zero(self):
-        """launchSwarm=true but teammateCount=0 returns manual context."""
-        input_data = {
-            "tool_name": "ExitPlanMode",
-            "tool_result": {},
-            "tool_input": {"launchSwarm": True, "teammateCount": 0},
-        }
-        result = run_hook(input_data)
-        context = result.get("hookSpecificOutput", {}).get("additionalContext", "")
-        assert "READY FOR EXECUTION" in context
-
-    def test_manual_context_includes_agent_table(self):
-        """Manual context should include agent delegation table."""
+    def test_context_includes_agent_table(self):
+        """Execution context should include agent delegation table."""
         input_data = {
             "tool_name": "ExitPlanMode",
             "tool_result": {},
@@ -117,6 +63,97 @@ class TestManualExecutionContext:
         assert "AGENT DELEGATION TABLE" in context
         assert "Explore" in context
         assert "general-purpose" in context
+
+    def test_context_includes_plan_compliance(self):
+        """Execution context should include plan compliance section."""
+        input_data = {
+            "tool_name": "ExitPlanMode",
+            "tool_result": {},
+            "tool_input": {},
+        }
+        result = run_hook(input_data)
+        context = result.get("hookSpecificOutput", {}).get("additionalContext", "")
+        assert "PLAN COMPLIANCE" in context
+        assert "STATE TRACKING" in context
+
+
+class TestAgentTeamsContext:
+    """Tests for Agent Teams section based on env var."""
+
+    def _base_env(self) -> dict:
+        """Base env dict with required PATH for subprocess."""
+        return {
+            "HOME": os.environ.get("HOME", "/tmp"),
+            "PATH": os.environ.get("PATH", "/usr/bin:/bin"),
+        }
+
+    def test_agent_teams_section_when_env_enabled(self):
+        """Agent Teams section appears when env var is set to '1'."""
+        env = self._base_env()
+        env["CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS"] = "1"
+        input_data = {
+            "tool_name": "ExitPlanMode",
+            "tool_result": {},
+            "tool_input": {},
+        }
+        result = run_hook(input_data, env=env)
+        context = result.get("hookSpecificOutput", {}).get("additionalContext", "")
+        assert "AGENT TEAMS (Available)" in context
+        assert "READY FOR EXECUTION" in context
+
+    def test_agent_teams_section_when_env_true(self):
+        """Agent Teams section appears when env var is set to 'true'."""
+        env = self._base_env()
+        env["CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS"] = "true"
+        input_data = {
+            "tool_name": "ExitPlanMode",
+            "tool_result": {},
+            "tool_input": {},
+        }
+        result = run_hook(input_data, env=env)
+        context = result.get("hookSpecificOutput", {}).get("additionalContext", "")
+        assert "AGENT TEAMS (Available)" in context
+
+    def test_no_agent_teams_when_env_disabled(self):
+        """No Agent Teams section when env var is absent."""
+        env = self._base_env()
+        # Explicitly do NOT include CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS
+        input_data = {
+            "tool_name": "ExitPlanMode",
+            "tool_result": {},
+            "tool_input": {},
+        }
+        result = run_hook(input_data, env=env)
+        context = result.get("hookSpecificOutput", {}).get("additionalContext", "")
+        assert "AGENT TEAMS" not in context
+        assert "READY FOR EXECUTION" in context
+
+    def test_no_agent_teams_when_env_zero(self):
+        """No Agent Teams section when env var is '0'."""
+        env = self._base_env()
+        env["CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS"] = "0"
+        input_data = {
+            "tool_name": "ExitPlanMode",
+            "tool_result": {},
+            "tool_input": {},
+        }
+        result = run_hook(input_data, env=env)
+        context = result.get("hookSpecificOutput", {}).get("additionalContext", "")
+        assert "AGENT TEAMS" not in context
+
+    def test_no_fake_teammatetool_references(self):
+        """Ensure no fake TeammateTool API references exist."""
+        env = self._base_env()
+        env["CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS"] = "1"
+        input_data = {
+            "tool_name": "ExitPlanMode",
+            "tool_result": {},
+            "tool_input": {},
+        }
+        result = run_hook(input_data, env=env)
+        context = result.get("hookSpecificOutput", {}).get("additionalContext", "")
+        for fake_ref in ["TeammateTool", "spawnTeam", "discoverTeams", "requestJoin", "launchSwarm"]:
+            assert fake_ref not in context, f"Found fake API reference: {fake_ref}"
 
 
 class TestPreToolUseIgnored:
@@ -136,7 +173,7 @@ class TestPreToolUseIgnored:
         """PermissionRequest (no tool_result) returns empty output."""
         input_data = {
             "tool_name": "ExitPlanMode",
-            "tool_input": {"launchSwarm": True, "teammateCount": 3},
+            "tool_input": {},
             # No tool_result - this is PermissionRequest phase
         }
         result = run_hook(input_data)
@@ -165,6 +202,6 @@ class TestEmptyInput:
             # No tool_input key
         }
         result = run_hook(input_data)
-        # Should return manual context (default when no swarm params)
+        # Should return execution context (default when no tool_input)
         context = result.get("hookSpecificOutput", {}).get("additionalContext", "")
         assert "READY FOR EXECUTION" in context
