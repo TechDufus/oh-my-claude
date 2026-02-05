@@ -52,6 +52,15 @@ def is_blocking_disabled() -> bool:
     return os.environ.get("OMC_ALLOW_LARGE_READS", "").lower() in ("1", "true", "yes")
 
 
+def is_allowlisted(file_path: str) -> bool:
+    """Check if file is allowlisted and should bypass size check.
+
+    CLAUDE.md files are always allowed through as they're Claude Code config files
+    that need to be read regardless of size.
+    """
+    return Path(file_path).name == "CLAUDE.md"
+
+
 # =============================================================================
 # File size detection
 # =============================================================================
@@ -159,6 +168,12 @@ def main() -> None:
 
     if not file_path:
         log_debug("no file_path in tool_input")
+        output_allow()
+        return
+
+    # Check if file is allowlisted (e.g., CLAUDE.md)
+    if is_allowlisted(file_path):
+        log_debug(f"file is allowlisted: {file_path}")
         output_allow()
         return
 

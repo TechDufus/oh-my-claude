@@ -6,6 +6,7 @@ from context_protector import (
     DEFAULT_THRESHOLD,
     get_line_count,
     get_threshold,
+    is_allowlisted,
     is_blocking_disabled,
 )
 
@@ -198,3 +199,31 @@ class TestEdgeCases:
         link = tmp_path / "broken_link.txt"
         link.symlink_to(tmp_path / "nonexistent.txt")
         assert get_line_count(str(link)) is None
+
+
+class TestAllowlist:
+    """Tests for is_allowlisted function."""
+
+    def test_claudemd_exact_match(self):
+        """CLAUDE.md should be allowlisted."""
+        assert is_allowlisted("CLAUDE.md") is True
+
+    def test_claudemd_with_path(self):
+        """CLAUDE.md with path prefix should be allowlisted."""
+        assert is_allowlisted("/path/to/CLAUDE.md") is True
+
+    def test_claudemd_in_dotclaude(self):
+        """CLAUDE.md in .claude directory should be allowlisted."""
+        assert is_allowlisted("/path/.claude/CLAUDE.md") is True
+
+    def test_readme_not_allowlisted(self):
+        """README.md should not be allowlisted."""
+        assert is_allowlisted("README.md") is False
+
+    def test_claudemd_backup_not_allowlisted(self):
+        """CLAUDE.md.bak should not be allowlisted."""
+        assert is_allowlisted("CLAUDE.md.bak") is False
+
+    def test_prefixed_claudemd_not_allowlisted(self):
+        """some_CLAUDE.md should not be allowlisted."""
+        assert is_allowlisted("some_CLAUDE.md") is False
