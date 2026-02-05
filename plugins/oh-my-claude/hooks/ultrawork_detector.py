@@ -206,7 +206,7 @@ Populate the Big Picture Intent section by pulling from your interview notes (Or
 
 **Key distinction:** `Task()` = spawn agent NOW. `TaskCreate()` = track work for later.
 
-**Note:** If Agent Teams are enabled (`CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1`), consider whether independent tasks benefit from inter-agent discussion. See EXECUTION STRATEGY below.
+**Note:** If agent teams are available, consider whether independent tasks benefit from inter-agent discussion. See EXECUTION STRATEGY below.
 
 ## Tasks
 
@@ -287,11 +287,7 @@ Choose the right execution approach based on task characteristics:
 Most plans execute best with subagents. Each `Task()` call spawns a focused worker
 that reports results back. Lower token cost, simpler coordination.
 
-### Agent Teams (Experimental, Opt-in)
-
-**Do NOT plan around agent teams unless confirmed available in the user's environment.**
-
-Requires: `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1` in environment or settings.json.
+### Agent Teams
 
 When available, request a team using natural language:
 - "Create an agent team to implement these 3 modules in parallel"
@@ -312,7 +308,7 @@ Bad fits: sequential tasks, same-file edits, dependency chains.
 5. Critic is MANDATORY (Step 6) — get approval before ExitPlanMode
 6. Every task needs file:line refs and runnable acceptance commands
 7. Compare 2+ approaches for significant decisions
-8. Agent teams are opt-in — only suggest when confirmed enabled in environment
+8. Subagents are the default — use agent teams only when parallel collaboration justifies it
 """
 
 # =============================================================================
@@ -588,7 +584,7 @@ NEVER downgrade models. Omit `model` param or use `model="inherit"`.
 
 **Parallel patterns:** Explore+librarian (research) -> Plan->critic->general-purpose (impl) -> validator (verify)
 
-**Agent teams:** When `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1`, consider teams for tasks needing inter-agent discussion. Use natural language to create teams. Subagents remain the default for focused work.
+**Agent teams:** Consider teams for tasks needing inter-agent discussion. Use natural language to create teams. Subagents remain the default for focused work.
 
 ## TASK TRACKING
 

@@ -1,7 +1,6 @@
 """Tests for plan_execution_injector.py PostToolUse hook."""
 
 import json
-import os
 import subprocess
 import sys
 from pathlib import Path
@@ -76,81 +75,25 @@ class TestExecutionContext:
         assert "PLAN COMPLIANCE" in context
         assert "STATE TRACKING" in context
 
-
-class TestAgentTeamsContext:
-    """Tests for Agent Teams section based on env var."""
-
-    def _base_env(self) -> dict:
-        """Base env dict with required PATH for subprocess."""
-        return {
-            "HOME": os.environ.get("HOME", "/tmp"),
-            "PATH": os.environ.get("PATH", "/usr/bin:/bin"),
-        }
-
-    def test_agent_teams_section_when_env_enabled(self):
-        """Agent Teams section appears when env var is set to '1'."""
-        env = self._base_env()
-        env["CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS"] = "1"
+    def test_agent_teams_section_always_present(self):
+        """Agent Teams section is always included in execution context."""
         input_data = {
             "tool_name": "ExitPlanMode",
             "tool_result": {},
             "tool_input": {},
         }
-        result = run_hook(input_data, env=env)
+        result = run_hook(input_data)
         context = result.get("hookSpecificOutput", {}).get("additionalContext", "")
-        assert "AGENT TEAMS (Available)" in context
-        assert "READY FOR EXECUTION" in context
-
-    def test_agent_teams_section_when_env_true(self):
-        """Agent Teams section appears when env var is set to 'true'."""
-        env = self._base_env()
-        env["CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS"] = "true"
-        input_data = {
-            "tool_name": "ExitPlanMode",
-            "tool_result": {},
-            "tool_input": {},
-        }
-        result = run_hook(input_data, env=env)
-        context = result.get("hookSpecificOutput", {}).get("additionalContext", "")
-        assert "AGENT TEAMS (Available)" in context
-
-    def test_no_agent_teams_when_env_disabled(self):
-        """No Agent Teams section when env var is absent."""
-        env = self._base_env()
-        # Explicitly do NOT include CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS
-        input_data = {
-            "tool_name": "ExitPlanMode",
-            "tool_result": {},
-            "tool_input": {},
-        }
-        result = run_hook(input_data, env=env)
-        context = result.get("hookSpecificOutput", {}).get("additionalContext", "")
-        assert "AGENT TEAMS" not in context
-        assert "READY FOR EXECUTION" in context
-
-    def test_no_agent_teams_when_env_zero(self):
-        """No Agent Teams section when env var is '0'."""
-        env = self._base_env()
-        env["CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS"] = "0"
-        input_data = {
-            "tool_name": "ExitPlanMode",
-            "tool_result": {},
-            "tool_input": {},
-        }
-        result = run_hook(input_data, env=env)
-        context = result.get("hookSpecificOutput", {}).get("additionalContext", "")
-        assert "AGENT TEAMS" not in context
+        assert "AGENT TEAMS" in context
 
     def test_no_fake_teammatetool_references(self):
         """Ensure no fake TeammateTool API references exist."""
-        env = self._base_env()
-        env["CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS"] = "1"
         input_data = {
             "tool_name": "ExitPlanMode",
             "tool_result": {},
             "tool_input": {},
         }
-        result = run_hook(input_data, env=env)
+        result = run_hook(input_data)
         context = result.get("hookSpecificOutput", {}).get("additionalContext", "")
         for fake_ref in ["TeammateTool", "spawnTeam", "discoverTeams", "requestJoin", "launchSwarm"]:
             assert fake_ref not in context, f"Found fake API reference: {fake_ref}"

@@ -10,7 +10,7 @@ Hook type: PostToolUse (matcher: ExitPlanMode)
 
 When ExitPlanMode completes successfully, this hook:
 1. Injects execution context into the active session
-2. Optionally includes Agent Teams guidance when enabled via env var
+2. Includes Agent Teams guidance for when teams are available
 3. Writes plan state to .claude/plans/.active-plan.json for cross-session continuity
 4. Cleans up interview draft files that are no longer needed post-approval
 
@@ -21,7 +21,6 @@ cross-session recovery if the user /clear or restarts before completion.
 from __future__ import annotations
 
 import json
-import os
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
@@ -38,13 +37,13 @@ from hook_utils import (
 )
 
 # =============================================================================
-# AGENT TEAMS SECTION - Only included when env var is enabled
+# AGENT TEAMS SECTION
 # =============================================================================
 AGENT_TEAMS_SECTION = """
-## AGENT TEAMS (Available)
+## AGENT TEAMS
 
-Agent teams are enabled in this environment. Consider using them when the plan
-has independent parallel tasks that benefit from inter-agent discussion.
+When agent teams are available, consider using them for plans with independent
+parallel tasks that benefit from inter-agent discussion.
 
 **Good fits:** research/review, new modules, competing hypotheses, cross-layer changes
 **Bad fits:** sequential tasks, same-file edits, dependency chains
@@ -72,14 +71,8 @@ Tell Claude to create a team in natural language:
 """
 
 
-def _is_agent_teams_enabled() -> bool:
-    """Check if Agent Teams feature is enabled via env var."""
-    val = os.environ.get("CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS", "")
-    return val.lower() in ("1", "true", "yes")
-
-
 def build_execution_context() -> str:
-    """Build execution context, optionally including Agent Teams guidance."""
+    """Build execution context, including Agent Teams guidance."""
     sections = []
 
     sections.append("""[PLAN APPROVED - READY FOR EXECUTION]
@@ -103,8 +96,7 @@ Your plan has been approved. When you return to execute:
 | Implement | general-purpose (built-in) | Writing actual code changes |
 | Validate | oh-my-claude:validator | Running tests, linters |""")
 
-    if _is_agent_teams_enabled():
-        sections.append(AGENT_TEAMS_SECTION)
+    sections.append(AGENT_TEAMS_SECTION)
 
     sections.append("""## PLAN COMPLIANCE
 

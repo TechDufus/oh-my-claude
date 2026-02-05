@@ -227,13 +227,9 @@ When you approve a plan (ExitPlanMode):
 2. "Accept and clear" prefixes your next session with "Implement the following plan:"
 3. ultrawork_detector injects execution context based on this prefix
 
-## Agent Teams (Experimental)
+## Agent Teams
 
-Coordinate multiple Claude Code sessions working together. Requires opt-in.
-
-### Setup
-
-Set `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1` in environment or settings.json.
+Coordinate multiple Claude Code sessions working together.
 
 ### When to Use Teams vs Subagents
 
@@ -323,4 +319,3 @@ Customize behavior via environment variables in your `settings.json`:
 | `OMC_TDD_MODE` | `off` | TDD enforcement: `off`, `guided`, `enforced` |
 | `OMC_DANGER_BLOCK` | `1` | Set to `0` to disable catastrophic command blocking |
 | `OMC_NOTIFICATIONS` | `0` | Set to `1` to enable desktop notifications on Stop |
-| `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS` | `0` | Set to `1` to enable Agent Teams (experimental) |
