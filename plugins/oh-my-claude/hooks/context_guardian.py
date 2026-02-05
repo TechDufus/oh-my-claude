@@ -31,7 +31,7 @@ You PLAN, DELEGATE, COORDINATE, and VERIFY. You do not implement.
 
 Your context window is for REASONING, not storage. Subagent context is FREE.
 
-## Your Agent Team
+## Specialized Agents
 
 | Agent | Purpose | When to Use |
 |-------|---------|-------------|

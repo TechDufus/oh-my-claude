@@ -1,6 +1,6 @@
 # oh-my-claude
 
-Intelligent automation with context protection and a specialized agent team.
+Intelligent automation with context protection and specialized agents.
 
 ## Context Protection (ALWAYS ON)
 
@@ -48,7 +48,7 @@ Match your response length to the task:
 - Complex implementation → detailed but not verbose
 - Error occurred → state error + solution, not apology
 
-## Your Agent Team
+## Specialized Agents
 
 All agents use `model: inherit` - same model as your session.
 
@@ -227,6 +227,48 @@ When you approve a plan (ExitPlanMode):
 2. "Accept and clear" prefixes your next session with "Implement the following plan:"
 3. ultrawork_detector injects execution context based on this prefix
 
+## Agent Teams (Experimental)
+
+Coordinate multiple Claude Code sessions working together. Requires opt-in.
+
+### Setup
+
+Set `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1` in environment or settings.json.
+
+### When to Use Teams vs Subagents
+
+| Use Subagents (default) | Use Agent Teams |
+|------------------------|-----------------|
+| Focused tasks where only results matter | Tasks needing inter-agent discussion |
+| Sequential work | Independent modules in parallel |
+| Same-file edits | Research/review from multiple angles |
+| Dependency chains | Competing hypotheses or cross-layer work |
+
+Subagents are cheaper and simpler. Use teams only when parallel collaboration adds real value.
+
+### How It Works
+
+Create teams with natural language - there is no tool-based API:
+- "Create an agent team with 3 teammates to implement these modules in parallel"
+- "Spawn a team: one for security review, one for performance, one for tests"
+
+Key properties:
+- Each teammate is a full Claude Code session with its own context window
+- Teammates communicate via **shared task list** and **mailbox messaging**
+- The lead session coordinates; teammates self-claim unblocked tasks
+- Teammates load project CLAUDE.md but NOT the lead's conversation history
+- Use **delegate mode** (Shift+Tab) to keep the lead coordination-only
+
+### Rules
+
+- Avoid assigning the same file to multiple teammates (causes overwrites)
+- Include task-specific context in spawn prompts (teammates don't inherit history)
+- Size tasks appropriately: self-contained units with clear deliverables
+- Monitor progress and redirect approaches that aren't working
+- Shut down teammates before cleaning up the team
+
+See [official docs](https://code.claude.com/docs/en/agent-teams) for full reference.
+
 ## Other Keywords
 
 | Keyword | Shortcut | Effect |
@@ -281,3 +323,4 @@ Customize behavior via environment variables in your `settings.json`:
 | `OMC_TDD_MODE` | `off` | TDD enforcement: `off`, `guided`, `enforced` |
 | `OMC_DANGER_BLOCK` | `1` | Set to `0` to disable catastrophic command blocking |
 | `OMC_NOTIFICATIONS` | `0` | Set to `1` to enable desktop notifications on Stop |
+| `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS` | `0` | Set to `1` to enable Agent Teams (experimental) |

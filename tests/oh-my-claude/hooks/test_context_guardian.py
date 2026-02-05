@@ -41,8 +41,8 @@ class TestMainSessionBehavior:
         context = get_context(output)
         assert "Context Protection ACTIVE" in context
 
-    def test_main_session_includes_agent_team(self):
-        """SOP should include agent team instructions."""
+    def test_main_session_includes_specialized_agents(self):
+        """SOP should include specialized agents instructions."""
         output = run_hook({})
         context = get_context(output)
         assert "advisor" in context
