@@ -10,7 +10,6 @@ Environment Variable: OMC_DANGER_BLOCK - default "1" (enabled). Set to "0" to di
 """
 
 import json
-import os
 import re
 import sys
 from pathlib import Path
