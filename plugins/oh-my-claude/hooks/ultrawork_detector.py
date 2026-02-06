@@ -291,9 +291,11 @@ that reports results back. Lower token cost, simpler coordination.
 
 ### Agent Teams
 
-When available, request a team using natural language:
-- "Create an agent team to implement these 3 modules in parallel"
-- "Spawn teammates: one for frontend, one for backend, one for tests"
+When available, create teams using explicit tool calls:
+1. `TeamCreate(team_name="descriptive-name")` — always first
+2. `TaskCreate(...)` for each work item
+3. `Task(subagent_type="general-purpose", team_name="descriptive-name", name="role")` per teammate
+4. `TaskUpdate(taskId, owner="role")` to assign work
 
 Agent teams create full Claude Code sessions that communicate via shared task list
 and mailbox messaging. Higher token cost but enables inter-agent collaboration.
@@ -547,6 +549,25 @@ Respond: APPROVED or NEEDS_REVISION with specific items to fix.
 If NEEDS_REVISION: fix the items, resubmit. Loop until APPROVED.
 Do NOT skip critic. Do NOT ExitPlanMode without critic approval.
 
+## Team & Task Tools (Quick Reference)
+
+| Tool | Purpose | Key Parameters |
+|------|---------|----------------|
+| `TeamCreate` | Create a named team | `team_name`, `description` |
+| `TaskCreate` | Create a tracked task | `subject`, `description`, `activeForm` |
+| `TaskUpdate` | Update task state | `taskId`, `owner`, `status`, `addBlockedBy` |
+| `TaskList` | View all tasks | (none) |
+| `TaskGet` | Get task details | `taskId` |
+| `Task` | Spawn a teammate | `subagent_type`, `team_name`, `name`, `prompt` |
+| `SendMessage` | Message a teammate | `type`, `recipient`, `content`, `summary` |
+
+**Team creation flow:**
+1. `TeamCreate(team_name="feature-x")` — create the team
+2. `TaskCreate(...)` for each plan item — build the task list
+3. `TaskUpdate(taskId, addBlockedBy=[...])` — set dependencies
+4. `Task(subagent_type="general-purpose", team_name="feature-x", name="implementer")` — spawn each teammate
+5. `TaskUpdate(taskId, owner="implementer")` — assign tasks to teammates
+
 ## EXECUTION STRATEGY
 
 Default to teams for independent parallel work. Use subagents for sequential or dependent tasks.
@@ -560,9 +581,11 @@ Default to teams for independent parallel work. Use subagents for sequential or 
 | Same-file edits | no | YES |
 | Dependency chains | no | YES |
 
-Spawn teams using natural language:
-- "Create an agent team to implement these 3 modules in parallel"
-- "Spawn teammates: one for frontend, one for backend, one for tests"
+Create teams using explicit tool calls:
+1. `TeamCreate(team_name="descriptive-name")` — always first
+2. `TaskCreate(...)` for each work item
+3. `Task(subagent_type="general-purpose", team_name="descriptive-name", name="role")` per teammate
+4. `TaskUpdate(taskId, owner="role")` to assign work
 
 Use **delegate mode** (Shift+Tab) to keep the lead coordination-only.
 
@@ -587,10 +610,12 @@ PLAN_EXECUTION_TEAMS_CONTEXT = """[ULTRAWORK MODE ACTIVE - PLAN EXECUTION (TEAM 
 
 You have an approved plan. Before ANY implementation:
 
-1. Spawn a team matching the plan's Team Composition section
-2. Use TaskCreate for EACH plan item with owner assignments
-3. Use TaskUpdate to set blockedBy dependencies
-4. Run TaskList to confirm tasks exist and are assigned
+1. `TeamCreate(team_name="plan-name")` — create the team first
+2. `TaskCreate(subject, description, activeForm)` for EACH plan item
+3. `TaskUpdate(taskId, addBlockedBy=[...])` to set dependencies between tasks
+4. `Task(subagent_type="general-purpose", team_name="plan-name", name="role")` to spawn each teammate
+5. `TaskUpdate(taskId, owner="role")` to assign tasks to teammates
+6. `TaskList()` to confirm everything is wired up
 
 Use **delegate mode** (Shift+Tab) to stay coordination-only.
 DO NOT implement directly. Teammates execute, you coordinate.
@@ -666,9 +691,11 @@ Match your team to the work type:
 
 ### Spawning Teams
 
-Use natural language to create teams:
-- "Create an agent team with 3 teammates to implement these modules in parallel"
-- "Spawn teammates: one for frontend changes, one for backend, one for tests"
+Create teams using explicit tool calls:
+1. `TeamCreate(team_name="descriptive-name")` — always first
+2. `TaskCreate(...)` for each work item
+3. `Task(subagent_type="general-purpose", team_name="descriptive-name", name="role")` per teammate
+4. `TaskUpdate(taskId, owner="role")` to assign work
 
 ### Team Rules
 
@@ -743,8 +770,8 @@ When assigning work to teammates:
 
 ## EXECUTION RULES
 
-1. PARALLELIZE - Spawn teammates for independent work streams
-2. TRACK - Use TaskCreate for multi-step work, update status real-time
+1. PARALLELIZE - `TeamCreate` first, then `Task(team_name, name)` to spawn teammates for independent work
+2. TRACK - `TaskCreate` for each work item, `TaskUpdate` to assign owners and track status
 3. NEVER STOP - Stopping requires passing checklist
 4. NO QUESTIONS - Decide and document
 5. COORDINATE - You plan, teammates implement
@@ -1027,7 +1054,7 @@ NEVER downgrade models. Omit `model` param or use `model="inherit"`.
 
 **Parallel patterns:** Explore+librarian (research) -> Plan->critic->general-purpose (impl) -> validator (verify)
 
-**Agent teams:** Consider teams for tasks needing inter-agent discussion. Use natural language to create teams. Subagents remain the default for focused work.
+**Agent teams:** Consider teams for tasks needing inter-agent discussion. Use `TeamCreate` + `Task(team_name, name)` to create teams. Subagents remain the default for focused work.
 
 ## TASK TRACKING
 

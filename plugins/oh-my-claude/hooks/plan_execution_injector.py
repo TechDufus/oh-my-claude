@@ -51,9 +51,11 @@ parallel tasks that benefit from inter-agent discussion.
 
 ### How to Use
 
-Tell Claude to create a team in natural language:
-- "Create an agent team with 3 teammates to implement these modules in parallel"
-- "Spawn a team: one for frontend, one for backend, one for tests"
+1. `TeamCreate(team_name="descriptive-name")` — create the team
+2. `TaskCreate(subject, description, activeForm)` — create tasks for each work item
+3. `Task(subagent_type="general-purpose", team_name="descriptive-name", name="role")` — spawn teammates
+4. `TaskUpdate(taskId, owner="role")` — assign tasks to teammates
+5. Monitor via `TaskList()` and communicate via `SendMessage(recipient="role")`
 
 ### Key Properties
 
@@ -85,11 +87,12 @@ Your plan has been approved. When you return to execute:
 
 ## EXECUTION PROTOCOL
 
-1. **Create todos** - Convert plan checkboxes to TaskCreate items
-2. **Execute in order** - Follow the plan's execution sequence
-3. **Coordinate teammates** - Use agent teams for parallel implementation
-4. **Verify each step** - Run validation after significant changes
-5. **Do NOT deviate** - The plan was researched and approved""")
+1. **Create team** - `TeamCreate(team_name="...")` with a descriptive name
+2. **Create tasks** - `TaskCreate(...)` for EACH plan item with descriptions
+3. **Spawn teammates** - `Task(subagent_type="general-purpose", team_name="...", name="role")` per role
+4. **Assign work** - `TaskUpdate(taskId, owner="role")` to assign tasks to teammates
+5. **Monitor + verify** - `TaskList()` to track progress, run validation after changes
+6. **Do NOT deviate** - The plan was researched and approved""")
 
         sections.append(AGENT_TEAMS_SECTION)
     else:
