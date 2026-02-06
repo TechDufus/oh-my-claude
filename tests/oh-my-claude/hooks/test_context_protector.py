@@ -232,3 +232,86 @@ class TestAllowlist:
     def test_prefixed_claudemd_not_allowlisted(self):
         """some_CLAUDE.md should not be allowlisted."""
         assert is_allowlisted("some_CLAUDE.md") is False
+
+
+class TestAgentSessionSkip:
+    """Tests for agent session bypass."""
+
+    def test_agent_session_skips_blocking(self, tmp_path):
+        """Agent sessions should never be blocked from reading."""
+        # Create a large file that would normally be blocked
+        large_file = tmp_path / "large.py"
+        large_file.write_text("\n".join(f"line {i}" for i in range(500)))
+
+        from context_protector import main as cp_main
+        import json
+        from unittest.mock import patch
+        from io import StringIO
+
+        input_data = json.dumps({
+            "agent_type": "oh-my-claude:librarian",
+            "tool_name": "Read",
+            "tool_input": {"file_path": str(large_file)},
+        })
+
+        with patch("sys.stdin", StringIO(input_data)):
+            with pytest.raises(SystemExit) as exc_info:
+                cp_main()
+            assert exc_info.value.code == 0
+
+    def test_no_agent_type_still_blocks(self, tmp_path):
+        """Normal sessions should still be blocked for large files."""
+        large_file = tmp_path / "large.py"
+        large_file.write_text("\n".join(f"line {i}" for i in range(500)))
+
+        from context_protector import main as cp_main
+        import json
+        from unittest.mock import patch
+        from io import StringIO
+
+        input_data = json.dumps({
+            "tool_name": "Read",
+            "tool_input": {"file_path": str(large_file)},
+        })
+
+        captured = StringIO()
+        with patch("sys.stdin", StringIO(input_data)), \
+             patch("sys.stdout", captured):
+            with pytest.raises(SystemExit) as exc_info:
+                cp_main()
+            assert exc_info.value.code == 0
+
+        output = captured.getvalue()
+        if output.strip():
+            result = json.loads(output)
+            # Should contain a deny decision
+            assert result.get("decision") == "deny" or result.get("reason")
+
+    def test_empty_agent_type_still_blocks(self, tmp_path):
+        """Empty agent_type should not bypass blocking."""
+        large_file = tmp_path / "large.py"
+        large_file.write_text("\n".join(f"line {i}" for i in range(500)))
+
+        from context_protector import main as cp_main
+        import json
+        from unittest.mock import patch
+        from io import StringIO
+
+        input_data = json.dumps({
+            "agent_type": "",
+            "tool_name": "Read",
+            "tool_input": {"file_path": str(large_file)},
+        })
+
+        captured = StringIO()
+        with patch("sys.stdin", StringIO(input_data)), \
+             patch("sys.stdout", captured):
+            with pytest.raises(SystemExit) as exc_info:
+                cp_main()
+            assert exc_info.value.code == 0
+
+        output = captured.getvalue()
+        # Empty agent_type should NOT bypass, so there should be a deny decision
+        if output.strip():
+            result = json.loads(output)
+            assert result.get("decision") == "deny" or result.get("reason")

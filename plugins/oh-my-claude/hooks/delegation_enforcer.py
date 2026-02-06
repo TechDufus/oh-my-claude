@@ -7,7 +7,7 @@
 delegation_enforcer.py - Context guidance for delegation in execution mode.
 
 Hook type: PreToolUse on Edit|Write
-Provides context reminder (not hard block) encouraging delegation to workers.
+Provides context reminder (not hard block) encouraging delegation to subagents.
 """
 
 from __future__ import annotations
@@ -19,7 +19,9 @@ sys.path.insert(0, str(Path(__file__).parent))
 
 from hook_utils import (
     get_nested,
+    get_session_context,
     hook_main,
+    is_agent_session,
     log_debug,
     output_context,
     output_empty,
@@ -42,8 +44,15 @@ DIRECT_MARKER = "[direct]"
 SHORT_CHANGE_THRESHOLD = 20
 
 DELEGATION_REMINDER = """[DELEGATION REMINDER] You're editing directly in main context. Consider delegating to:
-- Task(subagent_type='oh-my-claude:worker', prompt='...')
+- Task(subagent_type='oh-my-claude:general-purpose', prompt='...')
 - Task(subagent_type='general-purpose', prompt='...')
+
+Add [DIRECT] to proceed without delegation."""
+
+TEAM_LEAD_REMINDER = """[DELEGATION REMINDER] You're editing directly in main context. Consider delegating via teammates or subagents:
+- Task(subagent_type='oh-my-claude:general-purpose', prompt='...')
+- Task(subagent_type='general-purpose', prompt='...')
+- Or delegate via teammates for parallel collaboration
 
 Add [DIRECT] to proceed without delegation."""
 
@@ -113,6 +122,10 @@ def main() -> None:
         output_empty()
         return
 
+    # Skip for agent sessions (subagents and teammates implement freely)
+    if is_agent_session(data):
+        return output_empty()
+
     tool_name = get_nested(data, "tool_name", default="")
     tool_input = get_nested(data, "tool_input", default={})
 
@@ -142,8 +155,11 @@ def main() -> None:
         return
 
     # Output context reminder (continue, not block)
-    log_debug("showing delegation reminder")
-    output_context("PreToolUse", DELEGATION_REMINDER)
+    # Team leads get a softer message mentioning teammate delegation
+    session_ctx = get_session_context(data)
+    reminder = TEAM_LEAD_REMINDER if session_ctx == "team_lead" else DELEGATION_REMINDER
+    log_debug(f"showing delegation reminder (session_context={session_ctx})")
+    output_context("PreToolUse", reminder)
 
 
 if __name__ == "__main__":

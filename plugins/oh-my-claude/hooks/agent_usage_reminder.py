@@ -17,6 +17,7 @@ sys.path.insert(0, str(Path(__file__).parent))
 from hook_utils import (
     get_nested,
     hook_main,
+    is_agent_session,
     log_debug,
     output_context,
     output_empty,
@@ -54,6 +55,10 @@ def main() -> None:
     data = parse_hook_input(raw)
 
     if not data:
+        return output_empty()
+
+    # Skip for agent sessions (subagents and teammates use tools directly)
+    if is_agent_session(data):
         return output_empty()
 
     # Get tool name from hook input

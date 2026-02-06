@@ -16,6 +16,8 @@ from pathlib import Path
 from hook_utils import (
     RegexCache,
     hook_main,
+    is_agent_session,
+    is_teams_enabled,
     log_debug,
     output_context,
     output_empty,
@@ -284,7 +286,7 @@ Choose the right execution approach based on task characteristics:
 
 ### Default: Subagents (Task tool)
 
-Most plans execute best with subagents. Each `Task()` call spawns a focused worker
+Most plans execute best with subagents. Each `Task()` call spawns a focused subagent
 that reports results back. Lower token cost, simpler coordination.
 
 ### Agent Teams
@@ -326,7 +328,7 @@ You have an approved plan. Before ANY implementation:
 
 **Key distinction:** `Task()` = spawn agent NOW. `TaskCreate()` = track work for later.
 
-DO NOT spawn workers or start implementation until tasks are created.
+DO NOT spawn subagents or start implementation until tasks are created.
 
 Claude Code's task system handles execution order, dependencies, and progress tracking.
 Your job is to CREATE the tasks - then execute them in order.
@@ -366,6 +368,436 @@ When ALL tasks are done:
 2. Summarize what was implemented
 3. Note any deviations from plan (with reasons)
 """
+
+# =============================================================================
+# ULTRAPLAN TEAMS CONTEXT - Team-aware planning guidance
+# =============================================================================
+ULTRAPLAN_TEAMS_CONTEXT = """[ULTRAPLAN MODE ACTIVE - TEAM LEAD]
+
+STOP. Do NOT write a plan yet. Follow these steps IN ORDER.
+
+## STEP 1: QUICK RECON
+
+Understand the codebase context BEFORE asking questions. Spawn research teammates
+to gather the lay of the land so you can ask INFORMED questions (not generic ones).
+
+- Teammate 1: "Find files relevant to {request topic}, report paths and structure"
+- Teammate 2: "Summarize architecture and patterns in {area}"
+
+Goal: learn enough to ask smart questions. NOT enough to write a plan.
+
+## STEP 2: INFORMED INTERVIEW
+
+Now that you know the codebase, ask the user INFORMED questions using AskUserQuestion.
+Reference specific files, patterns, or decisions you discovered in Step 1.
+
+**Good questions** (informed by recon):
+- "I found 3 patterns for X in your codebase - {A}, {B}, {C}. Which should this follow?"
+- "This touches {file1} and {file2} which have different conventions. Align to which?"
+- "There's an existing {thing} that does something similar. Extend it or build new?"
+- "The test coverage in {area} is {sparse/good}. What test strategy for this?"
+
+**Bad questions** (generic, uninformed):
+- "What's your objective?" - you should already know from the request
+- "What's out of scope?" - you should infer from recon and confirm
+- "What patterns should I follow?" - you should have FOUND them already
+
+**Intent types** (adapt depth):
+- TRIVIAL -> skip interview, go to Step 4
+- REFACTORING -> ask about safety: regression risk, rollback, breaking changes
+- BUILD -> ask about patterns found, integration points, deliverables
+- MID-SIZED -> ask about exact boundaries: "Does this include X? What about Y?"
+- ARCHITECTURE -> ask about scale, lifespan, constraints, trade-off preferences
+
+**Clearance gate** - proceed to deep research only when you can answer:
+1. What exactly are we building/changing?
+2. What are we NOT changing?
+3. Which existing patterns/conventions to follow?
+
+Save interview outcomes to `.claude/plans/drafts/{name}.md`:
+```
+## Interview Notes - {name}
+Intent: {classification}
+Objective: {clear statement}
+In Scope: {list}
+Out of Scope: {list}
+Constraints: {list}
+Patterns to follow: {file:line references from recon}
+Test Strategy: {TDD | tests-after | manual-only}
+Effort Estimate: {Quick | Short | Medium | Large | XL}
+```
+
+## STEP 3: DEEP RESEARCH
+
+Now do thorough research informed by both recon AND interview answers.
+Spawn targeted research teammates:
+
+- Teammate: "Find ALL files, deps, call sites for {scope}"
+- Teammate: "Read {specific files} for {specific details}"
+
+This round is targeted - you know what to look for from Steps 1-2.
+
+## STEP 4: GAP ANALYSIS (MANDATORY before writing plan)
+
+After deep research, MUST run the advisor before writing any plan:
+
+```
+Task(subagent_type="oh-my-claude:advisor", prompt=\"\"\"
+Analyze for hidden requirements, scope risks, AI-slop patterns.
+Interview notes: {summary from Step 2}
+Research findings: {key discoveries from Step 3}
+Flag: missing edge cases, unstated assumptions, over-engineering risk.
+\"\"\")
+```
+
+If advisor finds CRITICAL gaps -> ask user (back to Step 2).
+If advisor finds MINOR gaps -> note them and proceed.
+
+## STEP 5: WRITE THE PLAN
+
+Write to `.claude/plans/{name}.md`. Every plan MUST include:
+
+```markdown
+# Plan: {name}
+
+## TL;DR
+- **Summary:** {one sentence}
+- **Deliverables:** {bullet list}
+- **Effort:** {Quick | Short | Medium | Large | XL}
+- **Critical Path:** {longest dependency chain}
+- **Test Strategy:** {TDD | tests-after | manual-only}
+
+## Big Picture Intent
+
+> **When facing unexpected decisions during execution, align with this intent.**
+
+- **Original Problem:** {summarize user's first message - what triggered this work}
+- **Why This Matters:** {business/user impact if not done}
+- **Key Constraints:** {non-negotiable requirements from interview}
+- **Primary Driver:** {single most important factor guiding tradeoffs}
+
+Populate the Big Picture Intent section by pulling from your interview notes (Original Problem from user's first message, Key Constraints from interview Constraints field).
+
+## Must NOT (Guardrails)
+- {thing explicitly excluded from scope}
+- {constraint from interview}
+
+## Team Composition
+
+| Role | Responsibility | Assigned Tasks |
+|------|---------------|----------------|
+| {e.g., implementer-auth} | {what they own} | {task numbers} |
+| {e.g., test-author} | {what they own} | {task numbers} |
+| {e.g., security-reviewer} | {what they review} | {task numbers} |
+
+**File ownership:** Map which files each teammate touches. No overlaps.
+
+## Tasks
+
+### Task {n}: {title}
+- **Owner:** {teammate role}
+- **Files:** {exact paths with line numbers}
+- **Changes:** {what changes per location}
+- **Validation:** {what to check} OR `N/A - research|docs`
+- **Must NOT:** {per-task exclusions}
+- **References:**
+  - Pattern: {file:line of existing pattern to follow}
+  - API: {file:line of relevant interfaces}
+  - Tests: {file:line of related test files}
+- **Commit:** {conventional commit message}
+- **Acceptance:** runnable verification command:
+  ```
+  {e.g.: pytest tests/test_auth.py -v}
+  ```
+
+## Decisions
+{rationale for each choice, why this over alternatives}
+
+## Risks
+{known issues + mitigations}
+
+## Validation Protocol
+
+Each implementation task SHOULD specify what to validate. The executor decides HOW (batch or per-task).
+
+| Task Type | Validation Required? | Example |
+|-----------|---------------------|---------|
+| Implementation | YES | "Tests pass", "Lint clean", "Type check passes" |
+| Refactoring | YES | "Existing tests still pass", "No behavior change" |
+| Research | NO - exempt | Mark as `N/A - research` |
+| Documentation | NO - exempt | Mark as `N/A - docs` |
+
+**If validation is unclear:** Split the task smaller until each piece has a clear validation criterion.
+```
+
+## STEP 6: CRITIC REVIEW (MANDATORY)
+
+MUST submit plan to critic before ExitPlanMode:
+
+```
+Task(subagent_type="oh-my-claude:critic", prompt=\"\"\"
+Review this plan for clarity, completeness, correctness, executability.
+Interview decisions: {from Step 2}
+Advisor findings: {from Step 4}
+Plan: {plan content or path}
+Respond: APPROVED or NEEDS_REVISION with specific items to fix.
+\"\"\")
+```
+
+If NEEDS_REVISION: fix the items, resubmit. Loop until APPROVED.
+Do NOT skip critic. Do NOT ExitPlanMode without critic approval.
+
+## EXECUTION STRATEGY
+
+Default to teams for independent parallel work. Use subagents for sequential or dependent tasks.
+
+| Signal | Use Teams (preferred) | Use Subagents (fallback) |
+|--------|----------------------|--------------------------|
+| Independent modules | YES | no |
+| Competing hypotheses | YES | no |
+| Cross-layer coordination | YES | no |
+| Sequential tasks | no | YES |
+| Same-file edits | no | YES |
+| Dependency chains | no | YES |
+
+Spawn teams using natural language:
+- "Create an agent team to implement these 3 modules in parallel"
+- "Spawn teammates: one for frontend, one for backend, one for tests"
+
+Use **delegate mode** (Shift+Tab) to keep the lead coordination-only.
+
+## RULES
+
+1. Recon FIRST (Step 1) - quick research to understand the landscape
+2. Then INFORMED interview (Step 2) - ask smart questions referencing what you found
+3. Then DEEP research (Step 3) - targeted by interview answers
+4. Advisor is MANDATORY (Step 4) - run gap analysis before writing plan
+5. Critic is MANDATORY (Step 6) - get approval before ExitPlanMode
+6. Every task needs file:line refs and runnable acceptance commands
+7. Compare 2+ approaches for significant decisions
+8. Teams are the default - use subagents only when tasks are sequential or touch same files
+"""
+
+# =============================================================================
+# PLAN EXECUTION TEAMS CONTEXT - Team-aware plan execution
+# =============================================================================
+PLAN_EXECUTION_TEAMS_CONTEXT = """[ULTRAWORK MODE ACTIVE - PLAN EXECUTION (TEAM LEAD)]
+
+*** MANDATORY FIRST ACTION - CREATE TEAM + TASKS ***
+
+You have an approved plan. Before ANY implementation:
+
+1. Spawn a team matching the plan's Team Composition section
+2. Use TaskCreate for EACH plan item with owner assignments
+3. Use TaskUpdate to set blockedBy dependencies
+4. Run TaskList to confirm tasks exist and are assigned
+
+Use **delegate mode** (Shift+Tab) to stay coordination-only.
+DO NOT implement directly. Teammates execute, you coordinate.
+
+## EXECUTION PROTOCOL
+
+1. **Create team** - Spawn teammates per the plan's composition table
+2. **Create tasks** - Convert plan items to TaskCreate calls with dependencies and owners
+3. **Monitor progress** - Track teammate status, redirect failing approaches
+4. **Verify each step** - Run validator after each significant change
+5. **Do NOT deviate** - The plan was researched and approved. Follow it.
+
+## PLAN COMPLIANCE
+
+| Allowed | NOT Allowed |
+|---------|-------------|
+| Following plan steps exactly | Adding features not in plan |
+| Minor implementation details | Changing architecture decisions |
+| Bug fixes discovered during work | Scope expansion |
+| Asking about ambiguous plan items | Ignoring plan requirements |
+
+If you discover the plan has a flaw:
+1. STOP implementation
+2. Explain the issue to the user
+3. Get approval before changing approach
+
+## DECISION ALIGNMENT
+
+When facing unexpected choices during execution, refer to the plan's "Big Picture Intent" section:
+- Does this align with the original problem being solved?
+- Does this respect the key constraints?
+- Does this optimize for the stated primary driver?
+
+## COMPLETION
+
+When ALL tasks are done:
+1. Run full validation (tests, lints, type checks)
+2. Summarize what was implemented
+3. Note any deviations from plan (with reasons)
+"""
+
+# =============================================================================
+# ULTRAWORK TEAMS CONTEXT - Team-aware execution intensity
+# Uses $TRIVIAL_NOTE$ and $VALIDATION$ as replacement markers
+# =============================================================================
+ULTRAWORK_TEAMS_CONTEXT = """[ULTRAWORK MODE ACTIVE - TEAM LEAD]
+
+$TRIVIAL_NOTE$RELENTLESS MODE. Work until COMPLETE. Find problems first. No corners cut.
+
+## CERTAINTY PROTOCOL (Before ANY Code)
+
+Spawn research teammates to map the codebase before planning:
+
+1. Teammate: "Find ALL relevant files, patterns, and dependencies for {task}"
+2. Teammate: "Read and summarize key modules, constraints, and conventions in {area}"
+3. YOU: Synthesize research, plan with file:line specifics
+
+**Plan MUST include:** files (exact paths), functions (line numbers), changes per location, tests to update, execution order.
+
+**NOT READY if:** "probably", "maybe", "I think", no file:line refs, "straightforward".
+
+## TEAM COMPOSITION
+
+Match your team to the work type:
+
+| Work Type | Team Composition |
+|-----------|-----------------|
+| Feature work | implementer + security reviewer + test author |
+| Bug investigation | 3-5 hypothesis investigators (competing theories) |
+| Refactoring | implementer + regression tester |
+| Code review | security reviewer + performance reviewer + coverage reviewer |
+| Research | 2-3 researchers with different search angles |
+
+### Spawning Teams
+
+Use natural language to create teams:
+- "Create an agent team with 3 teammates to implement these modules in parallel"
+- "Spawn teammates: one for frontend changes, one for backend, one for tests"
+
+### Team Rules
+
+- Use **delegate mode** (Shift+Tab) to stay coordination-only
+- NEVER assign the same file to multiple teammates (causes overwrites)
+- Include full context in spawn prompts (teammates do NOT inherit your conversation)
+- Size tasks as self-contained units with clear deliverables
+- Monitor progress and redirect approaches that are not working
+
+## ORCHESTRATOR PROTOCOL
+
+You PLAN and COORDINATE. You do NOT implement directly.
+
+### Pre-Delegation Declaration (Required)
+```
+Teammate: <role description>
+Task: <one-line summary>
+Why: <justification>
+Expected: <deliverable>
+```
+
+### Delegation Prompt Structure
+1. TASK - atomic goal
+2. CONTEXT - files, patterns, constraints
+3. EXPECTED OUTPUT - specific deliverables
+4. MUST DO / MUST NOT - requirements and constraints
+5. ACCEPTANCE CRITERIA - verification checks
+6. RELEVANT CODE - file:line references
+
+| Task Type | Min Lines |
+|-----------|-----------|
+| Simple | 20 |
+| Standard | 30-50 |
+| Complex | 50+ |
+
+**<20 lines = TOO SHORT. Verbose beats vague.**
+
+## VERIFICATION (Trust Nothing)
+
+After EVERY teammate completes:
+- [ ] Run validator on changed files
+- [ ] Read files directly (confirm changes exist)
+- [ ] Match output to original request
+- [ ] Run full test suite
+
+| Claim | Evidence Required |
+|-------|-------------------|
+| File edit | Validator clean + Read confirms |
+| Build | Exit code 0 in output |
+| Tests | PASS with test names visible |
+| Lint | Zero errors in output |
+
+**No evidence = not done.**
+
+## ZERO TOLERANCE
+
+| Violation | Response |
+|-----------|----------|
+| Partial implementation | UNACCEPTABLE - finish or don't start |
+| Simplified version | UNACCEPTABLE - build what was asked |
+| Skipped tests | UNACCEPTABLE - untested = broken |
+| Scope reduction | UNACCEPTABLE - deliver EXACTLY what was asked |
+| "Good enough" | UNACCEPTABLE - only DONE is acceptable |
+
+## FILE CONFLICT AVOIDANCE
+
+When assigning work to teammates:
+- Map which files each task touches BEFORE spawning
+- If two tasks touch the same file, make one depend on the other
+- Prefer splitting by module/directory boundaries
+- When overlap is unavoidable, assign to a single teammate
+
+## EXECUTION RULES
+
+1. PARALLELIZE - Spawn teammates for independent work streams
+2. TRACK - Use TaskCreate for multi-step work, update status real-time
+3. NEVER STOP - Stopping requires passing checklist
+4. NO QUESTIONS - Decide and document
+5. COORDINATE - You plan, teammates implement
+
+## FAILURE RECOVERY (3-Strike Rule)
+
+| Strike | Action |
+|--------|--------|
+| 1st | Redirect teammate, adjust approach |
+| 2nd | Re-examine assumptions, spawn fresh teammate |
+| 3rd | STOP -> REVERT -> DOCUMENT -> ESCALATE to user |
+
+After user guidance: reset counter, new approach.
+
+## AUTONOMOUS EXECUTION
+
+| Situation | Action |
+|-----------|--------|
+| Single valid interpretation | Proceed |
+| Multiple approaches, similar effort | Proceed, note assumption |
+| 2x+ effort difference | MUST ask |
+| Missing critical info | MUST ask |
+
+**NEVER ask:** "proceed?", "continue?", "fix this?", "anything else?"
+
+## Validation: $VALIDATION$
+
+## STOPPING CHECKLIST
+
+CANNOT stop until ALL true:
+- [ ] ALL tasks "completed" (verify via TaskList)
+- [ ] Validation passed (lints, tests, types)
+- [ ] No TODO/FIXME in changed code
+- [ ] Changes verified with direct tools
+- [ ] Original request FULLY addressed
+
+Before concluding: re-read request, check every requirement, TaskList, validate again.
+
+## COMPLETION
+
+When TRULY done: `<promise>DONE</promise>`
+
+## EXTERNAL MEMORY
+
+| Notepad | Purpose |
+|---------|---------|
+| `.claude/notepads/learnings.md` | Patterns, gotchas |
+| `.claude/notepads/decisions.md` | Design decisions |
+| `.claude/notepads/issues.md` | Blockers |
+
+Write BEFORE context fills. Read when resuming.
+
+Execute relentlessly until complete."""
 
 
 def check_plan_execution_prompt(prompt: str) -> bool:
@@ -430,6 +862,10 @@ def main() -> None:
         log_debug("no valid input data, exiting")
         output_empty()
 
+    # Agent sessions must NEVER receive prompt injection
+    if is_agent_session(data):
+        return output_empty()
+
     prompt = data.get("prompt", "")
     cwd = data.get("cwd", ".")
     permission_mode = data.get("permission_mode", "")
@@ -442,7 +878,8 @@ def main() -> None:
     # ==========================================================================
     if check_plan_execution_prompt(prompt):
         log_debug("Plan execution detected from prompt prefix")
-        output_context("UserPromptSubmit", PLAN_EXECUTION_CONTEXT)
+        context = PLAN_EXECUTION_TEAMS_CONTEXT if is_teams_enabled() else PLAN_EXECUTION_CONTEXT
+        output_context("UserPromptSubmit", context)
         output_empty()
         return  # Early return - don't also inject ultrawork
 
@@ -452,7 +889,8 @@ def main() -> None:
     # ==========================================================================
     if permission_mode == "plan":
         log_debug("plan mode detected via permission_mode, injecting ultraplan")
-        output_context("UserPromptSubmit", ULTRAPLAN_CONTEXT)
+        context = ULTRAPLAN_TEAMS_CONTEXT if is_teams_enabled() else ULTRAPLAN_CONTEXT
+        output_context("UserPromptSubmit", context)
         output_empty()
 
     # Detect validation commands with graceful degradation
@@ -483,7 +921,12 @@ Ultrawork mode acknowledged, but full orchestration overhead is unnecessary.
 
 """
 
-        context = f"""[ULTRAWORK MODE ACTIVE]
+        if is_teams_enabled():
+            context = ULTRAWORK_TEAMS_CONTEXT.replace(
+                "$TRIVIAL_NOTE$", trivial_note
+            ).replace("$VALIDATION$", validation)
+        else:
+            context = f"""[ULTRAWORK MODE ACTIVE]
 
 {trivial_note}RELENTLESS MODE. Work until COMPLETE. Find problems first. No corners cut.
 

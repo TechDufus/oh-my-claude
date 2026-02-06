@@ -10,6 +10,9 @@ from hook_utils import (
     RegexCache,
     WhichCache,
     get_nested,
+    get_session_context,
+    is_agent_session,
+    is_teams_enabled,
     output_block,
     output_context,
     output_stop_block,
@@ -321,3 +324,90 @@ class TestOutputStopBlock:
         captured = capsys.readouterr()
         result = json.loads(captured.out)
         assert "continue" not in result
+
+
+class TestIsTeamsEnabled:
+    """Tests for is_teams_enabled function."""
+
+    def test_enabled_when_set_to_1(self, monkeypatch):
+        """Should return True when env var is '1'."""
+        monkeypatch.setenv("CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS", "1")
+        assert is_teams_enabled() is True
+
+    def test_disabled_when_not_set(self, monkeypatch):
+        """Should return False when env var is not set."""
+        monkeypatch.delenv("CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS", raising=False)
+        assert is_teams_enabled() is False
+
+    def test_disabled_when_set_to_0(self, monkeypatch):
+        """Should return False when env var is '0'."""
+        monkeypatch.setenv("CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS", "0")
+        assert is_teams_enabled() is False
+
+    def test_disabled_when_set_to_true(self, monkeypatch):
+        """Should return False for 'true' (only '1' is valid)."""
+        monkeypatch.setenv("CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS", "true")
+        assert is_teams_enabled() is False
+
+    def test_disabled_when_empty(self, monkeypatch):
+        """Should return False when env var is empty string."""
+        monkeypatch.setenv("CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS", "")
+        assert is_teams_enabled() is False
+
+
+class TestIsAgentSession:
+    """Tests for is_agent_session function."""
+
+    def test_true_with_agent_type(self):
+        """Should return True when agent_type is present and truthy."""
+        assert is_agent_session({"agent_type": "oh-my-claude:worker"}) is True
+        assert is_agent_session({"agent_type": "librarian"}) is True
+
+    def test_false_without_agent_type(self):
+        """Should return False when agent_type is missing."""
+        assert is_agent_session({}) is False
+        assert is_agent_session({"session_id": "test"}) is False
+
+    def test_false_with_none_agent_type(self):
+        """Should return False when agent_type is None."""
+        assert is_agent_session({"agent_type": None}) is False
+
+    def test_false_with_empty_agent_type(self):
+        """Should return False when agent_type is empty string."""
+        assert is_agent_session({"agent_type": ""}) is False
+
+    def test_true_with_extra_fields(self):
+        """Should work with additional fields present."""
+        data = {"agent_type": "critic", "session_id": "abc", "cwd": "/tmp"}
+        assert is_agent_session(data) is True
+
+
+class TestGetSessionContext:
+    """Tests for get_session_context function."""
+
+    def test_agent_session(self, monkeypatch):
+        """Agent sessions should return 'agent' regardless of teams env."""
+        monkeypatch.delenv("CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS", raising=False)
+        assert get_session_context({"agent_type": "worker"}) == "agent"
+
+    def test_agent_session_with_teams(self, monkeypatch):
+        """Agent sessions should return 'agent' even when teams enabled."""
+        monkeypatch.setenv("CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS", "1")
+        assert get_session_context({"agent_type": "teammate"}) == "agent"
+
+    def test_team_lead(self, monkeypatch):
+        """Main session with teams enabled should return 'team_lead'."""
+        monkeypatch.setenv("CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS", "1")
+        assert get_session_context({}) == "team_lead"
+        assert get_session_context({"session_id": "lead"}) == "team_lead"
+
+    def test_solo_session(self, monkeypatch):
+        """Main session without teams should return 'solo'."""
+        monkeypatch.delenv("CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS", raising=False)
+        assert get_session_context({}) == "solo"
+        assert get_session_context({"session_id": "test"}) == "solo"
+
+    def test_solo_with_teams_disabled(self, monkeypatch):
+        """Explicitly disabled teams should return 'solo'."""
+        monkeypatch.setenv("CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS", "0")
+        assert get_session_context({}) == "solo"

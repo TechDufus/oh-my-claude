@@ -1,6 +1,7 @@
 """Tests for plan_execution_injector.py PostToolUse hook."""
 
 import json
+import os
 import subprocess
 import sys
 from pathlib import Path
@@ -51,13 +52,15 @@ class TestExecutionContext:
         assert "READY FOR EXECUTION" in context
 
     def test_context_includes_agent_table(self):
-        """Execution context should include agent delegation table."""
+        """Execution context should include agent delegation table in solo mode."""
         input_data = {
             "tool_name": "ExitPlanMode",
             "tool_result": {},
             "tool_input": {},
         }
-        result = run_hook(input_data)
+        env = os.environ.copy()
+        env.pop("CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS", None)
+        result = run_hook(input_data, env=env)
         context = result.get("hookSpecificOutput", {}).get("additionalContext", "")
         assert "AGENT DELEGATION TABLE" in context
         assert "Explore" in context
@@ -148,3 +151,55 @@ class TestEmptyInput:
         # Should return execution context (default when no tool_input)
         context = result.get("hookSpecificOutput", {}).get("additionalContext", "")
         assert "READY FOR EXECUTION" in context
+
+
+class TestTeamModeExecution:
+    """Tests for team mode execution context."""
+
+    def test_teams_enabled_gets_team_context(self):
+        """When agent teams enabled, context mentions team keywords."""
+        input_data = {
+            "tool_name": "ExitPlanMode",
+            "tool_result": {},
+            "tool_input": {},
+        }
+        env = os.environ.copy()
+        env["CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS"] = "1"
+        result = run_hook(input_data, env=env)
+        context = result.get("hookSpecificOutput", {}).get("additionalContext", "")
+        assert "teammate" in context.lower()
+        assert "team" in context.lower()
+
+    def test_solo_gets_standard_context(self):
+        """Without agent teams, standard execution context returned."""
+        input_data = {
+            "tool_name": "ExitPlanMode",
+            "tool_result": {},
+            "tool_input": {},
+        }
+        env = os.environ.copy()
+        env.pop("CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS", None)
+        result = run_hook(input_data, env=env)
+        context = result.get("hookSpecificOutput", {}).get("additionalContext", "")
+        assert "AGENT DELEGATION TABLE" in context
+
+    def test_no_worker_references(self):
+        """No 'worker' references in output for either mode."""
+        input_data = {
+            "tool_name": "ExitPlanMode",
+            "tool_result": {},
+            "tool_input": {},
+        }
+        # Solo mode
+        env_solo = os.environ.copy()
+        env_solo.pop("CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS", None)
+        result_solo = run_hook(input_data, env=env_solo)
+        context_solo = result_solo.get("hookSpecificOutput", {}).get("additionalContext", "")
+        assert "worker" not in context_solo.lower()
+
+        # Teams mode
+        env_teams = os.environ.copy()
+        env_teams["CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS"] = "1"
+        result_teams = run_hook(input_data, env=env_teams)
+        context_teams = result_teams.get("hookSpecificOutput", {}).get("additionalContext", "")
+        assert "worker" not in context_teams.lower()

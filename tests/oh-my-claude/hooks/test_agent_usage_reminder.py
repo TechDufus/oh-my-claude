@@ -230,3 +230,36 @@ class TestEmptyInputHandled:
         output = run_hook({"session_id": "lonely-session"})
         context = get_context(output)
         assert context == ""
+
+
+class TestAgentSessionSkip:
+    """Tests for agent sessions skipping the reminder entirely."""
+
+    def test_agent_session_skips_grep_reminder(self):
+        """Agent sessions using Grep should produce empty output."""
+        output = run_hook({
+            "tool_name": "Grep",
+            "agent_type": "oh-my-claude:worker",
+            "session_id": "agent-test-grep",
+        })
+        context = get_context(output)
+        assert context == ""
+
+    def test_agent_session_skips_glob_reminder(self):
+        """Agent sessions using Glob should produce empty output."""
+        output = run_hook({
+            "tool_name": "Glob",
+            "agent_type": "oh-my-claude:worker",
+            "session_id": "agent-test-glob",
+        })
+        context = get_context(output)
+        assert context == ""
+
+    def test_no_agent_type_still_triggers(self):
+        """Regular sessions (no agent_type) should still trigger reminder."""
+        output = run_hook({
+            "tool_name": "Grep",
+            "session_id": "agent-test-regular",
+        })
+        context = get_context(output)
+        assert "Agent Usage Reminder" in context

@@ -14,6 +14,7 @@ from delegation_enforcer import (
     DIRECT_MARKER,
     EXECUTION_MARKERS,
     SHORT_CHANGE_THRESHOLD,
+    TEAM_LEAD_REMINDER,
     has_direct_marker,
     is_execution_mode,
     is_short_change,
@@ -283,3 +284,84 @@ class TestMainIntegration:
             "tool_name": "Edit",
         })
         assert output == {}
+
+
+# =============================================================================
+# Tests: Agent session skip, team lead behavior, no worker references
+# =============================================================================
+
+
+class TestAgentSessionAndTeamLead:
+    """Tests for agent session skip, team lead messaging, and worker removal."""
+
+    def test_agent_session_gets_empty_output(self):
+        """Agent sessions (agent_type set) should get empty output, no reminder."""
+        long_content = "\n".join(f"line {i}" for i in range(30))
+        output = run_hook({
+            "tool_name": "Edit",
+            "tool_input": {"new_string": long_content},
+            "prompt": "ultrawork implement the feature",
+            "agent_type": "subagent",
+        })
+        assert output == {}
+
+    def test_agent_session_with_teammate_type(self):
+        """Teammate agent sessions should also get empty output."""
+        long_content = "\n".join(f"line {i}" for i in range(30))
+        output = run_hook({
+            "tool_name": "Write",
+            "tool_input": {"content": long_content},
+            "prompt": "plan execution in progress",
+            "agent_type": "teammate",
+        })
+        assert output == {}
+
+    def test_normal_session_still_gets_reminder(self):
+        """Normal sessions (no agent_type) still get the reminder in execution mode."""
+        long_content = "\n".join(f"line {i}" for i in range(30))
+        output = run_hook({
+            "tool_name": "Edit",
+            "tool_input": {"new_string": long_content},
+            "prompt": "ultrawork implement the feature",
+        })
+        context = get_context(output)
+        assert "DELEGATION REMINDER" in context
+
+    def test_team_lead_gets_teammate_mention(self, monkeypatch):
+        """Team leads should get a reminder mentioning teammate delegation."""
+        monkeypatch.setenv("CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS", "1")
+        long_content = "\n".join(f"line {i}" for i in range(30))
+        output = run_hook({
+            "tool_name": "Edit",
+            "tool_input": {"new_string": long_content},
+            "prompt": "ultrawork implement the feature",
+        })
+        context = get_context(output)
+        assert "teammates" in context
+        assert "DELEGATION REMINDER" in context
+
+    def test_solo_session_gets_standard_reminder(self, monkeypatch):
+        """Solo sessions (no teams) should get the standard delegation reminder."""
+        monkeypatch.delenv("CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS", raising=False)
+        long_content = "\n".join(f"line {i}" for i in range(30))
+        output = run_hook({
+            "tool_name": "Edit",
+            "tool_input": {"new_string": long_content},
+            "prompt": "ultrawork implement the feature",
+        })
+        context = get_context(output)
+        assert "DELEGATION REMINDER" in context
+        assert "teammates" not in context
+
+    def test_no_worker_references_in_delegation_reminder(self):
+        """DELEGATION_REMINDER constant should not contain 'worker'."""
+        assert "worker" not in DELEGATION_REMINDER.lower()
+
+    def test_no_worker_references_in_team_lead_reminder(self):
+        """TEAM_LEAD_REMINDER constant should not contain 'worker'."""
+        assert "worker" not in TEAM_LEAD_REMINDER.lower()
+
+    def test_reminders_reference_general_purpose(self):
+        """Both reminders should reference general-purpose agent."""
+        assert "general-purpose" in DELEGATION_REMINDER
+        assert "general-purpose" in TEAM_LEAD_REMINDER

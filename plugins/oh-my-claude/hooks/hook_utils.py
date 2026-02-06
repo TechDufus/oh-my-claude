@@ -453,3 +453,46 @@ class WhichCache:
 
 # Global WhichCache instance for convenience
 WHICH = WhichCache()
+
+
+# =============================================================================
+# Agent Teams detection
+# =============================================================================
+
+
+def is_teams_enabled() -> bool:
+    """Check if native agent teams feature is enabled.
+
+    Returns:
+        True if CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS is set to "1".
+    """
+    return os.environ.get("CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS") == "1"
+
+
+def is_agent_session(data: dict[str, Any]) -> bool:
+    """Check if the current session is an agent (subagent or teammate).
+
+    Agents have `agent_type` set in their hook input data.
+
+    Args:
+        data: Parsed hook input dictionary.
+
+    Returns:
+        True if agent_type is present and truthy.
+    """
+    return bool(get_nested(data, "agent_type", default=None))
+
+
+def get_session_context(data: dict[str, Any]) -> str:
+    """Determine session context for dual-mode behavior.
+
+    Returns:
+        "agent" - subagent or teammate (agent_type is set)
+        "team_lead" - main session with teams enabled
+        "solo" - main session without teams
+    """
+    if is_agent_session(data):
+        return "agent"
+    if is_teams_enabled():
+        return "team_lead"
+    return "solo"

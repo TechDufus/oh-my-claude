@@ -62,7 +62,7 @@ You'll receive a specific {task type}. Examples:
 - Clear distinction between required and optional context
 - Explicit about what makes a task well-formed vs poorly-formed
 
-**Example (from worker.md):**
+**Example (from general-purpose delegation):**
 ```markdown
 ## Input
 
@@ -114,7 +114,7 @@ Control how the agent handles permission prompts via the `permissionMode` frontm
 |------|----------|----------|
 | `default` | Standard permission checking | General-purpose agents, balanced safety |
 | `plan` | Read-only exploration mode | Read-only agents - information gathering only |
-| `acceptEdits` | Auto-accept file edits | Worker - trusted implementation agent |
+| `acceptEdits` | Auto-accept file edits | Trusted implementation agents |
 | `dontAsk` | Auto-deny permission prompts | Strict read-only agents, reviewers |
 | `bypassPermissions` | Skip all permission checks | Dangerous - use only for fully trusted automation |
 
@@ -209,7 +209,6 @@ Control token limits via `maxTokens` in frontmatter for agents with specific out
 | Explore | 2000-4000 | Returns locations, not content |
 | Librarian | 4000-8000 | Summaries should be concise |
 | Critic | 4000-6000 | Focused feedback, not rewrites |
-| Worker | No limit | Implementation varies widely |
 | Validator | 4000-6000 | Results + brief explanation |
 | Advisor | 4000-6000 | Guidance should be concise |
 
@@ -264,12 +263,20 @@ Examples:
 |------|--------|-------------|
 | Read-only | librarian | Restricted |
 | Review | critic, advisor | Restricted |
-| Execution | validator, worker | Full |
+| Execution | validator | Full |
 
 **Note:** Use Claude Code's built-in agents for common tasks:
 - **Explore** - File/definition discovery
 - **Plan** - Complex task decomposition
 - **general-purpose** - Implementation tasks
+
+## Team Context
+
+Agents work the same whether spawned by a team lead, a teammate, or a solo session. When native agent teams are enabled (`CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1`):
+
+- **Team leads** should use specialist agents (librarian, advisor, critic, validator) for focused analysis/verification, and teammates for implementation work
+- **Teammates** can also spawn specialist agents as subagents for their own analysis needs
+- Agent identity and tool constraints are unchanged regardless of caller
 
 ## Adding New Agent
 

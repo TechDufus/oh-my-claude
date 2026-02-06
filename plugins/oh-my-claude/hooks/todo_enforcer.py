@@ -17,7 +17,9 @@ from typing import Any
 
 from hook_utils import (
     RegexCache,
+    get_session_context,
     hook_main,
+    is_agent_session,
     log_debug,
     output_empty,
     output_stop_block,
@@ -212,6 +214,10 @@ def main() -> None:
     raw = read_stdin_safe()
     data = parse_hook_input(raw)
 
+    # Skip for agent sessions (teammates/subagents finish when they finish)
+    if is_agent_session(data):
+        return output_empty()
+
     # Extract stop reason
     stop_reason = data.get("stopReason") or data.get("stop_reason") or "unknown"
 
@@ -268,11 +274,15 @@ def main() -> None:
 
     # If any issues exist, block with combined message
     if issues:
+        session_ctx = get_session_context(data)
         issues_text = "\n".join(f"- {issue}" for issue in issues)
+        team_note = ""
+        if session_ctx == "team_lead":
+            team_note = "\n- Verify teammates have completed their work before stopping"
         context = f"""[WORK INCOMPLETE - CANNOT STOP]
 
 The following issues prevent stopping:
-{issues_text}
+{issues_text}{team_note}
 
 ## Rules
 - You CANNOT stop until ALL issues are resolved
@@ -289,8 +299,8 @@ If you have open tasks, consider these approaches:
 
 **Parallel work:** Delegate to agents with owner assignment:
 ```
-TaskUpdate(taskId="1", owner="worker-a")
-Task(subagent_type="general-purpose", prompt="You are worker-a. Find your tasks via TaskList...")
+TaskUpdate(taskId="1", owner="agent-a")
+Task(subagent_type="general-purpose", prompt="You are agent-a. Find your tasks via TaskList...")
 ```
 
 **Blocked tasks:** Check if blocking tasks are complete, then proceed with unblocked work.

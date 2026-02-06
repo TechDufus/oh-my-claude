@@ -12,6 +12,10 @@ from ultrawork_detector import (
     PATTERNS,
     PLAN_EXECUTION_CONTEXT,
     PLAN_EXECUTION_PREFIXES,
+    PLAN_EXECUTION_TEAMS_CONTEXT,
+    ULTRAPLAN_CONTEXT,
+    ULTRAPLAN_TEAMS_CONTEXT,
+    ULTRAWORK_TEAMS_CONTEXT,
     check_plan_execution_prompt,
     detect_validation,
     is_trivial_request,
@@ -550,3 +554,103 @@ class TestCheckPlanExecutionPromptFunction:
         """Both old and new prefixes should independently trigger detection."""
         assert check_plan_execution_prompt("Implement the following plan:\n\nContent") is True
         assert check_plan_execution_prompt("Plan to implement\n\nContent") is True
+
+
+# =============================================================================
+# Agent Session Skip Tests
+# =============================================================================
+
+
+class TestAgentSessionSkip:
+    """Tests that agent sessions (subagents/teammates) get no prompt injection."""
+
+    def test_agent_session_skips_ultrawork(self, test_home):
+        """Agent sessions with ultrawork prompt should return empty output."""
+        output = run_hook(
+            {"prompt": "ultrawork fix all bugs", "agent_type": "subagent", "session_id": "test"},
+            test_home,
+        )
+        assert output == {}
+
+    def test_agent_session_skips_plan_execution(self, test_home):
+        """Agent sessions with plan execution prompt should return empty output."""
+        output = run_hook(
+            {
+                "prompt": "Implement the following plan:\n\n## Steps",
+                "agent_type": "oh-my-claude:critic",
+                "session_id": "test",
+            },
+            test_home,
+        )
+        assert output == {}
+
+
+# =============================================================================
+# Team Mode Ultrawork Tests
+# =============================================================================
+
+
+class TestTeamModeUltrawork:
+    """Tests for team-aware ultrawork mode selection."""
+
+    def test_teams_enabled_gets_team_context(self, test_home):
+        """With teams enabled, ultrawork prompt should get team-specific context."""
+        env = {
+            "HOME": str(test_home),
+            "PATH": "/usr/bin:/bin",
+            "CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS": "1",
+        }
+        result = subprocess.run(
+            [sys.executable, str(HOOK_PATH)],
+            input=json.dumps({"prompt": "ultrawork fix bugs", "session_id": "test"}),
+            capture_output=True,
+            text=True,
+            env=env,
+        )
+        assert result.returncode == 0
+        output = json.loads(result.stdout) if result.stdout.strip() else {}
+        context = get_context(output)
+        assert "TEAM LEAD" in context
+        assert "TEAM COMPOSITION" in context
+        assert "teammate" in context.lower()
+
+    def test_solo_gets_standard_context(self, test_home):
+        """Without teams env, ultrawork prompt should get standard context."""
+        output = run_hook(
+            {"prompt": "ultrawork fix bugs", "session_id": "test"},
+            test_home,
+        )
+        context = get_context(output)
+        assert "ULTRAWORK MODE ACTIVE" in context
+        assert "CERTAINTY PROTOCOL" in context
+        assert "TEAM LEAD" not in context
+
+
+# =============================================================================
+# No Worker References Tests
+# =============================================================================
+
+
+class TestNoWorkerReferences:
+    """Verify no 'worker' references exist in any prompt constants."""
+
+    def test_no_worker_in_team_prompts(self):
+        """Team prompt constants must not reference 'worker'."""
+        assert "worker" not in ULTRAWORK_TEAMS_CONTEXT.lower(), (
+            "ULTRAWORK_TEAMS_CONTEXT contains 'worker'"
+        )
+        assert "worker" not in ULTRAPLAN_TEAMS_CONTEXT.lower(), (
+            "ULTRAPLAN_TEAMS_CONTEXT contains 'worker'"
+        )
+        assert "worker" not in PLAN_EXECUTION_TEAMS_CONTEXT.lower(), (
+            "PLAN_EXECUTION_TEAMS_CONTEXT contains 'worker'"
+        )
+
+    def test_no_worker_in_solo_prompts(self):
+        """Solo prompt constants must not reference 'worker'."""
+        assert "worker" not in ULTRAPLAN_CONTEXT.lower(), (
+            "ULTRAPLAN_CONTEXT contains 'worker'"
+        )
+        assert "worker" not in PLAN_EXECUTION_CONTEXT.lower(), (
+            "PLAN_EXECUTION_CONTEXT contains 'worker'"
+        )

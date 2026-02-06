@@ -139,3 +139,26 @@ class TestEmptyInputHandled:
         })
         context = get_context(output)
         assert "Verification Required" in context
+
+
+class TestAgentSessionSkip:
+    """Tests for agent sessions skipping verification reminder."""
+
+    def test_agent_session_skips_task_reminder(self):
+        """Agent sessions should skip verification reminder for Task tool."""
+        output = run_hook({
+            "tool_name": "Task",
+            "agent_type": "oh-my-claude:critic",
+            "session_id": "agent-test",
+        })
+        context = get_context(output)
+        assert context == ""
+
+    def test_no_agent_type_still_triggers(self):
+        """Regular sessions without agent_type should still get reminder."""
+        output = run_hook({
+            "tool_name": "Task",
+            "session_id": "agent-test",
+        })
+        context = get_context(output)
+        assert "Verification Required" in context

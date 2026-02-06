@@ -29,6 +29,7 @@ sys.path.insert(0, str(Path(__file__).parent))
 
 from hook_utils import (
     hook_main,
+    is_teams_enabled,
     log_debug,
     output_context,
     output_empty,
@@ -74,8 +75,11 @@ Tell Claude to create a team in natural language:
 def build_execution_context() -> str:
     """Build execution context, including Agent Teams guidance."""
     sections = []
+    teams_active = is_teams_enabled()
 
-    sections.append("""[PLAN APPROVED - READY FOR EXECUTION]
+    if teams_active:
+        # Team-first: AGENT_TEAMS_SECTION is primary, no delegation table
+        sections.append("""[PLAN APPROVED - READY FOR EXECUTION]
 
 Your plan has been approved. When you return to execute:
 
@@ -83,7 +87,22 @@ Your plan has been approved. When you return to execute:
 
 1. **Create todos** - Convert plan checkboxes to TaskCreate items
 2. **Execute in order** - Follow the plan's execution sequence
-3. **Delegate to agents** - Use specialized workers for implementation
+3. **Coordinate teammates** - Use agent teams for parallel implementation
+4. **Verify each step** - Run validation after significant changes
+5. **Do NOT deviate** - The plan was researched and approved""")
+
+        sections.append(AGENT_TEAMS_SECTION)
+    else:
+        # Solo mode: delegation table with supplementary teams info
+        sections.append("""[PLAN APPROVED - READY FOR EXECUTION]
+
+Your plan has been approved. When you return to execute:
+
+## EXECUTION PROTOCOL
+
+1. **Create todos** - Convert plan checkboxes to TaskCreate items
+2. **Execute in order** - Follow the plan's execution sequence
+3. **Delegate to agents** - Use general-purpose agents for implementation
 4. **Verify each step** - Run validation after significant changes
 5. **Do NOT deviate** - The plan was researched and approved
 
@@ -96,7 +115,7 @@ Your plan has been approved. When you return to execute:
 | Implement | general-purpose (built-in) | Writing actual code changes |
 | Validate | oh-my-claude:validator | Running tests, linters |""")
 
-    sections.append(AGENT_TEAMS_SECTION)
+        sections.append(AGENT_TEAMS_SECTION)
 
     sections.append("""## PLAN COMPLIANCE
 

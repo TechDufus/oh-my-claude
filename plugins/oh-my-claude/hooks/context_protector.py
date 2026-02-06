@@ -26,6 +26,7 @@ sys.path.insert(0, str(Path(__file__).parent))
 
 from hook_utils import (
     hook_main,
+    is_agent_session,
     log_debug,
     output_empty,
     parse_bool_env,
@@ -147,6 +148,10 @@ def main() -> None:
         log_debug("no input data, passing through")
         output_allow()
         return
+
+    # Skip for agent sessions (subagents and teammates work freely)
+    if is_agent_session(data):
+        return output_empty()
 
     # Only handle Read tool
     tool_name = data.get("tool_name", "")

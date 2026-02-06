@@ -16,6 +16,7 @@ sys.path.insert(0, str(Path(__file__).parent))
 from hook_utils import (
     get_nested,
     hook_main,
+    is_agent_session,
     log_debug,
     output_context,
     output_empty,
@@ -41,6 +42,10 @@ def main() -> None:
     data = parse_hook_input(raw)
 
     if not data:
+        return output_empty()
+
+    # Skip for agent sessions (teammates verify their own work)
+    if is_agent_session(data):
         return output_empty()
 
     tool_name = get_nested(data, "tool_name", default="")

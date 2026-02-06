@@ -122,3 +122,34 @@ def sample_todos():
         {"content": "Add tests", "status": "in_progress", "activeForm": "Adding tests"},
         {"content": "Update docs", "status": "pending", "activeForm": "Updating docs"},
     ]
+
+
+# =============================================================================
+# Agent Teams fixtures
+# =============================================================================
+
+
+@pytest.fixture
+def teams_env(monkeypatch):
+    """Enable agent teams via environment variable."""
+    monkeypatch.setenv("CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS", "1")
+    yield
+    monkeypatch.delenv("CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS", raising=False)
+
+
+@pytest.fixture
+def no_teams_env(monkeypatch):
+    """Ensure agent teams is disabled."""
+    monkeypatch.delenv("CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS", raising=False)
+
+
+@pytest.fixture
+def agent_session_input():
+    """Hook input data representing an agent session (subagent or teammate)."""
+    return {"agent_type": "oh-my-claude:worker", "session_id": "agent-123"}
+
+
+@pytest.fixture
+def team_lead_input():
+    """Hook input data representing a team lead session (no agent_type)."""
+    return {"session_id": "lead-456"}

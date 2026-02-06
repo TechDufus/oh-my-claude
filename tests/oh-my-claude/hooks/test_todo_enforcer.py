@@ -13,6 +13,7 @@ from todo_enforcer import (
     get_completed_todos_from_todos,
     get_incomplete_todos_from_todos,
     has_uncommitted_changes,
+    main,
     should_use_task_system,
 )
 
@@ -540,3 +541,79 @@ class TestHybridDetection:
 
         assert task_incomplete == 0
         assert todo_incomplete == 0
+
+
+class TestAgentSessionSkip:
+    """Tests for agent session skip logic in main()."""
+
+    def test_agent_session_not_blocked(self, monkeypatch):
+        """Agent sessions (agent_type set) should return empty, not blocked."""
+        import json
+
+        # Build input with agent_type set and incomplete todos that would normally block
+        hook_input = json.dumps({
+            "agent_type": "teammate",
+            "stopReason": "end_turn",
+            "todos": [{"content": "Task 1", "status": "pending"}],
+        })
+
+        # Mock stdin to provide the hook input
+        monkeypatch.setattr("todo_enforcer.read_stdin_safe", lambda: hook_input)
+
+        # main() calls output_empty() which does sys.exit(0)
+        with pytest.raises(SystemExit) as exc_info:
+            main()
+        assert exc_info.value.code == 0
+
+    def test_empty_agent_type_still_checks(self, monkeypatch, capsys):
+        """Empty string agent_type should still check todos (not skip)."""
+        import json
+
+        # agent_type is empty string - should NOT be treated as agent session
+        hook_input = json.dumps({
+            "agent_type": "",
+            "stopReason": "end_turn",
+            "todos": [{"content": "Task 1", "status": "pending"}],
+        })
+
+        monkeypatch.setattr("todo_enforcer.read_stdin_safe", lambda: hook_input)
+        # Disable plan/git checks to isolate todo checking
+        monkeypatch.setenv("OMC_STOP_CHECK_PLANS", "0")
+        monkeypatch.setenv("OMC_STOP_CHECK_GIT", "0")
+
+        with pytest.raises(SystemExit) as exc_info:
+            main()
+        assert exc_info.value.code == 0
+
+        # Should have produced blocking output (not empty) because todos are pending
+        captured = capsys.readouterr()
+        output = json.loads(captured.out)
+        assert output["decision"] == "block"
+        assert "Open tasks" in output["reason"]
+
+
+class TestWorkerReferencesRemoved:
+    """Tests that 'worker' references have been replaced in prompts/messages."""
+
+    def test_no_worker_references(self):
+        """The word 'worker' should not appear in todo_enforcer prompt strings."""
+        import inspect
+        import todo_enforcer
+
+        source = inspect.getsource(todo_enforcer)
+
+        # Collect all lines containing "worker" (case-insensitive) in string literals
+        # Exclude import lines and function/class definitions
+        violations = []
+        for i, line in enumerate(source.splitlines(), 1):
+            stripped = line.strip()
+            # Skip comments that are code structure, imports, docstrings about the test
+            if stripped.startswith(("import ", "from ", "def ", "class ")):
+                continue
+            if "worker" in stripped.lower():
+                violations.append(f"Line {i}: {stripped}")
+
+        assert violations == [], (
+            f"Found 'worker' references that should be replaced:\n"
+            + "\n".join(violations)
+        )

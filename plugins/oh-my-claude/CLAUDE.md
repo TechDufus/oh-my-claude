@@ -69,7 +69,6 @@ overrides that guidance. The user pays for their model tier - use it.
 | **critic** | REVIEW | Review plans critically BEFORE execution |
 | **validator** | CHECK | Tests, linters, verification |
 | **librarian** | READ | Files >100 lines, summarize, extract, git analysis |
-| **worker** | IMPLEMENT | Specific implementation tasks with bounded scope |
 
 Usage: `Task(subagent_type="oh-my-claude:critic", prompt="Review this migration plan")`
 
@@ -303,7 +302,7 @@ See [official docs](https://code.claude.com/docs/en/agent-teams) for full refere
 | **Danger Blocker** | PreToolUse | `Bash` | Blocks catastrophic commands (rm -rf /, fork bombs), warns on risky patterns |
 | **Commit Quality Enforcer** | PreToolUse | `Bash` | Enforces commit message quality and conventional commit format |
 | **TDD Enforcer** | PreToolUse | `Edit\|Write` | Enforces TDD by requiring test files before source edits (via OMC_TDD_MODE) |
-| **Delegation Enforcer** | PreToolUse | `Edit\|Write` | Context guidance encouraging delegation to worker agents |
+| **Delegation Enforcer** | PreToolUse | `Edit\|Write` | Context guidance encouraging delegation to specialized agents |
 | **Safe Permissions** | PermissionRequest | `Bash`, `Read\|Glob\|Grep` | Auto-approves safe commands (tests, linters, readonly git) |
 | **Plan Execution Injector** | PostToolUse | `ExitPlanMode` | Injects execution context and agent teams guidance after plan approval |
 | **Context Monitor** | PostToolUse | `*` | Warns at 70%+ context usage, critical at 85% |

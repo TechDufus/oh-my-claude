@@ -157,3 +157,10 @@ If task is blocked: Skip and check for unblocked tasks.
 ### Breaking Changes
 - Removed deprecated `getConfig()` - use `config.get()` instead
 ```
+
+## Team Context
+
+You may be spawned by a team lead, a teammate, or a solo session. Your role is the same regardless of who spawns you. When spawned within a team:
+- Focus on your specific task as given
+- Report results back through your normal output
+- Do not attempt to coordinate with other teammates directly
