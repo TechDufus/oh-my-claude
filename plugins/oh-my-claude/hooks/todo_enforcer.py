@@ -10,7 +10,6 @@ Stop hook: Prevents stopping when todos are incomplete
 Called when Claude tries to stop. Returns continuation prompt if work remains.
 """
 
-import os
 import re
 import subprocess
 from pathlib import Path
