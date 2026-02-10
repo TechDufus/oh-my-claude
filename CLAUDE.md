@@ -12,7 +12,7 @@ Claude Code plugin providing ultrawork mode, context protection, and specialized
 │   └── CLAUDE.md                     # Testing conventions
 └── plugins/oh-my-claude/             # The actual plugin
     ├── .claude-plugin/plugin.json    # Plugin metadata (version x1)
-    ├── agents/                       # 5 specialized agents
+    ├── agents/                       # 6 specialized agents
     │   └── CLAUDE.md                 # Agent authoring guide
     ├── hooks/                        # Python hooks (PEP 723)
     │   └── CLAUDE.md                 # Hook development patterns
@@ -63,6 +63,18 @@ Key: PEP 723 inline deps, JSON stdin/stdout, `@hook_main` decorator.
 5. Skills must be explicitly listed in plugin.json
 
 See `/PLUGIN-STRUCTURE.md` for complete guide.
+
+## Site Sync
+
+The `site/` landing page hardcodes plugin component names and counts. When you change any of these, update the site too:
+
+| Change | Update |
+|--------|--------|
+| Add/remove agent | `site/src/components/AgentGrid.astro` |
+| Add/remove skill | `site/src/content/copy.ts` stats |
+| Add/remove hook | `site/src/content/copy.ts` stats |
+| Change agent descriptions | `AgentGrid.astro` + relevant components |
+| Change workflow/features | Relevant component in `site/src/components/` |
 
 ## Claude Code Update Sources
 
