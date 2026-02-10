@@ -38,12 +38,23 @@ CATASTROPHIC_PATTERNS = [
 
     # System destruction
     (r'>\s*/dev/(sd|hd|nvme)', "Blocks writing directly to disk devices"),
+
+    # Drive zeroing
+    (r'\bdd\s+.*if=/dev/zero\s+.*of=/dev/sd', "Blocks drive zeroing via dd"),
+
+    # Recursive permission lockout
+    (r'\bchmod\s+(-[a-zA-Z]*R[a-zA-Z]*\s+.*|.*-[a-zA-Z]*R[a-zA-Z]*\s+)000\s+/', "Blocks recursive permission lockout"),
+
+    # Fork bomb variant (X(){ X|X& };X)
+    (r'\w+\(\)\s*\{.*\w+\s*\|\s*\w+\s*&', "Fork bomb variant detected"),
 ]
 
 # Warn patterns - warn via additionalContext but allow
 WARN_PATTERNS = [
-    (r'\bcurl\s+.*\|\s*(ba)?sh', "piping curl to shell executes remote code"),
-    (r'\bwget\s+.*\|\s*(ba)?sh', "piping wget to shell executes remote code"),
+    (r'\bcurl\s+.*\|\s*(ba)?sh', "piping curl to shell executes remote code. Safe alternative: download first, inspect, then run"),
+    (r'\bwget\s+.*\|\s*(ba)?sh', "piping wget to shell executes remote code. Safe alternative: download first, inspect, then run"),
+    (r'\bwget\s+.*&&\s*(ba)?sh', "wget followed by shell execution of downloaded content. Safe alternative: download first, inspect, then run"),
+    (r'\bcurl\s+.*\|\s*base64\s+-d\s*\|\s*(ba)?sh', "piping curl through base64 decode to shell is obfuscated remote code execution. Safe alternative: download first, inspect, then run"),
 ]
 
 

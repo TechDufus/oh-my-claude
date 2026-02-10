@@ -262,7 +262,7 @@ Examples:
 | Tier | Agents | Bash Access |
 |------|--------|-------------|
 | Read-only | librarian | Restricted |
-| Review | critic, advisor | Restricted |
+| Review | critic, code-reviewer, advisor | Restricted |
 | Execution | validator | Full |
 
 **Note:** Use Claude Code's built-in agents for common tasks:

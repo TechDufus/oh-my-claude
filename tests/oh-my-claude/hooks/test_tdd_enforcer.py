@@ -422,9 +422,8 @@ class TestHookIntegration:
         result = self.run_hook(hook_path, input_data, env={"OMC_TDD_MODE": "enforced"})
         assert result.returncode == 0
         output = self.parse_output(result.stdout)
-        assert self.is_blocked(output)
-        hook_output = output.get("hookSpecificOutput", {})
-        assert "TDD" in hook_output.get("reason", "")
+        assert output.get("decision") == "deny"
+        assert "TDD" in output.get("reason", "")
 
     def test_hook_allows_edit_when_test_exists(self, hook_path, tmp_path):
         """Edit allowed when corresponding test file exists."""
@@ -457,4 +456,4 @@ class TestHookIntegration:
         result = self.run_hook(hook_path, input_data, env={"OMC_TDD_MODE": "enforced"})
         assert result.returncode == 0
         output = self.parse_output(result.stdout)
-        assert self.is_blocked(output)
+        assert output.get("decision") == "deny"

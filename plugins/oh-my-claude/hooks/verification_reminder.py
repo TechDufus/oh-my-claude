@@ -33,6 +33,12 @@ Agent task completed. VERIFY claims before proceeding:
 3. **CHECK** - Confirm output matches expected behavior
 4. **COMPARE** - Review before/after if relevant
 
+For full verification methodology, invoke the `verification` skill.
+
+## Anti-Rationalization
+- "The agent seems confident" → Confidence is not evidence. Read the actual code.
+- "I trust subagents" → Trust but verify. Verification takes 2 min, debugging takes 30.
+
 Trust but verify. Agent context is isolated from yours."""
 
 

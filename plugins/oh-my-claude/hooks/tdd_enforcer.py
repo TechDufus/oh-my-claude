@@ -13,6 +13,7 @@ Modes (via OMC_TDD_MODE env var):
 - enforced: Block edits without tests
 """
 
+import json
 import os
 import re
 from pathlib import Path
@@ -24,12 +25,18 @@ from hook_utils import (
     get_nested,
     hook_main,
     log_debug,
-    output_block,
     output_context,
     output_empty,
     parse_hook_input,
     read_stdin_safe,
 )
+
+def output_deny(reason: str) -> None:
+    """Output denial response for PreToolUse hook."""
+    response = {"decision": "deny", "reason": reason}
+    print(json.dumps(response))
+    sys.exit(0)
+
 
 # Source file extensions that should have tests
 SOURCE_EXTENSIONS = {
@@ -208,9 +215,7 @@ def main() -> None:
     log_debug(f"No test found for: {file_path}")
 
     if mode == "enforced":
-        output_block(
-            tool_name,
-            "TDD Required",
+        output_deny(
             f"""[TDD ENFORCEMENT - BLOCKED]
 
 Cannot edit source file without corresponding test.
@@ -222,6 +227,12 @@ Expected test at one of:
 
 ## Required Action
 Create the test file FIRST, then edit the source.
+
+For TDD methodology guidance, invoke the `tdd` skill.
+
+## Anti-Rationalization
+- "I'll write tests after" → Tests written after prove nothing — they pass immediately.
+- "Too simple to test" → Simple code breaks. Test takes 30 seconds.
 
 Mode: enforced (set OMC_TDD_MODE=guided to warn only, or OMC_TDD_MODE=off to disable)"""
         )
@@ -235,6 +246,8 @@ Mode: enforced (set OMC_TDD_MODE=guided to warn only, or OMC_TDD_MODE=off to dis
 Editing source file without test: {file_path}
 
 Consider creating test first: {suggested}
+
+The `tdd` skill provides Red-Green-Refactor methodology and anti-rationalization guidance.
 
 Mode: guided (set OMC_TDD_MODE=enforced to block)"""
         )

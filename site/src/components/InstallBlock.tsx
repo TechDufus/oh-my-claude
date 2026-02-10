@@ -4,7 +4,8 @@ import { Check, Copy } from 'lucide-react'
 
 const COMMANDS = [
   'curl -LsSf https://astral.sh/uv/install.sh | sh',
-  '/plugin install techdufus/oh-my-claude',
+  'claude plugin marketplace add techdufus/oh-my-claude',
+  'claude plugin install oh-my-claude@oh-my-claude',
 ]
 
 export default function InstallBlock() {

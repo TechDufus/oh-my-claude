@@ -55,13 +55,25 @@ def is_blocking_disabled() -> bool:
     return parse_bool_env("OMC_ALLOW_LARGE_READS", default=False)
 
 
+ALLOWLISTED_FILENAMES = {
+    "CLAUDE.md",
+    "package.json",
+    "pyproject.toml",
+    "go.mod",
+    "Cargo.toml",
+    ".gitignore",
+    "tsconfig.json",
+    "Makefile",
+}
+
+
 def is_allowlisted(file_path: str) -> bool:
     """Check if file is allowlisted and should bypass size check.
 
-    CLAUDE.md files are always allowed through as they're Claude Code config files
-    that need to be read regardless of size.
+    CLAUDE.md files and common project metadata files are always allowed through
+    as they're small config files that need to be read regardless of size.
     """
-    return Path(file_path).name == "CLAUDE.md"
+    return Path(file_path).name in ALLOWLISTED_FILENAMES
 
 
 # =============================================================================
@@ -123,7 +135,7 @@ def output_deny(reason: str) -> None:
     """Output denial response for PreToolUse hook."""
     import json
 
-    response = {"decision": "deny", "reason": reason}
+    response = {"decision": "block", "reason": reason}
     print(json.dumps(response))
     sys.exit(0)
 
@@ -200,10 +212,15 @@ def main() -> None:
 
     if line_count > threshold:
         # Block the read
+        estimated_tokens = line_count * 4
         reason = (
             f"File has {line_count} lines (threshold: {threshold}). "
+            f"Reading directly costs ~{estimated_tokens:,} tokens. Delegate to librarian.\n"
             f"Use Task(subagent_type=\"oh-my-claude:librarian\") to read large files. "
-            f"This protects your context window for reasoning."
+            f"This protects your context window for reasoning.\n\n"
+            f"\"I'll just skim it\" → Skimming still costs full token count. Delegate.\n"
+            f"\"I need the whole file\" → Librarian reads whole file, extracts semantics. "
+            f"Same result, fraction of the cost."
         )
         log_debug(f"blocking read: {reason}")
         output_deny(reason)

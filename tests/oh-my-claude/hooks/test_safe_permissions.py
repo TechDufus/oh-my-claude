@@ -4,7 +4,13 @@ import os
 
 import pytest
 
-from safe_permissions import is_plugin_internal_script, is_safe_command
+from safe_permissions import (
+    check_redirect_safety,
+    has_shell_operators,
+    is_plugin_internal_script,
+    is_safe_command,
+    split_compound_command,
+)
 
 
 class TestNodeJsCommands:
@@ -468,3 +474,140 @@ class TestPluginInternalScripts:
         command = "/tmp/oh-my-claude/malicious.sh"
         is_safe, _ = is_safe_command(command)
         assert is_safe is False
+
+
+class TestShellOperatorBypass:
+    """Tests for shell operator bypass vectors (security fixes)."""
+
+    @pytest.mark.parametrize(
+        "command",
+        [
+            "echo foo; rm -rf /",
+            "ls; cat /etc/passwd",
+        ],
+    )
+    def test_semicolon_bypass_detected(self, command):
+        """Semicolon should be caught by has_shell_operators."""
+        assert has_shell_operators(command) is True
+        is_safe, _ = is_safe_command(command)
+        assert is_safe is False
+
+    @pytest.mark.parametrize(
+        "command",
+        [
+            "echo foo & rm -rf /",
+            "ls & cat /etc/passwd",
+        ],
+    )
+    def test_background_operator_bypass_detected(self, command):
+        """Bare & (background operator) should be caught."""
+        assert has_shell_operators(command) is True
+        is_safe, _ = is_safe_command(command)
+        assert is_safe is False
+
+    @pytest.mark.parametrize(
+        "command",
+        [
+            "echo $(rm -rf /)",
+            "cat $(whoami)",
+        ],
+    )
+    def test_command_substitution_bypass_detected(self, command):
+        """$(...) command substitution should be caught."""
+        assert has_shell_operators(command) is True
+        is_safe, _ = is_safe_command(command)
+        assert is_safe is False
+
+    @pytest.mark.parametrize(
+        "command",
+        [
+            "echo `rm -rf /`",
+            "cat `whoami`",
+        ],
+    )
+    def test_backtick_substitution_bypass_detected(self, command):
+        """Backtick command substitution should be caught."""
+        assert has_shell_operators(command) is True
+        is_safe, _ = is_safe_command(command)
+        assert is_safe is False
+
+    @pytest.mark.parametrize(
+        "command",
+        [
+            "(rm -rf /)",
+            "echo foo && (rm -rf /)",
+        ],
+    )
+    def test_subshell_bypass_detected(self, command):
+        """Subshell (...) should be caught."""
+        assert has_shell_operators(command) is True
+        is_safe, _ = is_safe_command(command)
+        assert is_safe is False
+
+    def test_existing_operators_still_caught(self):
+        """Existing pipe, redirect, and && operators still work."""
+        assert has_shell_operators("cat foo | grep bar") is True
+        assert has_shell_operators("echo foo > /tmp/out") is True
+        assert has_shell_operators("echo foo < /tmp/in") is True
+        assert has_shell_operators("cmd1 && cmd2") is True
+
+    def test_safe_command_without_operators(self):
+        """Commands without shell operators are not flagged."""
+        assert has_shell_operators("npm test") is False
+        assert has_shell_operators("pytest -v") is False
+        assert has_shell_operators("git status") is False
+
+
+class TestMultipleRedirectSafety:
+    """Tests for check_redirect_safety handling all redirect targets."""
+
+    def test_multiple_redirects_catches_second_unsafe(self, monkeypatch, tmp_path):
+        """Second redirect to unsafe path should be caught."""
+        monkeypatch.chdir(tmp_path)
+        subcmd = f"echo foo > {tmp_path}/safe.txt > /etc/shadow"
+        assert check_redirect_safety(subcmd) is False
+
+    def test_single_safe_redirect_passes(self, monkeypatch, tmp_path):
+        """Single redirect within project is safe."""
+        monkeypatch.chdir(tmp_path)
+        subcmd = f"echo foo > {tmp_path}/output.txt"
+        assert check_redirect_safety(subcmd) is True
+
+    def test_single_unsafe_redirect_fails(self, monkeypatch, tmp_path):
+        """Single redirect outside project is unsafe."""
+        monkeypatch.chdir(tmp_path)
+        subcmd = "echo foo > /etc/shadow"
+        assert check_redirect_safety(subcmd) is False
+
+    def test_no_redirect_passes(self):
+        """Commands without redirects are safe."""
+        assert check_redirect_safety("echo hello") is True
+
+
+class TestSplitCompoundBareAmpersand:
+    """Tests for split_compound_command bare & handling."""
+
+    def test_bare_ampersand_returns_none(self):
+        """Bare & (background operator) should return None (unsafe)."""
+        result = split_compound_command("echo foo & rm -rf /")
+        assert result is None
+
+    def test_double_ampersand_still_splits(self):
+        """&& should still split normally."""
+        result = split_compound_command("echo foo && echo bar")
+        assert result == ["echo foo", "echo bar"]
+
+    def test_trailing_bare_ampersand_returns_none(self):
+        """Trailing & should return None."""
+        result = split_compound_command("echo foo &")
+        assert result is None
+
+    def test_bare_pipe_still_returns_none(self):
+        """Bare | should still return None."""
+        result = split_compound_command("echo foo | grep bar")
+        assert result is None
+
+    def test_double_pipe_still_splits(self):
+        """|| should still split normally."""
+        result = split_compound_command("echo foo || echo bar")
+        assert result == ["echo foo", "echo bar"]

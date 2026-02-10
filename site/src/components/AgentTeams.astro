@@ -1,0 +1,99 @@
+---
+// AgentTeams.astro — Agent swarm / teams showcase
+import { Card, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
+
+const teamFlow = [
+  {
+    step: 1,
+    label: "You describe",
+    description: "A multi-module feature, a cross-layer refactor, parallel research — any task that benefits from concurrent work.",
+  },
+  {
+    step: 2,
+    label: "Team spawns",
+    description: "Teammates launch as independent sessions, each with their own context window. Shared task list keeps everyone aligned.",
+  },
+  {
+    step: 3,
+    label: "Specialists assist",
+    description: "Both leads and teammates tap specialist agents — librarian reads, critic reviews plans, validator runs checks, code-reviewer gates merges.",
+  },
+  {
+    step: 4,
+    label: "Work converges",
+    description: "Tasks complete in parallel. Hooks enforce standards across every session. You review results, not process.",
+  },
+]
+
+const enhancements = [
+  {
+    title: 'Context protection everywhere',
+    description: 'Every teammate gets the same context discipline. Hooks block large file reads, enforce delegation to specialists, and warn on context pressure — automatically.',
+    accent: 'cyan',
+  },
+  {
+    title: 'Specialist agents for every role',
+    description: 'Teammates spawn librarian for file reading, advisor for gap analysis, critic for plan review, and code-reviewer before merge. No teammate wastes context on raw file dumps.',
+    accent: 'coral',
+  },
+  {
+    title: 'Standards enforced at scale',
+    description: 'Commit quality, TDD requirements, danger blocking, and safe permissions — all hooks fire in every session. Three teammates means three times the enforcement, not three times the risk.',
+    accent: 'cyan',
+  },
+  {
+    title: 'Dual-mode intelligence',
+    description: 'Hooks detect whether they are running in a lead, teammate, or solo session and adapt behavior accordingly. Team leads get delegation reminders. Teammates get implementation focus.',
+    accent: 'coral',
+  },
+]
+---
+
+<section class="py-20 px-4 bg-secondary/20">
+  <div class="container mx-auto max-w-6xl">
+    <h2 class="text-3xl md:text-4xl font-heading font-bold text-center mb-4">
+      One lead. Many <span class="text-coral">teammates.</span>
+    </h2>
+    <p class="text-muted-foreground text-center mb-12 max-w-2xl mx-auto">
+      Claude Code's agent teams let you spawn parallel sessions that coordinate through shared task lists and messaging. oh-my-claude makes every session smarter.
+    </p>
+
+    <!-- Team flow -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-16">
+      {teamFlow.map((item) => (
+        <div class="p-5 rounded-xl border border-border/50 bg-card/50">
+          <div class="flex items-center gap-3 mb-3">
+            <span class="flex items-center justify-center w-8 h-8 rounded-lg bg-coral/10 text-coral font-mono text-sm font-bold">
+              {item.step}
+            </span>
+            <h3 class="font-heading font-bold text-lg">{item.label}</h3>
+          </div>
+          <p class="text-sm text-muted-foreground leading-relaxed">{item.description}</p>
+        </div>
+      ))}
+    </div>
+
+    <!-- Enhancement cards -->
+    <h3 class="text-xl font-heading font-bold text-center mb-2">
+      What the plugin <span class="text-cyan">adds</span>
+    </h3>
+    <p class="text-muted-foreground text-center mb-8 text-sm max-w-xl mx-auto">
+      Native teams handle coordination. oh-my-claude handles quality.
+    </p>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+      {enhancements.map((item) => (
+        <Card className="bg-card/50 backdrop-blur border-border/50">
+          <CardHeader>
+            <CardTitle className="text-xl mb-2">
+              {item.title}
+            </CardTitle>
+            <CardDescription className="text-sm leading-relaxed">
+              {item.description}
+            </CardDescription>
+          </CardHeader>
+        </Card>
+      ))}
+    </div>
+  </div>
+</section>

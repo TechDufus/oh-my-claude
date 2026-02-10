@@ -28,10 +28,10 @@ const agents = [
     useCase: 'Running test suites, CI validation',
   },
   {
-    name: 'worker',
-    type: 'implement',
-    description: 'Focused implementation agent. Executes ONE specific task completely with full context isolation.',
-    useCase: 'Single-task implementation, focused file edits',
+    name: 'code-reviewer',
+    type: 'review',
+    description: 'Post-implementation review agent. Reviews code against requirements and coding standards before merge.',
+    useCase: 'Code review after implementation, quality checks before merge',
   },
 ]
 
@@ -72,12 +72,12 @@ const typeColors: Record<string, 'coral' | 'cyan'> = {
       Specialized <span class="text-cyan">Agents</span>
     </h2>
     <p class="text-muted-foreground text-center mb-12 max-w-2xl mx-auto">
-      5 custom agents that extend Claude Code's built-in capabilities. Your context window stays clean while they do the heavy lifting.
+      6 custom agents that extend Claude Code's built-in capabilities. Your context window stays clean while they do the heavy lifting.
     </p>
 
     <!-- Custom Agents -->
     <h3 class="text-xl font-heading font-semibold mb-4 text-coral">Custom Agents</h3>
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-12">
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-12">
       {agents.map((agent) => (
         <div class="group">
           <Card className="h-full transition-all duration-300 hover:border-cyan/50 hover:shadow-[0_0_20px_rgba(0,229,204,0.1)]">

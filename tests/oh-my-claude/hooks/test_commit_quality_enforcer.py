@@ -54,6 +54,25 @@ This is the body explaining the change."'''
         # Empty quotes don't match .+ pattern, so returns None
         assert extract_commit_message(cmd) is None
 
+    def test_heredoc_commit_message(self):
+        """Test that heredoc-style commits extract the message correctly."""
+        command = '''git commit -m "$(cat <<'EOF'
+feat: add authentication
+
+Added JWT-based authentication to the API.
+This includes middleware and token refresh.
+EOF
+)"'''
+        message = extract_commit_message(command)
+        assert message is not None
+        assert message.startswith("feat: add authentication")
+        assert "JWT-based" in message
+
+    def test_simple_pattern_still_works_after_heredoc_reorder(self):
+        """Simple -m patterns must still work after heredoc reorder."""
+        cmd = 'git commit -m "fix: resolve login bug"'
+        assert extract_commit_message(cmd) == "fix: resolve login bug"
+
 
 class TestCountMessageBodyLines:
     """Tests for count_message_body_lines function."""

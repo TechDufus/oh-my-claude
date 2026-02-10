@@ -93,13 +93,21 @@ def main() -> None:
     # Check thresholds
     if usage_pct >= critical_threshold:
         _warned_sessions.add(session_id)
-        warning = f"""[CONTEXT CRITICAL: ~{usage_pct*100:.0f}% used ({estimated_tokens:,}~/{CONTEXT_LIMIT:,} tokens)]
-Consider: (1) Delegate to subagents (2) Write to notepads (3) Summarize before continuing"""
+        warning = (
+            f"[CONTEXT CRITICAL: ~{usage_pct*100:.0f}% used ({estimated_tokens:,}~/{CONTEXT_LIMIT:,} tokens)]\n"
+            f"Delegate large file reads and searches to preserve remaining context.\n"
+            f"Consider: (1) Delegate to subagents (2) Write to notepads (3) Summarize before continuing\n\n"
+            f"\"I'm almost done\" → 70% full means context tax on every operation. Delegate now."
+        )
         output_context("PostToolUse", warning)
 
     elif usage_pct >= warning_threshold:
         _warned_sessions.add(session_id)
-        warning = f"[Context: ~{usage_pct*100:.0f}% used - consider delegating to preserve context]"
+        warning = (
+            f"[Context: ~{usage_pct*100:.0f}% used - consider delegating to preserve context]\n"
+            f"Delegate large file reads and searches to preserve remaining context.\n\n"
+            f"\"I'm almost done\" → 70% full means context tax on every operation. Delegate now."
+        )
         output_context("PostToolUse", warning)
 
     else:

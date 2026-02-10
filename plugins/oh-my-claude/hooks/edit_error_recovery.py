@@ -38,10 +38,15 @@ The edit failed. Before retrying:
 2. VERIFY the exact content you want to replace (copy from output)
 3. Retry with the EXACT string from the file
 
+Recovery steps: Check indentation → Check encoding → Check if content changed since read → Re-read file
+
 Common causes:
 - File was modified since you last read it
 - Whitespace/indentation mismatch
-- Content doesn't exist as expected"""
+- Content doesn't exist as expected
+
+"The tool is just being difficult" → Edit has strict matching. This is deterministic, not random.
+"I'll just try again" → Same input = same failure. Change the old_string first."""
 
 
 def has_edit_error(tool_output: str) -> bool:

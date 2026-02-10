@@ -67,6 +67,7 @@ overrides that guidance. The user pays for their model tier - use it.
 |-------|-----|------|
 | **advisor** | ANALYZE | Pre-planning gap analysis, hidden requirements, scope risks |
 | **critic** | REVIEW | Review plans critically BEFORE execution |
+| **code-reviewer** | REVIEW | Review implementation AFTER code is written, before merge |
 | **validator** | CHECK | Tests, linters, verification |
 | **librarian** | READ | Files >100 lines, summarize, extract, git analysis |
 
@@ -74,8 +75,19 @@ Usage: `Task(subagent_type="oh-my-claude:critic", prompt="Review this migration 
 
 More examples:
 - `Task(subagent_type="oh-my-claude:advisor", prompt="Analyze scope risks for this refactor")`
+- `Task(subagent_type="oh-my-claude:code-reviewer", prompt="Review the auth implementation")`
 - `Task(subagent_type="oh-my-claude:validator", prompt="Run tests and verify the changes")`
 - `Task(subagent_type="oh-my-claude:librarian", prompt="Summarize the auth module")`
+
+### Agent Disambiguation (Review Agents)
+
+| Agent | Reviews | When | Output |
+|-------|---------|------|--------|
+| **critic** | Plans (before execution) | After Plan agent, before implementation | APPROVED / NEEDS_REVISION / REJECTED |
+| **code-reviewer** | Implementation (after execution) | After code is written, before merge | Strengths + Issues (Critical/Important/Minor) |
+| **validator** | Technical correctness | Before declaring work complete | VERDICT: PASS / FAIL with test/lint results |
+
+**Flow:** Plan → critic reviews → implement → code-reviewer reviews → validator runs checks → done
 
 ### Built-in Agents (Claude Code)
 
@@ -289,6 +301,10 @@ See [official docs](https://code.claude.com/docs/en/agent-teams) for full refere
 | `ralph-plan` | Structured PRD generation with interview, research, and approval workflow | `/ralph-plan <topic>`, "create prd", "generate prd", "plan this" |
 | `ralph-loop-init` | Transform approved plans into executable ralph loop infrastructure | `/ralph-loop-init`, `/ralph-init`, "setup ralph loop" |
 | `debugger` | Systematic debugging methodology for diagnosing failures and root cause analysis | 2+ failed fix attempts, "ultradebug", "uld", debugging in circles |
+| `tdd` | TDD methodology for writing tests first, Red-Green-Refactor cycle | "tdd", "test first", "test driven", "red green refactor" |
+| `verification` | Evidence-based verification before claiming work is complete | "verify", "verification", "is it done", "complete", "ready to merge" |
+| `receiving-code-review` | How to handle code review feedback with technical rigor | "review feedback", "address review", "fix review comments" |
+| `writing-skills` | Methodology for creating effective skills using TDD principles | "create skill", "write skill", "new skill", "skill authoring" |
 
 ## Hooks (Automatic)
 

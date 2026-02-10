@@ -9,6 +9,7 @@ import StatsBar from '@/components/StatsBar.astro'
 import HowItWorks from '@/components/HowItWorks.astro'
 import PlanMode from '@/components/PlanMode.astro'
 import UseCases from '@/components/UseCases.astro'
+import AgentTeams from '@/components/AgentTeams.astro'
 import CRTEffect from '@/components/CRTEffect'
 import MagneticButton from '@/components/MagneticButton'
 ---
@@ -114,11 +115,16 @@ import MagneticButton from '@/components/MagneticButton'
       <AgentGrid />
     </div>
 
+    <!-- Agent Teams Section -->
+    <div data-reveal data-reveal-delay="100">
+      <AgentTeams />
+    </div>
+
     <!-- CTA / Install -->
     <section id="install" class="py-20 px-4" data-reveal data-reveal-delay="100">
       <div class="container mx-auto max-w-4xl text-center">
         <h2 class="text-3xl md:text-4xl font-heading font-bold mb-4">
-          One command. <span class="text-cyan">Zero config.</span>
+          Three commands. <span class="text-cyan">Zero config.</span>
         </h2>
         <p class="text-muted-foreground mb-8">
           Install the plugin. Start a new session. That's it.
@@ -126,7 +132,8 @@ import MagneticButton from '@/components/MagneticButton'
         <div class="p-8 rounded-xl border border-border/50 bg-card/50">
           <p class="font-mono text-muted-foreground whitespace-nowrap overflow-x-auto">
             $ curl -LsSf https://astral.sh/uv/install.sh | sh<br>
-            $ /plugin install techdufus/oh-my-claude<br>
+            $ claude plugin marketplace add techdufus/oh-my-claude<br>
+            $ claude plugin install oh-my-claude@oh-my-claude<br>
             <span class="text-cyan">→ Plugin installed. Context protection active.</span>
           </p>
         </div>

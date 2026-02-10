@@ -48,6 +48,9 @@ FORBIDDEN_PATTERNS = [
     # Explicit AI-generated markers
     re.compile(r'\bai-generated\b', re.IGNORECASE),
     re.compile(r'\bai-assisted\b', re.IGNORECASE),
+    re.compile(r'\bbuilt with ai\b', re.IGNORECASE),
+    re.compile(r'\bclaude generated\b', re.IGNORECASE),
+    re.compile(r'\bai[- ]powered\s+(by|with|via)\b', re.IGNORECASE),
     # Robot emoji (unlikely in legitimate commits)
     re.compile(r'\U0001F916'),
 ]
@@ -110,11 +113,7 @@ def extract_commit_message(command: str) -> str | None:
     - git commit -m 'message'
     - git commit -m "$(cat <<'EOF'\nmessage\nEOF\n)"
     """
-    # Pattern for -m "message" or -m 'message'
-    simple_pattern = r'-m\s+["\'](.+?)["\']'
-    match = re.search(simple_pattern, command, re.DOTALL)
-    if match:
-        return match.group(1)
+    # HEREDOC patterns first (more specific, must match before simple pattern)
 
     # Pattern for HEREDOC: -m "$(cat <<'EOF' ... EOF )"
     heredoc_pattern = r'-m\s+"\$\(cat\s+<<[\'"]?EOF[\'"]?\s*\n(.+?)\nEOF\s*\)"'
@@ -125,6 +124,12 @@ def extract_commit_message(command: str) -> str | None:
     # Alternative HEREDOC without quotes
     heredoc_pattern2 = r"-m\s+'\$\(cat\s+<<['\"]?EOF['\"]?\s*\n(.+?)\nEOF\s*\)'"
     match = re.search(heredoc_pattern2, command, re.DOTALL)
+    if match:
+        return match.group(1)
+
+    # Simple pattern for -m "message" or -m 'message' (AFTER heredoc)
+    simple_pattern = r'-m\s+["\'](.+?)["\']'
+    match = re.search(simple_pattern, command, re.DOTALL)
     if match:
         return match.group(1)
 

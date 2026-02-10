@@ -223,7 +223,7 @@ def main() -> None:
 
     # Allow explicit user interrupts
     if stop_reason in ("user_interrupt", "explicit_stop", "user_cancelled", "abort"):
-        output_empty()
+        return output_empty()
 
     # Analyze transcript once
     transcript = data.get("transcript") or []
@@ -253,13 +253,27 @@ def main() -> None:
         incomplete_todos = task_incomplete
         completed_todos = task_completed
 
+    # Collect incomplete task subjects for actionable messaging
+    incomplete_subjects: list[str] = []
+    if task_incomplete > 0 and analysis["last_task_list"]:
+        for t in analysis["last_task_list"]:
+            if t.get("status") in ("pending", "in_progress"):
+                subj = t.get("subject") or t.get("content") or "untitled"
+                incomplete_subjects.append(subj)
+    elif analysis.get("last_todo_write"):
+        for t in (analysis["last_todo_write"] or []):
+            if t.get("status") in ("pending", "in_progress"):
+                subj = t.get("content") or "untitled"
+                incomplete_subjects.append(subj)
+
     # Collect all issues that should prevent stopping
     cwd = data.get("cwd") or "."
     issues: list[str] = []
 
     # Check 1: Incomplete tasks/todos
     if incomplete_todos > 0:
-        issues.append(f"Open tasks: {incomplete_todos} remaining")
+        subjects_text = ", ".join(incomplete_subjects[:10]) if incomplete_subjects else "unknown"
+        issues.append(f"Open tasks: {incomplete_todos} remaining: {subjects_text}")
 
     # Check 2: Active plan drafts (if enabled)
     if should_check_plans():
@@ -305,12 +319,17 @@ Task(subagent_type="general-purpose", prompt="You are agent-a. Find your tasks v
 
 **Blocked tasks:** Check if blocking tasks are complete, then proceed with unblocked work.
 
+## Anti-Rationalization
+- "I can come back to this later" → You'll lose context. Finish while it's fresh.
+- "These tasks are optional" → Tasks were explicitly created. They exist for a reason.
+- "I'll just do a quick save" → Partial work = debugging time tomorrow.
+
 ## Next Action
 Address the issues above, starting with the most critical.
 
 CONTINUE WORKING NOW."""
         do_output_block("Work incomplete", context)
-        output_empty()
+        return output_empty()
 
     # Check for incomplete work patterns in last message
     last_message = analysis["last_assistant_message"]
@@ -341,7 +360,7 @@ If you were in ULTRAWORK mode or working on a task:
 
 Do NOT ask - just finish the work."""
                 do_output_block("Uncommitted changes with incomplete work pattern", context)
-                output_empty()
+                return output_empty()
 
     # If work was done (completed todos exist), check validation status
     if completed_todos > 0:
@@ -359,7 +378,7 @@ Use Task with subagent_type="oh-my-claude:validator" to verify the work:
 
 Do NOT stop until validation passes. Run the validator now."""
             do_output_block("Validation required before completion", context)
-            output_empty()
+            return output_empty()
         else:
             # Validation already ran - inject completion summary prompt
             context = """[COMPLETION SUMMARY REQUIRED]
@@ -373,10 +392,10 @@ Work is complete and validated. Before stopping, provide a brief completion summ
 
 Provide this summary now, then you may stop."""
             do_output_block("Completion summary required", context)
-            output_empty()
+            return output_empty()
 
     # No intervention needed - allow stop
-    output_empty()
+    return output_empty()
 
 
 if __name__ == "__main__":
