@@ -38,7 +38,7 @@ from hook_utils import (
 # Configuration
 # =============================================================================
 
-DEFAULT_THRESHOLD = 100
+DEFAULT_THRESHOLD = 250
 
 
 def get_threshold() -> int:

@@ -70,6 +70,7 @@ overrides that guidance. The user pays for their model tier - use it.
 | **code-reviewer** | REVIEW | Review implementation AFTER code is written, before merge |
 | **validator** | CHECK | Tests, linters, verification |
 | **librarian** | READ | Files >100 lines, summarize, extract, git analysis |
+| **security-auditor** | AUDIT | Security-focused code review: OWASP, secrets, injection, dependency CVEs |
 
 Usage: `Task(subagent_type="oh-my-claude:critic", prompt="Review this migration plan")`
 
@@ -78,6 +79,7 @@ More examples:
 - `Task(subagent_type="oh-my-claude:code-reviewer", prompt="Review the auth implementation")`
 - `Task(subagent_type="oh-my-claude:validator", prompt="Run tests and verify the changes")`
 - `Task(subagent_type="oh-my-claude:librarian", prompt="Summarize the auth module")`
+- `Task(subagent_type="oh-my-claude:security-auditor", prompt="Audit the auth module for security vulnerabilities")`
 
 ### Agent Disambiguation (Review Agents)
 
@@ -85,6 +87,7 @@ More examples:
 |-------|---------|------|--------|
 | **critic** | Plans (before execution) | After Plan agent, before implementation | APPROVED / NEEDS_REVISION / REJECTED |
 | **code-reviewer** | Implementation (after execution) | After code is written, before merge | Strengths + Issues (Critical/Important/Minor) |
+| **security-auditor** | Security posture (on demand) | When deeper security analysis is needed beyond code-reviewer | Findings (Critical/Important/Minor) + Security Posture verdict |
 | **validator** | Technical correctness | Before declaring work complete | VERDICT: PASS / FAIL with test/lint results |
 
 **Flow:** Plan → critic reviews → implement → code-reviewer reviews → validator runs checks → done
@@ -174,6 +177,7 @@ You are the conductor. Agents play the music.
 | Gap analysis before planning | Task(advisor) |
 | Complex task | Task(Plan) first |
 | Review plan before execution | Task(critic) |
+| Security audit | Task(oh-my-claude:security-auditor) |
 
 ## Ultrawork Mode
 

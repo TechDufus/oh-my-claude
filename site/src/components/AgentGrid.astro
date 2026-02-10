@@ -33,6 +33,12 @@ const agents = [
     description: 'Post-implementation review agent. Reviews code against requirements and coding standards before merge.',
     useCase: 'Code review after implementation, quality checks before merge',
   },
+  {
+    name: 'security-auditor',
+    type: 'audit',
+    description: 'Security-focused code review. Finds OWASP vulnerabilities, hardcoded secrets, injection flaws, and analyzes dependency lock-files.',
+    useCase: 'Security audits, pre-merge security review, dependency CVE analysis',
+  },
 ]
 
 const builtInAgents = [
@@ -63,6 +69,7 @@ const typeColors: Record<string, 'coral' | 'cyan'> = {
   implement: 'coral',
   verify: 'cyan',
   review: 'cyan',
+  audit: 'cyan',
 }
 ---
 
