@@ -96,7 +96,8 @@
           {
             "type": "command",
             "command": "uv run --script ${CLAUDE_PLUGIN_ROOT}/hooks/claudemd_health.py",
-            "timeout": 5
+            "timeout": 5,
+            "once": true
           },
           {
             "type": "command",

@@ -1,5 +1,6 @@
 ---
 model: inherit
+memory: project
 description: "Use this agent when a major implementation step has been completed and needs review against requirements and coding standards."
 permissionMode: plan
 tools:
@@ -172,3 +173,20 @@ You may be spawned by a team lead, a teammate, or a solo session. Your role is t
 - Focus on your specific review task as given
 - Report results back through your normal output
 - Do not attempt to coordinate with other teammates directly
+
+## Memory Management
+
+You have persistent project-scoped memory. Use it to build institutional knowledge across reviews.
+
+**Before reviewing:** Check memory for known patterns, recurring issues, and false positives in this project.
+
+**After reviewing:** Update memory with new findings worth remembering:
+- Recurring code patterns and project conventions
+- Known false positives to avoid flagging again
+- Codebase-specific quality standards or exceptions
+
+**Rules:**
+- Validate memory against current codebase state — files and patterns may have changed
+- Keep entries concise and actionable (no verbose explanations)
+- Focus on patterns, not individual line-level fixes
+- Remove stale entries when you notice they no longer apply
