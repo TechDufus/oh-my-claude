@@ -13,8 +13,8 @@ When you dump a 500-line file into context, that's 500 lines less reasoning capa
 
 | Size | Action |
 |------|--------|
-| <100 lines | Read directly |
-| >100 lines | Delegate to librarian |
+| <500 lines | Read directly |
+| >500 lines | Delegate to librarian |
 | Unknown | Delegate (safe default) |
 | Multiple files | ALWAYS delegate |
 
@@ -69,7 +69,7 @@ overrides that guidance. The user pays for their model tier - use it.
 | **critic** | REVIEW | Review plans critically BEFORE execution |
 | **code-reviewer** | REVIEW | Review implementation AFTER code is written, before merge |
 | **validator** | CHECK | Tests, linters, verification |
-| **librarian** | READ | Files >100 lines, summarize, extract, git analysis |
+| **librarian** | READ | Files >500 lines, summarize, extract, git analysis |
 | **security-auditor** | AUDIT | Security-focused code review: OWASP, secrets, injection, dependency CVEs |
 
 Usage: `Task(subagent_type="oh-my-claude:critic", prompt="Review this migration plan")`
@@ -318,7 +318,7 @@ See [official docs](https://code.claude.com/docs/en/agent-teams) for full refere
 | **CLAUDE.md Health** | SessionStart | `*` | Checks CLAUDE.md health, warns about size/staleness issues |
 | **OpenKanban Status** | SessionStart, PreToolUse, PermissionRequest, UserPromptSubmit, Stop | `*` | Writes agent status when in OpenKanban terminal (via OPENKANBAN_SESSION) |
 | **Ultrawork Detector** | UserPromptSubmit | `*` | Detects ultrawork/ultradebug/ultraresearch keywords, adjusts intensity |
-| **Context Protector** | PreToolUse | `Read` | Blocks large file reads (>100 lines), forces librarian delegation |
+| **Context Protector** | PreToolUse | `Read` | Blocks large file reads (>500 lines), forces librarian delegation |
 | **Danger Blocker** | PreToolUse | `Bash` | Blocks catastrophic commands (rm -rf /, fork bombs), warns on risky patterns |
 | **Commit Quality Enforcer** | PreToolUse | `Bash` | Enforces commit message quality and conventional commit format |
 | **TDD Enforcer** | PreToolUse | `Edit\|Write` | Enforces TDD by requiring test files before source edits (via OMC_TDD_MODE) |
@@ -340,14 +340,14 @@ Customize behavior via environment variables in your `settings.json`:
 ```json
 {
   "env": {
-    "OMC_LARGE_FILE_THRESHOLD": "100"
+    "OMC_LARGE_FILE_THRESHOLD": "500"
   }
 }
 ```
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `OMC_LARGE_FILE_THRESHOLD` | `100` | Lines before Read is blocked |
+| `OMC_LARGE_FILE_THRESHOLD` | `500` | Lines before Read is blocked |
 | `OMC_ALLOW_LARGE_READS` | `0` | Set to `1` to disable large file blocking |
 | `OMC_CONTEXT_WARN_PCT` | `70` | Context % to trigger warning |
 | `OMC_CONTEXT_CRITICAL_PCT` | `85` | Context % for critical warning |

@@ -44,7 +44,7 @@ You used a search tool directly. Direct search = context tax. Agent search = par
 | Instead of | Use |
 |------------|-----|
 | Grep/Glob directly | Explore (built-in agent for finding files/definitions) |
-| Reading large files (>100 lines) | Task(subagent_type="oh-my-claude:librarian") |
+| Reading large files (>500 lines) | Task(subagent_type="oh-my-claude:librarian") |
 
 For large file reads, delegate to librarian — it reads the full file and returns only what matters.
 

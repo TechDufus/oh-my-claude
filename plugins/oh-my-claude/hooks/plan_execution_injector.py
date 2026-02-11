@@ -114,7 +114,7 @@ Your plan has been approved. When you return to execute:
 | Task Type | Agent | When to Use |
 |-----------|-------|-------------|
 | Find files | Explore (built-in) | Locating code, definitions |
-| Read content | oh-my-claude:librarian | Summarizing files >100 lines |
+| Read content | oh-my-claude:librarian | Summarizing files >500 lines |
 | Implement | general-purpose (built-in) | Writing actual code changes |
 | Validate | oh-my-claude:validator | Running tests, linters |""")
 

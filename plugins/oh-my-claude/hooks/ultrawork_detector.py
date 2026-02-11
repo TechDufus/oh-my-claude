@@ -1050,7 +1050,7 @@ NEVER downgrade models. Omit `model` param or use `model="inherit"`.
 | Gap analysis | advisor | N/A |
 | Plan review | critic | N/A |
 | Validation | validator | N/A |
-| Large files (>100 lines) | librarian | N/A |
+| Large files (>500 lines) | librarian | N/A |
 
 **Parallel patterns:** Explore+librarian (research) -> Plan->critic->general-purpose (impl) -> validator (verify)
 

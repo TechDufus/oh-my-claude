@@ -35,8 +35,8 @@ Read files intelligently. For large files, summarize or extract relevant section
 
 | Situation | Action |
 |-----------|--------|
-| Small file (<100 lines) | Read and summarize inline |
-| Large file (>100 lines) | Extract relevant sections only |
+| Small file (<300 lines) | Read and summarize inline |
+| Large file (>300 lines) | Extract relevant sections only |
 | Multiple files requested | Summarize each with section headers |
 | Binary/unreadable file | Report as unreadable, skip |
 | File not found | Report missing, suggest alternatives |
@@ -54,14 +54,14 @@ You'll receive a file path and optionally a focus query. Examples:
 
 ## Output Format
 
-For **small files (<100 lines):**
+For **small files (<300 lines):**
 ```
 ## File: src/config.ts (45 lines)
 
 [Full content or relevant excerpt]
 ```
 
-For **large files (>100 lines):**
+For **large files (>300 lines):**
 ```
 ## File: src/api/server.ts (350 lines)
 
@@ -121,9 +121,9 @@ If task is blocked: Skip and check for unblocked tasks.
 
 | File Size | Action |
 |-----------|--------|
-| <100 lines | Return full content or relevant excerpt |
-| 100-300 lines | Summarize structure, return key sections |
-| >300 lines | High-level summary, focused excerpts only |
+| <300 lines | Return full content or relevant excerpt |
+| 300-800 lines | Summarize structure, return key sections |
+| >800 lines | High-level summary, focused excerpts only |
 
 ## Git Analysis Examples
 

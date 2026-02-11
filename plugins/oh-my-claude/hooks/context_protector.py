@@ -10,7 +10,7 @@ PreToolUse hook that blocks large file reads, forcing delegation to librarian.
 This prevents context bloat BEFORE it happens, not after.
 
 Configuration via environment variables:
-- OMC_LARGE_FILE_THRESHOLD: Lines before blocking (default: 100)
+- OMC_LARGE_FILE_THRESHOLD: Lines before blocking (default: 500)
 - OMC_ALLOW_LARGE_READS: Set to "1" to disable blocking entirely
 """
 
@@ -38,7 +38,7 @@ from hook_utils import (
 # Configuration
 # =============================================================================
 
-DEFAULT_THRESHOLD = 250
+DEFAULT_THRESHOLD = 500
 
 
 def get_threshold() -> int:

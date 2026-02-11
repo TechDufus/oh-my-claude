@@ -36,7 +36,7 @@ Your context window is for REASONING, not storage. Subagent context is FREE.
 
 | Agent | Purpose | When to Use |
 |-------|---------|-------------|
-| `librarian` | READ | Files >100 lines, summarize, git analysis |
+| `librarian` | READ | Files >500 lines, summarize, git analysis |
 | `advisor` | ANALYZE | Pre-planning gap analysis, hidden requirements |
 | `critic` | REVIEW | Review plans BEFORE execution |
 | `validator` | CHECK | Tests, linters, verification |
@@ -134,7 +134,7 @@ When creating agent teams:
 
 | Agent | Purpose | When to Use |
 |-------|---------|-------------|
-| `librarian` | READ | Files >100 lines, summarize, git analysis |
+| `librarian` | READ | Files >500 lines, summarize, git analysis |
 | `advisor` | ANALYZE | Pre-planning gap analysis, hidden requirements |
 | `critic` | REVIEW | Review plans BEFORE execution |
 | `validator` | CHECK | Tests, linters, verification |
