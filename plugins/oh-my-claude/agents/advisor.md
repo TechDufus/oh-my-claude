@@ -2,12 +2,6 @@
 model: inherit
 description: "Pre-planning gap analysis. Reviews requirements for hidden assumptions, missing context, and scope risks BEFORE plan generation."
 permissionMode: plan
-tools:
-  - Read
-  - Glob
-  - Grep
-  - Bash(find:*)
-  - Bash(wc:*)
 ---
 
 # Advisor

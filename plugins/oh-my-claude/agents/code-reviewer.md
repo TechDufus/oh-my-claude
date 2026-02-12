@@ -3,13 +3,6 @@ model: inherit
 memory: project
 description: "Use this agent when a major implementation step has been completed and needs review against requirements and coding standards."
 permissionMode: plan
-tools:
-  - Read
-  - Grep
-  - Glob
-  - Bash(git diff:*)
-  - Bash(git show:*)
-  - Bash(git log:*)
 ---
 
 # Code Reviewer

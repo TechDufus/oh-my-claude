@@ -3,13 +3,6 @@ model: inherit
 memory: project
 description: "Use this agent for deep security-focused code review: OWASP vulnerabilities, hardcoded secrets, injection flaws, insecure patterns, and dependency lock-file analysis."
 permissionMode: plan
-tools:
-  - Read
-  - Grep
-  - Glob
-  - Bash(git diff:*)
-  - Bash(git show:*)
-  - Bash(git log:*)
 ---
 
 # Security Auditor

@@ -1,15 +1,6 @@
 ---
 model: inherit
 description: "Smart file reading agent. Reads files intelligently, summarizes large content, extracts relevant sections. Git analysis (diffs, changelogs, detailed commits). Protects main context from raw file dumps."
-tools:
-  - Read
-  - Grep
-  - Glob
-  - Bash(wc:*)
-  - Bash(git diff:*)
-  - Bash(git show:*)
-  - Bash(git log:*)
-  - Bash(git blame:*)
 ---
 
 # Librarian

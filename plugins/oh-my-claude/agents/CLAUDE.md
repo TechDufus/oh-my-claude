@@ -78,7 +78,6 @@ You'll receive a specific implementation task. Examples:
 |-------|-------|-------|
 | `model` | `inherit` | Uses session's model |
 | `description` | string | 1-2 sentences, quoted |
-| `tools` | list | Permissions array |
 
 ## Model Inheritance (CRITICAL)
 
@@ -230,24 +229,16 @@ tools:
 
 ## Tool Permissions
 
-**Unrestricted:**
-```yaml
-- Read
-- Glob
-- Grep
-```
+**Default: Omit `tools` entirely.** Agents inherit the parent session's tool access,
+which is governed by Claude Code's built-in permission system (settings.json,
+permission modes, PermissionRequest hooks). This avoids a redundant restriction
+layer that causes unnecessary permission prompts.
 
-**Restricted Bash:**
-```yaml
-- Bash(git log:*)    # Only git log
-- Bash(find:*)       # Only find
-- Bash(wc:*)         # Only wc
-```
+Use `permissionMode` to control agent behavior instead:
+- `plan` — read-only agents (critic, advisor, librarian, code-reviewer, security-auditor)
+- `default` — standard agents
 
-**Full access:**
-```yaml
-- Bash              # Unrestricted shell
-```
+Only add explicit `tools` if you need to restrict beyond what `permissionMode` provides.
 
 ## Description Pattern
 
@@ -259,11 +250,11 @@ Examples:
 
 ## Agent Tiers
 
-| Tier | Agents | Bash Access |
-|------|--------|-------------|
-| Read-only | librarian | Restricted |
-| Review | critic, code-reviewer, advisor, security-auditor | Restricted |
-| Execution | validator | Full |
+| Tier | Agents | Permission Mode |
+|------|--------|-----------------|
+| Read-only | librarian | plan |
+| Review | critic, code-reviewer, advisor, security-auditor | plan |
+| Execution | validator | default (inherits parent) |
 
 **Note:** Use Claude Code's built-in agents for common tasks:
 - **Explore** - File/definition discovery
@@ -338,7 +329,7 @@ Claude Code has built-in Task API documentation. Focus on small, validateable ta
 
 ## Anti-Patterns
 
-- Don't give read-only agents write tools
+- Don't add explicit `tools` unless `permissionMode` is insufficient
 - Don't omit "What Agent Does NOT Do" section
 - Don't use vague descriptions
-- Don't grant Bash without scoping when possible
+- Don't duplicate Claude Code's permission system with agent-level restrictions

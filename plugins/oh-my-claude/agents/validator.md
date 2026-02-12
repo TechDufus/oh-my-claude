@@ -1,11 +1,6 @@
 ---
 model: inherit
 description: "Quality assurance agent. Runs tests, linters, type checks. Reports pass/fail with specific errors. Does not fix issues."
-tools:
-  - Bash
-  - Read
-  - Glob
-  - Grep
 hooks:
   Stop:
     - matcher: "*"
