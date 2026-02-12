@@ -74,6 +74,16 @@
         ]
       },
       {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "uv run --script ${CLAUDE_PLUGIN_ROOT}/hooks/safe_permissions.py",
+            "timeout": 5
+          }
+        ]
+      },
+      {
         "matcher": ".*",
         "hooks": [
           {

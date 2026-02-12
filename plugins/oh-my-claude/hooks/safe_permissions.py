@@ -98,34 +98,29 @@ SAFE_PATTERNS.add("wc_cmd", r"^wc\b", re.IGNORECASE)
 SAFE_PATTERNS.add("which_cmd", r"^which\b", re.IGNORECASE)
 SAFE_PATTERNS.add("echo_cmd", r"^echo\b", re.IGNORECASE)
 
-# All pattern names for iteration
-SAFE_PATTERN_NAMES = [
-    "npm_test",
-    "npx_test",
-    "yarn_test",
-    "pnpm_test",
-    "pytest",
-    "ruff",
-    "mypy",
-    "black",
-    "uv_pytest",
-    "go_test",
-    "golint",
-    "cargo",
-    "git_readonly",
-    "make_safe",
-    "vitest",
-    "bun_test",
-    "deno_test",
-    "coverage",
-    "codecov",
-    "ls_cmd",
-    "cat_cmd",
-    "head_tail",
-    "wc_cmd",
-    "which_cmd",
-    "echo_cmd",
-]
+# Filesystem inspection
+SAFE_PATTERNS.add("tree_cmd", r"^tree\b", re.IGNORECASE)
+SAFE_PATTERNS.add("file_cmd", r"^file\b", re.IGNORECASE)
+SAFE_PATTERNS.add("stat_cmd", r"^stat\b", re.IGNORECASE)
+SAFE_PATTERNS.add("du_cmd", r"^du\b", re.IGNORECASE)
+SAFE_PATTERNS.add("df_cmd", r"^df\b", re.IGNORECASE)
+SAFE_PATTERNS.add("pwd_cmd", r"^pwd$", re.IGNORECASE)
+SAFE_PATTERNS.add("dirname_cmd", r"^(dirname|basename|realpath)\b", re.IGNORECASE)
+
+# System info
+SAFE_PATTERNS.add("uname_cmd", r"^uname\b", re.IGNORECASE)
+SAFE_PATTERNS.add("hostname_cmd", r"^hostname$", re.IGNORECASE)
+SAFE_PATTERNS.add("id_whoami", r"^(id|whoami)$", re.IGNORECASE)
+SAFE_PATTERNS.add("date_cmd", r"^date\b", re.IGNORECASE)
+SAFE_PATTERNS.add("uptime_cmd", r"^uptime$", re.IGNORECASE)
+
+# Version checks (strict — $ anchor prevents trailing args)
+SAFE_PATTERNS.add("version_check", r"^(node|python3?|ruby|go|rustc|cargo|npm|pip|uv|git|docker|kubectl|java|bun|deno)\s+(--version|-version|-V|version)$", re.IGNORECASE)
+
+# Dev tool inspection
+SAFE_PATTERNS.add("jq_cmd", r"^(jq|yq)\b", re.IGNORECASE)
+SAFE_PATTERNS.add("docker_list", r"^docker\s+(ps|images)\b", re.IGNORECASE)
+SAFE_PATTERNS.add("kubectl_get", r"^kubectl\s+get\s+(?!secrets?\b)", re.IGNORECASE)
 
 
 def has_shell_operators(command: str) -> bool:
@@ -313,6 +308,42 @@ def is_path_in_project(path: str) -> bool:
         return False
 
 
+CLAUDE_INTERNAL_DIRS = (".claude/plans", ".claude/notepads", ".claude/tasks")
+
+
+def is_claude_internal_path(path: str) -> bool:
+    """Check if path is within Claude's internal working directories."""
+    if not path:
+        return False
+    cwd = os.getcwd()
+    if not os.path.isabs(path):
+        path = os.path.join(cwd, path)
+    try:
+        resolved = os.path.realpath(path)
+        cwd_resolved = os.path.realpath(cwd)
+        for allowed_dir in CLAUDE_INTERNAL_DIRS:
+            allowed_path = os.path.realpath(os.path.join(cwd_resolved, allowed_dir))
+            if resolved.startswith(allowed_path + os.sep) or resolved == allowed_path:
+                return True
+    except (OSError, ValueError):
+        pass
+    return False
+
+
+# Catastrophic patterns — hard-deny (moved from danger_blocker.py for PermissionRequest)
+CATASTROPHIC_PATTERNS = [
+    ("root_delete", re.compile(r"rm\s+(-[a-zA-Z]*r[a-zA-Z]*\s+|.*\s+)/?['\"]?/['\"]?(\s|$)", re.I), "recursive delete of root filesystem"),
+    ("home_delete", re.compile(r"rm\s+(-[a-zA-Z]*r[a-zA-Z]*\s+|.*\s+)['\"]?~/?['\"]?(\s|$)", re.I), "recursive delete of home directory"),
+    ("sudo_rm_recursive", re.compile(r"sudo\s+rm\s+.*-r", re.I), "sudo recursive delete"),
+    ("fork_bomb", re.compile(r":\(\)\s*\{.*\|.*&.*\}\s*;?\s*:", re.I), "fork bomb"),
+    ("fork_bomb_named", re.compile(r"\w+\(\)\s*\{.*\w+\s*\|\s*\w+\s*&", re.I), "fork bomb (named variant)"),
+    ("dd_device", re.compile(r"dd\s+.*of=/dev/(sd|hd|nvme|vd)", re.I), "overwriting block device"),
+    ("mkfs_device", re.compile(r"mkfs.*\s+/dev/", re.I), "formatting block device"),
+    ("device_redirect", re.compile(r">\s*/dev/(sd|hd|nvme)", re.I), "redirecting to block device"),
+    ("chmod_root", re.compile(r"chmod\s+-R\s+000\s+/", re.I), "removing all permissions from root"),
+]
+
+
 def is_safe_read_tool(tool_name: str, tool_input: dict | str) -> tuple[bool, str | None]:
     """
     Check if a Read/Glob/Grep operation is safe to auto-approve.
@@ -351,7 +382,7 @@ def is_safe_read_tool(tool_name: str, tool_input: dict | str) -> tuple[bool, str
 
 def _match_safe_pattern(cmd: str) -> str | None:
     """Check if a single command matches any safe pattern. Returns pattern name or None."""
-    for pattern_name in SAFE_PATTERN_NAMES:
+    for pattern_name in SAFE_PATTERNS.names():
         if SAFE_PATTERNS.match(pattern_name, cmd):
             return pattern_name
     return None
@@ -430,6 +461,15 @@ def main() -> None:
     tool_name = data.get("tool_name", "")
     tool_input = data.get("tool_input", {})
 
+    # Handle Write/Edit tools - auto-approve Claude internal paths
+    if tool_name in ("Write", "Edit"):
+        file_path = tool_input.get("file_path", "") if isinstance(tool_input, dict) else ""
+        if is_claude_internal_path(file_path):
+            output_permission("allow", f"Auto-approved: {tool_name}_claude_internal")
+        else:
+            output_empty()
+        return
+
     # Handle Read/Glob/Grep tools - auto-approve within project directory
     if tool_name in ("Read", "Glob", "Grep"):
         log_debug(f"checking {tool_name} tool for project path")
@@ -461,6 +501,13 @@ def main() -> None:
         return
 
     log_debug(f"checking command: {command[:100]}...")
+
+    # Check catastrophic patterns — deny if not already approved via settings.json
+    for pattern_name, pattern_regex, reason in CATASTROPHIC_PATTERNS:
+        if pattern_regex.search(command):
+            log_debug(f"catastrophic command detected: {reason}")
+            output_permission("deny", f"Blocked: {reason}")
+            return
 
     # Check if command is safe
     is_safe, pattern = is_safe_command(command)

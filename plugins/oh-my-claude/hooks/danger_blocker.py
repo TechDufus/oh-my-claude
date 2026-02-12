@@ -4,7 +4,10 @@
 # dependencies = []
 # ///
 """
-PreToolUse hook that blocks catastrophic Bash commands and warns on risky ones.
+PreToolUse hook that warns on risky Bash patterns (e.g., curl piped to shell).
+
+Catastrophic command blocking has moved to safe_permissions.py (PermissionRequest).
+This hook now only handles warnings via additionalContext.
 
 Environment Variable: OMC_DANGER_BLOCK - default "1" (enabled). Set to "0" to disable.
 """
@@ -18,37 +21,6 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent))
 from hook_utils import hook_main, log_debug, output_empty, parse_bool_env, parse_hook_input, read_stdin_safe
 
-# Catastrophic patterns - must block with JSON deny
-CATASTROPHIC_PATTERNS = [
-    # Mass delete at root or home (NOT subdirectories)
-    # Matches: rm with -r flag, targeting exactly / or ~ (optionally quoted), with optional trailing flags
-    (r'\brm\s+(-[a-zA-Z]+\s+)*["\']?/["\']?(\s|$)', "Blocks deletion of entire filesystem"),
-    (r'\brm\s+(-[a-zA-Z]+\s+)*["\']?~["\']?(\s|$)', "Blocks deletion of entire home directory"),
-
-    # sudo rm -rf anywhere (too dangerous even with paths)
-    (r'\bsudo\s+rm\s+.*-[a-zA-Z]*r[a-zA-Z]*', "sudo rm -rf is blocked for safety"),
-
-    # Fork bomb patterns
-    (r':\(\)\s*\{.*:\s*\|.*\}', "Fork bomb detected"),
-    (r':\s*\(\s*\)\s*\{', "Potential fork bomb"),
-
-    # Disk destruction
-    (r'\bdd\s+.*of=/dev/(sd|hd|nvme|vd)', "Blocks disk overwrite"),
-    (r'\bmkfs\.\w+\s+/dev/', "Blocks filesystem creation on devices"),
-
-    # System destruction
-    (r'>\s*/dev/(sd|hd|nvme)', "Blocks writing directly to disk devices"),
-
-    # Drive zeroing
-    (r'\bdd\s+.*if=/dev/zero\s+.*of=/dev/sd', "Blocks drive zeroing via dd"),
-
-    # Recursive permission lockout
-    (r'\bchmod\s+(-[a-zA-Z]*R[a-zA-Z]*\s+.*|.*-[a-zA-Z]*R[a-zA-Z]*\s+)000\s+/', "Blocks recursive permission lockout"),
-
-    # Fork bomb variant (X(){ X|X& };X)
-    (r'\w+\(\)\s*\{.*\w+\s*\|\s*\w+\s*&', "Fork bomb variant detected"),
-]
-
 # Warn patterns - warn via additionalContext but allow
 WARN_PATTERNS = [
     (r'\bcurl\s+.*\|\s*(ba)?sh', "piping curl to shell executes remote code. Safe alternative: download first, inspect, then run"),
@@ -56,13 +28,6 @@ WARN_PATTERNS = [
     (r'\bwget\s+.*&&\s*(ba)?sh', "wget followed by shell execution of downloaded content. Safe alternative: download first, inspect, then run"),
     (r'\bcurl\s+.*\|\s*base64\s+-d\s*\|\s*(ba)?sh', "piping curl through base64 decode to shell is obfuscated remote code execution. Safe alternative: download first, inspect, then run"),
 ]
-
-
-def output_deny(reason: str) -> None:
-    """Output denial response for PreToolUse hook."""
-    response = {"decision": "deny", "reason": reason}
-    print(json.dumps(response))
-    sys.exit(0)
 
 
 def output_warn(message: str) -> None:
@@ -103,13 +68,6 @@ def main() -> None:
         return
 
     log_debug(f"Checking command: {command[:100]}...")
-
-    # Check catastrophic patterns (block)
-    for pattern, reason in CATASTROPHIC_PATTERNS:
-        if re.search(pattern, command, re.IGNORECASE):
-            log_debug(f"BLOCKED: {reason}")
-            output_deny(f"CATASTROPHIC COMMAND BLOCKED: {reason}")
-            return
 
     # Check warn patterns (allow with warning)
     for pattern, reason in WARN_PATTERNS:

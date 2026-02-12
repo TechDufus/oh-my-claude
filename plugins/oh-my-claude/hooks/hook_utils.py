@@ -405,6 +405,10 @@ class RegexCache:
             raise KeyError(f"pattern '{name}' not in cache")
         return self._patterns[name].search(text)
 
+    def names(self) -> list[str]:
+        """Return all registered pattern names."""
+        return list(self._patterns.keys())
+
     def has(self, name: str) -> bool:
         """Check if a pattern is cached."""
         return name in self._patterns

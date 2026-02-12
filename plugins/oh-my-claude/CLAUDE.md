@@ -319,11 +319,11 @@ See [official docs](https://code.claude.com/docs/en/agent-teams) for full refere
 | **OpenKanban Status** | SessionStart, PreToolUse, PermissionRequest, UserPromptSubmit, Stop | `*` | Writes agent status when in OpenKanban terminal (via OPENKANBAN_SESSION) |
 | **Ultrawork Detector** | UserPromptSubmit | `*` | Detects ultrawork/ultradebug/ultraresearch keywords, adjusts intensity |
 | **Context Protector** | PreToolUse | `Read` | Blocks large file reads (>500 lines), forces librarian delegation |
-| **Danger Blocker** | PreToolUse | `Bash` | Blocks catastrophic commands (rm -rf /, fork bombs), warns on risky patterns |
+| **Danger Blocker** | PreToolUse | `Bash` | Warns on risky patterns (curl piped to shell); catastrophic blocking moved to Safe Permissions |
 | **Commit Quality Enforcer** | PreToolUse | `Bash` | Enforces commit message quality and conventional commit format |
 | **TDD Enforcer** | PreToolUse | `Edit\|Write` | Enforces TDD by requiring test files before source edits (via OMC_TDD_MODE) |
 | **Delegation Enforcer** | PreToolUse | `Edit\|Write` | Context guidance encouraging delegation to specialized agents |
-| **Safe Permissions** | PermissionRequest | `Bash`, `Read\|Glob\|Grep` | Auto-approves safe commands (tests, linters, readonly git) |
+| **Safe Permissions** | PermissionRequest | `Bash`, `Read\|Glob\|Grep`, `Write\|Edit` | Auto-approves safe commands (tests, linters, readonly git, Claude internal paths), denies catastrophic commands |
 | **Plan Execution Injector** | PostToolUse | `ExitPlanMode` | Injects execution context and agent teams guidance after plan approval |
 | **Context Monitor** | PostToolUse | `*` | Warns at 70%+ context usage, critical at 85% |
 | **Edit Error Recovery** | PostToolUse | `*` | Detects Edit tool failures, injects recovery guidance |

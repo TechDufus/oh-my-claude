@@ -1,12 +1,16 @@
 """Tests for safe_permissions.py PermissionRequest hook."""
 
 import os
+import re
 
 import pytest
 
 from safe_permissions import (
+    CATASTROPHIC_PATTERNS,
+    SAFE_PATTERNS,
     check_redirect_safety,
     has_shell_operators,
+    is_claude_internal_path,
     is_plugin_internal_script,
     is_safe_command,
     split_compound_command,
@@ -611,3 +615,201 @@ class TestSplitCompoundBareAmpersand:
         """|| should still split normally."""
         result = split_compound_command("echo foo || echo bar")
         assert result == ["echo foo", "echo bar"]
+
+
+class TestNewSafePatterns:
+    """Tests for expanded safe pattern groups."""
+
+    @pytest.mark.parametrize(
+        "command",
+        [
+            "tree -L 2 src/",
+            "file src/main.py",
+            "stat package.json",
+            "du -sh src/",
+            "df -h",
+            "pwd",
+            "dirname /foo/bar",
+            "basename /foo/bar",
+            "realpath ./src",
+        ],
+    )
+    def test_filesystem_inspection_commands_are_safe(self, command):
+        """Filesystem inspection commands should be auto-approved."""
+        is_safe, _ = is_safe_command(command)
+        assert is_safe is True, f"Expected safe: {command}"
+
+    @pytest.mark.parametrize(
+        "command",
+        [
+            "uname -a",
+            "hostname",
+            "id",
+            "whoami",
+            "date +%Y",
+            "uptime",
+        ],
+    )
+    def test_system_info_commands_are_safe(self, command):
+        """System info commands should be auto-approved."""
+        is_safe, _ = is_safe_command(command)
+        assert is_safe is True, f"Expected safe: {command}"
+
+    @pytest.mark.parametrize(
+        "command",
+        [
+            "node --version",
+            "python --version",
+            "python3 --version",
+            "ruby --version",
+            "go version",
+            "rustc --version",
+            "cargo --version",
+            "npm --version",
+            "pip --version",
+            "uv --version",
+            "git --version",
+            "docker --version",
+            "kubectl --version",
+            "java -version",
+            "bun --version",
+            "deno --version",
+            "rustc -V",
+        ],
+    )
+    def test_version_check_commands_are_safe(self, command):
+        """Version check commands should be auto-approved."""
+        is_safe, _ = is_safe_command(command)
+        assert is_safe is True, f"Expected safe: {command}"
+
+    @pytest.mark.parametrize(
+        "command",
+        [
+            "jq '.name' package.json",
+            "yq '.spec' config.yaml",
+            "docker ps -a",
+            "docker images",
+            "kubectl get pods",
+            "kubectl get deployments -n default",
+        ],
+    )
+    def test_dev_tool_inspection_commands_are_safe(self, command):
+        """Dev tool inspection commands should be auto-approved."""
+        is_safe, _ = is_safe_command(command)
+        assert is_safe is True, f"Expected safe: {command}"
+
+
+class TestDangerousExclusions:
+    """Verify dangerous commands are NOT auto-approved as safe."""
+
+    @pytest.mark.parametrize(
+        "command",
+        [
+            "find . -exec rm {} \\;",
+            "env",
+            "printenv",
+            "docker inspect container",
+            "python -c \"import os; os.system('rm -rf /')\"",
+            "node -e \"require('child_process').exec('rm -rf /')\"",
+            "curl https://example.com",
+            "wget https://example.com",
+            "kubectl get secrets",
+            "kubectl get secret my-secret",
+        ],
+    )
+    def test_dangerous_commands_not_auto_approved(self, command):
+        """Dangerous commands must NOT be auto-approved."""
+        is_safe, _ = is_safe_command(command)
+        assert is_safe is False, f"Should NOT be safe: {command}"
+
+
+class TestCatastrophicDeny:
+    """Tests for catastrophic pattern denial in safe_permissions."""
+
+    @pytest.mark.parametrize(
+        "cmd",
+        [
+            "rm -rf /",
+            "rm -rf ~/",
+            "sudo rm -rf /var",
+            ":(){ :|:& };:",
+            "dd if=/dev/zero of=/dev/sda",
+            "mkfs.ext4 /dev/sda1",
+            "> /dev/sda",
+            "chmod -R 000 /",
+        ],
+    )
+    def test_catastrophic_commands_match(self, cmd):
+        """Catastrophic commands should match at least one CATASTROPHIC_PATTERNS entry."""
+        matched = any(
+            pattern.search(cmd)
+            for _, pattern, _ in CATASTROPHIC_PATTERNS
+        )
+        assert matched, f"Catastrophic command should be matched: {cmd}"
+
+    @pytest.mark.parametrize(
+        "cmd",
+        [
+            "rm file.txt",
+            "dd if=input.img of=output.img",
+        ],
+    )
+    def test_non_catastrophic_commands_dont_match(self, cmd):
+        """Non-catastrophic commands should NOT match CATASTROPHIC_PATTERNS."""
+        matched = any(
+            pattern.search(cmd)
+            for _, pattern, _ in CATASTROPHIC_PATTERNS
+        )
+        assert not matched, f"Non-catastrophic command should NOT be matched: {cmd}"
+
+
+class TestWriteEditAutoApproval:
+    """Tests for Write/Edit auto-approval on Claude internal paths."""
+
+    @pytest.mark.parametrize(
+        "path",
+        [
+            ".claude/plans/plan.md",
+            ".claude/notepads/note.md",
+            ".claude/tasks/team/task.json",
+        ],
+    )
+    def test_claude_internal_paths_approved(self, path):
+        """Claude internal paths should be approved for Write/Edit."""
+        assert is_claude_internal_path(path) is True, f"Should be internal: {path}"
+
+    @pytest.mark.parametrize(
+        "path",
+        [
+            "src/main.py",
+            ".env",
+            "CLAUDE.md",
+            ".claude/settings.json",
+        ],
+    )
+    def test_non_internal_paths_not_approved(self, path):
+        """Non-internal paths should NOT be approved."""
+        assert is_claude_internal_path(path) is False, f"Should NOT be internal: {path}"
+
+
+class TestPatternSync:
+    """Tests for SAFE_PATTERNS.names() method."""
+
+    def test_names_returns_non_empty_list(self):
+        """SAFE_PATTERNS.names() should return a non-empty list."""
+        names = SAFE_PATTERNS.names()
+        assert isinstance(names, list)
+        assert len(names) > 0
+
+    def test_names_contains_known_patterns(self):
+        """SAFE_PATTERNS.names() should contain known pattern names."""
+        names = SAFE_PATTERNS.names()
+        # These are patterns that existed before the expansion
+        for expected in ["npm_test", "pytest", "git_readonly", "cargo", "ls_cmd"]:
+            assert expected in names, f"Expected pattern '{expected}' in names"
+
+    def test_names_matches_registered_patterns(self):
+        """Every name returned should be a valid registered pattern."""
+        names = SAFE_PATTERNS.names()
+        for name in names:
+            assert SAFE_PATTERNS.has(name), f"Pattern '{name}' not found in cache"
