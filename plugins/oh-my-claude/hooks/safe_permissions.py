@@ -308,7 +308,7 @@ def is_path_in_project(path: str) -> bool:
         return False
 
 
-CLAUDE_INTERNAL_DIRS = (".claude/plans", ".claude/notepads", ".claude/tasks")
+CLAUDE_INTERNAL_DIRS = (".claude/plans", ".claude/plans/drafts", ".claude/notepads", ".claude/tasks")
 
 
 def is_claude_internal_path(path: str) -> bool:
