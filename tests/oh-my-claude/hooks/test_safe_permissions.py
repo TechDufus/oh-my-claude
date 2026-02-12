@@ -770,8 +770,11 @@ class TestWriteEditAutoApproval:
         "path",
         [
             ".claude/plans/plan.md",
+            ".claude/plans/drafts/plan.md",
             ".claude/notepads/note.md",
             ".claude/tasks/team/task.json",
+            "../../../../../.claude/plans/drafts/plan.md",
+            "../../.claude/notepads/note.md",
         ],
     )
     def test_claude_internal_paths_approved(self, path):

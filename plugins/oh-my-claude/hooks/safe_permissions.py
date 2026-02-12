@@ -312,21 +312,25 @@ CLAUDE_INTERNAL_DIRS = (".claude/plans", ".claude/plans/drafts", ".claude/notepa
 
 
 def is_claude_internal_path(path: str) -> bool:
-    """Check if path is within Claude's internal working directories."""
+    """Check if path is within Claude's internal working directories.
+
+    Uses path-component matching so traversal paths like
+    ../../../../../.claude/plans/drafts/file.md are recognized
+    regardless of how many parent-dir segments precede .claude/.
+    """
     if not path:
         return False
-    cwd = os.getcwd()
     if not os.path.isabs(path):
-        path = os.path.join(cwd, path)
+        path = os.path.join(os.getcwd(), path)
     try:
         resolved = os.path.realpath(path)
-        cwd_resolved = os.path.realpath(cwd)
-        for allowed_dir in CLAUDE_INTERNAL_DIRS:
-            allowed_path = os.path.realpath(os.path.join(cwd_resolved, allowed_dir))
-            if resolved.startswith(allowed_path + os.sep) or resolved == allowed_path:
-                return True
     except (OSError, ValueError):
-        pass
+        return False
+    for allowed_dir in CLAUDE_INTERNAL_DIRS:
+        # Match /.claude/plans/ (or /notepads/, /tasks/) anywhere in resolved path
+        marker = os.sep + allowed_dir + os.sep
+        if marker in resolved or resolved.endswith(os.sep + allowed_dir):
+            return True
     return False
 
 
