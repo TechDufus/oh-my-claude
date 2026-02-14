@@ -33,7 +33,7 @@ from hook_utils import (
 
 def output_deny(reason: str) -> None:
     """Output denial response for PreToolUse hook."""
-    response = {"decision": "deny", "reason": reason}
+    response = {"decision": "block", "reason": reason}
     print(json.dumps(response))
     sys.exit(0)
 
