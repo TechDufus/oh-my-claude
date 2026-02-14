@@ -284,8 +284,7 @@ class TestAgentSessionSkip:
         output = captured.getvalue()
         if output.strip():
             result = json.loads(output)
-            # Should contain a deny decision
-            assert result.get("decision") == "deny" or result.get("reason")
+            assert result.get("decision") == "block"
 
     def test_empty_agent_type_still_blocks(self, tmp_path):
         """Empty agent_type should not bypass blocking."""
@@ -311,7 +310,6 @@ class TestAgentSessionSkip:
             assert exc_info.value.code == 0
 
         output = captured.getvalue()
-        # Empty agent_type should NOT bypass, so there should be a deny decision
         if output.strip():
             result = json.loads(output)
-            assert result.get("decision") == "deny" or result.get("reason")
+            assert result.get("decision") == "block"

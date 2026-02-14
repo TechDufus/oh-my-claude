@@ -422,7 +422,7 @@ class TestHookIntegration:
         result = self.run_hook(hook_path, input_data, env={"OMC_TDD_MODE": "enforced"})
         assert result.returncode == 0
         output = self.parse_output(result.stdout)
-        assert output.get("decision") == "deny"
+        assert output.get("decision") == "block"
         assert "TDD" in output.get("reason", "")
 
     def test_hook_allows_edit_when_test_exists(self, hook_path, tmp_path):
@@ -456,4 +456,4 @@ class TestHookIntegration:
         result = self.run_hook(hook_path, input_data, env={"OMC_TDD_MODE": "enforced"})
         assert result.returncode == 0
         output = self.parse_output(result.stdout)
-        assert output.get("decision") == "deny"
+        assert output.get("decision") == "block"
