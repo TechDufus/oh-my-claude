@@ -6,6 +6,7 @@
         "hooks": [
           {
             "type": "command",
+            "statusMessage": "Checking file size...",
             "command": "uv run --script ${CLAUDE_PLUGIN_ROOT}/hooks/context_protector.py",
             "timeout": 5
           }
@@ -16,11 +17,13 @@
         "hooks": [
           {
             "type": "command",
+            "statusMessage": "Scanning command...",
             "command": "uv run --script ${CLAUDE_PLUGIN_ROOT}/hooks/danger_blocker.py",
             "timeout": 5
           },
           {
             "type": "command",
+            "statusMessage": "Validating commit message...",
             "command": "uv run --script ${CLAUDE_PLUGIN_ROOT}/hooks/commit_quality_enforcer.py",
             "timeout": 10
           }
@@ -31,11 +34,13 @@
         "hooks": [
           {
             "type": "command",
+            "statusMessage": "Checking test files...",
             "command": "uv run --script ${CLAUDE_PLUGIN_ROOT}/hooks/tdd_enforcer.py",
             "timeout": 5
           },
           {
             "type": "command",
+            "statusMessage": "Checking delegation...",
             "command": "uv run --script ${CLAUDE_PLUGIN_ROOT}/hooks/delegation_enforcer.py",
             "timeout": 5
           }
@@ -46,6 +51,7 @@
         "hooks": [
           {
             "type": "command",
+            "statusMessage": "Updating status...",
             "command": "uv run --script ${CLAUDE_PLUGIN_ROOT}/hooks/openkanban_status.py",
             "timeout": 2
           }
@@ -58,6 +64,7 @@
         "hooks": [
           {
             "type": "command",
+            "statusMessage": "Checking permissions...",
             "command": "uv run --script ${CLAUDE_PLUGIN_ROOT}/hooks/safe_permissions.py",
             "timeout": 5
           }
@@ -68,6 +75,7 @@
         "hooks": [
           {
             "type": "command",
+            "statusMessage": "Checking permissions...",
             "command": "uv run --script ${CLAUDE_PLUGIN_ROOT}/hooks/safe_permissions.py",
             "timeout": 5
           }
@@ -78,6 +86,7 @@
         "hooks": [
           {
             "type": "command",
+            "statusMessage": "Checking permissions...",
             "command": "uv run --script ${CLAUDE_PLUGIN_ROOT}/hooks/safe_permissions.py",
             "timeout": 5
           }
@@ -88,6 +97,7 @@
         "hooks": [
           {
             "type": "command",
+            "statusMessage": "Updating status...",
             "command": "uv run --script ${CLAUDE_PLUGIN_ROOT}/hooks/openkanban_status.py",
             "timeout": 2
           }
@@ -100,17 +110,20 @@
         "hooks": [
           {
             "type": "command",
+            "statusMessage": "Loading context protection...",
             "command": "uv run --script ${CLAUDE_PLUGIN_ROOT}/hooks/context_guardian.py",
             "timeout": 5
           },
           {
             "type": "command",
+            "statusMessage": "Checking CLAUDE.md health...",
             "command": "uv run --script ${CLAUDE_PLUGIN_ROOT}/hooks/claudemd_health.py",
             "timeout": 5,
             "once": true
           },
           {
             "type": "command",
+            "statusMessage": "Updating status...",
             "command": "uv run --script ${CLAUDE_PLUGIN_ROOT}/hooks/openkanban_status.py",
             "timeout": 2
           }
@@ -123,11 +136,13 @@
         "hooks": [
           {
             "type": "command",
+            "statusMessage": "Detecting mode...",
             "command": "uv run --script ${CLAUDE_PLUGIN_ROOT}/hooks/ultrawork_detector.py",
             "timeout": 5
           },
           {
             "type": "command",
+            "statusMessage": "Updating status...",
             "command": "uv run --script ${CLAUDE_PLUGIN_ROOT}/hooks/openkanban_status.py",
             "timeout": 2
           }
@@ -140,16 +155,19 @@
         "hooks": [
           {
             "type": "command",
+            "statusMessage": "Checking incomplete tasks...",
             "command": "uv run --script ${CLAUDE_PLUGIN_ROOT}/hooks/todo_enforcer.py",
             "timeout": 10
           },
           {
             "type": "command",
+            "statusMessage": "Updating status...",
             "command": "uv run --script ${CLAUDE_PLUGIN_ROOT}/hooks/openkanban_status.py",
             "timeout": 2
           },
           {
             "type": "command",
+            "statusMessage": "Sending notification...",
             "command": "uv run --script ${CLAUDE_PLUGIN_ROOT}/hooks/notification_alert.py",
             "timeout": 5
           }
@@ -162,6 +180,7 @@
         "hooks": [
           {
             "type": "command",
+            "statusMessage": "Sending notification...",
             "command": "uv run --script ${CLAUDE_PLUGIN_ROOT}/hooks/notification_alert.py",
             "timeout": 5
           }
@@ -174,7 +193,41 @@
         "hooks": [
           {
             "type": "command",
+            "statusMessage": "Preparing execution context...",
             "command": "uv run --script ${CLAUDE_PLUGIN_ROOT}/hooks/plan_execution_injector.py",
+            "timeout": 5
+          }
+        ]
+      },
+      {
+        "matcher": "^Edit$",
+        "hooks": [
+          {
+            "type": "command",
+            "statusMessage": "Checking edit result...",
+            "command": "uv run --script ${CLAUDE_PLUGIN_ROOT}/hooks/edit_error_recovery.py",
+            "timeout": 5
+          }
+        ]
+      },
+      {
+        "matcher": "^Grep$|^Glob$",
+        "hooks": [
+          {
+            "type": "command",
+            "statusMessage": "Checking agent usage...",
+            "command": "uv run --script ${CLAUDE_PLUGIN_ROOT}/hooks/agent_usage_reminder.py",
+            "timeout": 5
+          }
+        ]
+      },
+      {
+        "matcher": "^Task$",
+        "hooks": [
+          {
+            "type": "command",
+            "statusMessage": "Checking verification...",
+            "command": "uv run --script ${CLAUDE_PLUGIN_ROOT}/hooks/verification_reminder.py",
             "timeout": 5
           }
         ]
@@ -184,22 +237,8 @@
         "hooks": [
           {
             "type": "command",
+            "statusMessage": "Monitoring context usage...",
             "command": "uv run --script ${CLAUDE_PLUGIN_ROOT}/hooks/context_monitor.py",
-            "timeout": 5
-          },
-          {
-            "type": "command",
-            "command": "uv run --script ${CLAUDE_PLUGIN_ROOT}/hooks/edit_error_recovery.py",
-            "timeout": 5
-          },
-          {
-            "type": "command",
-            "command": "uv run --script ${CLAUDE_PLUGIN_ROOT}/hooks/agent_usage_reminder.py",
-            "timeout": 5
-          },
-          {
-            "type": "command",
-            "command": "uv run --script ${CLAUDE_PLUGIN_ROOT}/hooks/verification_reminder.py",
             "timeout": 5
           }
         ]
@@ -211,6 +250,7 @@
         "hooks": [
           {
             "type": "command",
+            "statusMessage": "Preserving context...",
             "command": "uv run --script ${CLAUDE_PLUGIN_ROOT}/hooks/precompact_context.py",
             "timeout": 10
           }
