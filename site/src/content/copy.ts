@@ -10,7 +10,7 @@ export const heroTagline = "A Claude Code plugin that delegates file reading, se
 export const stats = [
   { value: "6", label: "Custom Agents" },
   { value: "11", label: "Built-in Skills" },
-  { value: "18", label: "Lifecycle Hooks" },
+  { value: "17", label: "Lifecycle Hooks" },
   { value: "1", label: "Plugin Install" },
 ]
 
@@ -120,7 +120,7 @@ export const agentGridSubtitle = "6 custom agents that extend Claude's built-in 
 export const agentTeamsTitle = "One lead. Many teammates."
 export const agentTeamsSubtitle = "Claude Code's agent teams let you spawn parallel sessions that coordinate through shared task lists and messaging. oh-my-claude makes every session smarter."
 export const agentTeamsEnhancements = [
-  { title: "Context protection everywhere", description: "Every teammate gets the same context discipline. Hooks block large file reads, enforce delegation to specialists, and warn on context pressure — automatically." },
+  { title: "Context protection everywhere", description: "Every teammate gets the same context discipline. Hooks enforce delegation to specialists and warn on context pressure — automatically." },
   { title: "Specialist agents for every role", description: "Teammates spawn librarian for file reading, advisor for gap analysis, critic for plan review, and code-reviewer before merge. No teammate wastes context on raw file dumps." },
   { title: "Standards enforced at scale", description: "Commit quality, TDD requirements, danger blocking, and safe permissions — all hooks fire in every session. Three teammates means three times the enforcement, not three times the risk." },
   { title: "Dual-mode intelligence", description: "Hooks detect whether they are running in a lead, teammate, or solo session and adapt behavior accordingly. Team leads get delegation reminders. Teammates get implementation focus." },

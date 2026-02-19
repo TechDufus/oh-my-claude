@@ -2,17 +2,6 @@
   "hooks": {
     "PreToolUse": [
       {
-        "matcher": "Read",
-        "hooks": [
-          {
-            "type": "command",
-            "statusMessage": "Checking file size...",
-            "command": "uv run --script ${CLAUDE_PLUGIN_ROOT}/hooks/context_protector.py",
-            "timeout": 5
-          }
-        ]
-      },
-      {
         "matcher": "Bash",
         "hooks": [
           {

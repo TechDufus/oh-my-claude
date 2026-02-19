@@ -204,7 +204,6 @@ Cross-session continuity means "Accept and clear" carries the full execution con
 |------|------|------|
 | **context-guardian** | Session start | Injects context protection rules |
 | **ultrawork-detector** | Prompt submit | Detects keywords, injects execution directives |
-| **context-protector** | Pre tool use | Blocks large file reads, forces librarian delegation |
 | **safe-permissions** | Permission request | Auto-approves safe commands (tests, linters, readonly) |
 | **todo-enforcer** | Stop | Prevents stopping with incomplete todos |
 | **context-monitor** | Post tool use | Warns at high context usage |
