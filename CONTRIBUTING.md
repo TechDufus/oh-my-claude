@@ -72,6 +72,41 @@ python -m py_compile plugins/oh-my-claude/hooks/*.py
 ruff check plugins/oh-my-claude/hooks/
 ```
 
+## Real Runtime Plugin Load Test
+
+Unit tests are necessary but not sufficient. Run a real Claude Code smoke test
+to confirm the plugin loads from the local directory and hooks execute without
+runtime errors.
+
+```bash
+LOG=$(mktemp /tmp/claude-omc-runtime.XXXXXX)
+
+claude --setting-sources project \
+  --plugin-dir "$(pwd)/plugins/oh-my-claude" \
+  -p "ultrawork runtime smoke test: reply exactly OK" \
+  -d --debug-file "$LOG" --output-format text
+```
+
+Quick verification:
+
+```bash
+rg -n "Loaded inline plugin from path|Loaded hooks from standard location for plugin oh-my-claude|Skill prompt: showing \"oh-my-claude|Hook UserPromptSubmit .* success|Hook .* failed|unhandled exception|Traceback" "$LOG"
+```
+
+Pass criteria:
+
+- Prompt returns successfully (non-error exit code)
+- Log contains plugin load lines (`Loaded inline plugin from path`, hooks loaded)
+- Log contains at least one hook success line
+- Log contains no hook failure/exception lines
+
+Important note on MCP stderr:
+
+- Lines like `MCP server ... Server stderr: ... running on stdio` may be logged
+  as `[ERROR]` even when startup is healthy.
+- Treat this as non-fatal if followed by `Successfully connected` and
+  `Connection established` for the same MCP server.
+
 ## Pull Request Guidelines
 
 1. **Create PRs as drafts** - Mark ready when CI passes

@@ -189,30 +189,14 @@ Context protection is always on. Ultrawork adds execution intensity.
 | Validation | When appropriate | REQUIRED before stopping |
 | Completion | End normally | Must output `<promise>DONE</promise>` |
 
-### External Memory (Notepad System)
+### External Memory
 
-For complex tasks, persist learnings to avoid losing context:
-
-| Notepad | Purpose | When to Use |
-|---------|---------|-------------|
-| `.claude/notepads/learnings.md` | Patterns discovered, gotchas found | After discovering something non-obvious |
-| `.claude/notepads/decisions.md` | Design decisions with rationale | After making architectural choices |
-| `.claude/notepads/issues.md` | Problems encountered, blockers | When hitting blockers or finding bugs |
-| `.claude/notepads/context.md` | Project-specific context | Key info for /prime recovery |
-
-**Entry Format:**
-```markdown
-## [YYYY-MM-DD HH:MM] {title}
-Source: {agent-name or "user"}
-
-{content}
-```
+Use Claude Code auto-memory for durable context via `/memory`.
 
 **Protocol:**
-- Write to notepads BEFORE context fills up
-- Read notepads when resuming work or after /prime
-- Include notepad wisdom in agent delegations
-- Agents should append findings, not overwrite
+- Save key decisions, learnings, and blockers with `/memory` before context fills up
+- Review relevant memory entries when resuming work or after `/prime`
+- Include important memory context in agent delegations
 
 ## Ultra Plan Mode
 

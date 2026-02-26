@@ -10,7 +10,6 @@ Thumbs.db
 
 # Claude local settings
 .claude/settings.local.json
-.claude/notepads/
 
 # Node (if any)
 node_modules/
