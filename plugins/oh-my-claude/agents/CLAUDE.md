@@ -119,7 +119,7 @@ Control how the agent handles permission prompts via the `permissionMode` frontm
 
 **Guidelines:**
 - Read-only agents (librarian): use `plan` or `dontAsk`
-- Review agents (advisor, critic): use `plan` to prevent accidental changes
+- Review agents (advisor, risk-assessor, critic): use `plan` to prevent accidental changes
 - Validation agents (validator): use `plan` for safety, full Bash for test execution
 - Never use `bypassPermissions` unless explicitly required by workflow
 
@@ -235,7 +235,7 @@ permission modes, PermissionRequest hooks). This avoids a redundant restriction
 layer that causes unnecessary permission prompts.
 
 Use `permissionMode` to control agent behavior instead:
-- `plan` — read-only agents (critic, advisor, librarian, code-reviewer, security-auditor)
+- `plan` — read-only agents (critic, advisor, risk-assessor, librarian, code-reviewer, security-auditor)
 - `default` — standard agents
 
 Only add explicit `tools` if you need to restrict beyond what `permissionMode` provides.
@@ -253,7 +253,7 @@ Examples:
 | Tier | Agents | Permission Mode |
 |------|--------|-----------------|
 | Read-only | librarian | plan |
-| Review | critic, code-reviewer, advisor, security-auditor | plan |
+| Review | critic, code-reviewer, advisor, risk-assessor, security-auditor | plan |
 | Execution | validator | default (inherits parent) |
 
 **Note:** Use Claude Code's built-in agents for common tasks:
@@ -265,7 +265,7 @@ Examples:
 
 Agents work the same whether spawned by a team lead, a teammate, or a solo session. When native agent teams are enabled (`CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1`):
 
-- **Team leads** should use specialist agents (librarian, advisor, critic, validator) for focused analysis/verification, and teammates for implementation work
+- **Team leads** should use specialist agents (librarian, advisor, risk-assessor, critic, validator) for focused analysis/verification, and teammates for implementation work
 - **Teammates** can also spawn specialist agents as subagents for their own analysis needs
 - Agent identity and tool constraints are unchanged regardless of caller
 
@@ -287,7 +287,7 @@ Add Task integration to agents that:
 - Can be parallelized (multiple instances of same agent type)
 - Benefit from self-discovery via owner field
 
-Skip Task integration for advisory agents (advisor, critic) that are called on-demand.
+Skip Task integration for advisory agents (advisor, risk-assessor, critic) that are called on-demand.
 
 ### Standard Pattern
 
@@ -310,7 +310,7 @@ If assigned via owner field in a task workflow:
 - Report findings (summaries, extracted content, observations)
 - May spawn follow-up tasks based on discoveries
 
-**Review agents (advisor, critic):**
+**Review agents (advisor, risk-assessor, critic):**
 - Provide analysis and feedback
 - Do not make changes directly
 

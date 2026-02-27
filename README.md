@@ -138,11 +138,12 @@ The hook intercepts your prompt, detects the keyword, and injects context that g
 
 ## The Agent Team
 
-Five specialized subagents complement Claude Code's built-in agents:
+Specialized subagents complement Claude Code's built-in agents:
 
 | Agent | What It Does |
 |-------|--------------|
 | **advisor** | Pre-planning gap analysis for hidden requirements and scope risks |
+| **risk-assessor** | Change-risk assessment for plans and diffs across app/dependency/infra concerns |
 | **critic** | Plan review — finds flaws and edge cases BEFORE execution |
 | **librarian** | Smart reading — summarizes large files, git diffs and changelogs |
 | **validator** | QA — runs tests, linters, type checks, reports pass/fail |
@@ -162,6 +163,7 @@ Claude Code provides these agents out of the box, which oh-my-claude leverages:
 
 ```
 Task(subagent_type="oh-my-claude:librarian", prompt="Summarize src/auth/service.ts")
+Task(subagent_type="oh-my-claude:risk-assessor", prompt="Assess risk for this migration plan")
 Task(subagent_type="oh-my-claude:critic", prompt="Review this implementation plan for flaws")
 Task(subagent_type="oh-my-claude:worker", prompt="Add password reset endpoint")
 Task(subagent_type="oh-my-claude:validator", prompt="Run all tests and report results")
@@ -175,14 +177,15 @@ Subagent context is **isolated** from your main context. When a librarian reads 
 
 ## Enhanced Plan Mode
 
-Enter plan mode (Shift+Tab) and get a structured 6-step pipeline automatically — no magic words needed:
+Enter plan mode (Shift+Tab) and get a structured 7-step pipeline automatically — no magic words needed:
 
 1. **Recon** — Explore and librarian gather codebase context before questions
 2. **Interview** — Smart, recon-informed questions (not generic prompts)
 3. **Research** — Targeted deep research informed by your answers
 4. **Gap Analysis** — Advisor agent catches hidden assumptions and scope risks
-5. **Write Plan** — Structured plan with file:line refs, decisions, and risks
-6. **Critic Review** — Critic must approve before plan exits
+5. **Risk Pass** — Risk-assessor evaluates cross-stack change risk before approval
+6. **Write Plan** — Structured plan with file:line refs, decisions, and risks
+7. **Critic Review** — Critic must approve before plan exits
 
 Cross-session continuity means "Accept and clear" carries the full execution context into the next session automatically.
 
@@ -278,7 +281,7 @@ After restart, use **ultrawork** in any prompt to activate parallel execution mo
 - Claude Code is already smart — add quality gates, not overrides
 - Your context is for reasoning — delegate storage to subagents
 - Hooks work invisibly — better experience without extra commands
-- Specialized agents fill gaps — advisor, critic, validator, worker
+- Specialized agents fill gaps — advisor, risk-assessor, critic, validator, worker
 - Stay out of the way — let Claude do what it does well
 
 ---

@@ -12,7 +12,7 @@ Claude Code plugin providing ultrawork mode, context protection, and specialized
 │   └── CLAUDE.md                     # Testing conventions
 └── plugins/oh-my-claude/             # The actual plugin
     ├── .claude-plugin/plugin.json    # Plugin metadata (version x1)
-    ├── agents/                       # 6 specialized agents
+    ├── agents/                       # 7 specialized agents
     │   └── CLAUDE.md                 # Agent authoring guide
     ├── hooks/                        # Python hooks (PEP 723)
     │   └── CLAUDE.md                 # Hook development patterns

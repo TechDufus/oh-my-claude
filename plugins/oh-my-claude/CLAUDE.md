@@ -57,6 +57,7 @@ overrides that guidance. The user pays for their model tier - use it.
 | Agent | Job | When |
 |-------|-----|------|
 | **advisor** | ANALYZE | Pre-planning gap analysis, hidden requirements, scope risks |
+| **risk-assessor** | ASSESS | Proactive change-risk pass during planning and PR review (functional, security, compatibility, performance, operational) |
 | **critic** | REVIEW | Review plans critically BEFORE execution |
 | **code-reviewer** | REVIEW | Review implementation AFTER code is written, before merge |
 | **validator** | CHECK | Tests, linters, verification |
@@ -67,21 +68,23 @@ Usage: `Task(subagent_type="oh-my-claude:critic", prompt="Review this migration 
 
 More examples:
 - `Task(subagent_type="oh-my-claude:advisor", prompt="Analyze scope risks for this refactor")`
+- `Task(subagent_type="oh-my-claude:risk-assessor", prompt="Assess pre-implementation risk for this migration plan")`
 - `Task(subagent_type="oh-my-claude:code-reviewer", prompt="Review the auth implementation")`
 - `Task(subagent_type="oh-my-claude:validator", prompt="Run tests and verify the changes")`
 - `Task(subagent_type="oh-my-claude:librarian", prompt="Summarize the auth module")`
 - `Task(subagent_type="oh-my-claude:security-auditor", prompt="Audit the auth module for security vulnerabilities")`
 
-### Agent Disambiguation (Review Agents)
+### Agent Disambiguation (Planning + Review Agents)
 
 | Agent | Reviews | When | Output |
 |-------|---------|------|--------|
+| **risk-assessor** | Change risk (plan or diff) | Default for non-trivial planning; optional on PR review | Intent summary + risk factors + 1-10 risk level + mitigations + recommendation |
 | **critic** | Plans (before execution) | After Plan agent, before implementation | APPROVED / NEEDS_REVISION / REJECTED |
 | **code-reviewer** | Implementation (after execution) | After code is written, before merge | Strengths + Issues (Critical/Important/Minor) |
 | **security-auditor** | Security posture (on demand) | When deeper security analysis is needed beyond code-reviewer | Findings (Critical/Important/Minor) + Security Posture verdict |
 | **validator** | Technical correctness | Before declaring work complete | VERDICT: PASS / FAIL with test/lint results |
 
-**Flow:** Plan → critic reviews → implement → code-reviewer reviews → validator runs checks → done
+**Flow:** Plan → advisor scans gaps → risk-assessor evaluates change risk → critic reviews plan → implement → code-reviewer reviews → validator runs checks → done
 
 ### Built-in Agents (Claude Code)
 
@@ -151,7 +154,7 @@ TaskUpdate(taskId="1", status="completed")
 
 You are the conductor. Agents play the music.
 
-- **Explore finds** -> **Librarian reads** -> **Plan designs** -> **Critic reviews** -> **general-purpose implements** -> **Validator checks**
+- **Explore finds** -> **Librarian reads** -> **Plan designs** -> **Advisor scans** -> **Risk-assessor evaluates risk** -> **Critic reviews** -> **general-purpose implements** -> **Validator checks**
 - Launch independent agents in parallel (one message, multiple Task calls)
 - Sequential when dependent: wait for Explore paths before librarian reads them
 - Declare intent before delegating: which agent, what task, expected output
@@ -166,6 +169,7 @@ You are the conductor. Agents play the music.
 | Implement feature | Task(general-purpose) with spec |
 | Verify work | Task(validator) |
 | Gap analysis before planning | Task(advisor) |
+| Risk pass before plan approval | Task(oh-my-claude:risk-assessor) |
 | Complex task | Task(Plan) first |
 | Review plan before execution | Task(critic) |
 | Security audit | Task(oh-my-claude:security-auditor) |
@@ -208,6 +212,7 @@ Auto-activates when entering native plan mode (no keyword needed).
 |-------|----------|
 | Research | Mandatory Explore + librarian before designing |
 | Analysis | Must consider 2+ approaches with tradeoffs |
+| Risk | For non-trivial changes, run risk-assessor before plan approval |
 | Review | Critic agent MUST approve before ExitPlanMode |
 | Handoff | Plan path saved for execution session |
 

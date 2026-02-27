@@ -16,6 +16,12 @@ const agents = [
     useCase: 'Gap analysis before writing plans, catching scope risks',
   },
   {
+    name: 'risk-assessor',
+    type: 'assess',
+    description: 'Proactive change-risk agent. Assesses functional, security, compatibility, performance, and operational risk for plans and diffs.',
+    useCase: 'Non-trivial planning risk pass, PR/diff risk triage',
+  },
+  {
     name: 'critic',
     type: 'review',
     description: 'Critical plan reviewer. Reviews plans to find flaws, edge cases, problems BEFORE execution.',
@@ -68,6 +74,7 @@ const typeColors: Record<string, 'coral' | 'cyan'> = {
   plan: 'coral',
   implement: 'coral',
   verify: 'cyan',
+  assess: 'cyan',
   review: 'cyan',
   audit: 'cyan',
 }
@@ -79,7 +86,7 @@ const typeColors: Record<string, 'coral' | 'cyan'> = {
       Specialized <span class="text-cyan">Agents</span>
     </h2>
     <p class="text-muted-foreground text-center mb-12 max-w-2xl mx-auto">
-      6 custom agents that extend Claude Code's built-in capabilities. Your context window stays clean while they do the heavy lifting.
+      7 custom agents that extend Claude Code's built-in capabilities. Your context window stays clean while they do the heavy lifting.
     </p>
 
     <!-- Custom Agents -->

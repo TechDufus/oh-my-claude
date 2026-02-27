@@ -8,7 +8,7 @@ export const heroTagline = "A Claude Code plugin that delegates file reading, se
 
 // ── Stats Bar ───────────────────────────────────────────────────
 export const stats = [
-  { value: "6", label: "Custom Agents" },
+  { value: "7", label: "Custom Agents" },
   { value: "11", label: "Built-in Skills" },
   { value: "17", label: "Lifecycle Hooks" },
   { value: "1", label: "Plugin Install" },
@@ -97,14 +97,15 @@ export const features = [
 
 // ── Plan Mode ───────────────────────────────────────────────────
 export const planModeSectionTitle = "Plan mode, supercharged."
-export const planModeSectionSubtitle = "Enter plan mode and get a structured 6-step pipeline automatically. No magic words needed — just Shift+Tab."
+export const planModeSectionSubtitle = "Enter plan mode and get a structured 7-step pipeline automatically. No magic words needed — just Shift+Tab."
 export const planModePipeline = [
   { step: 1, label: "Recon", description: "Explore and librarian gather codebase context before any questions are asked.", agent: "Explore + librarian" },
   { step: 2, label: "Interview", description: "Smart, recon-informed questions via AskUserQuestion. No guessing.", agent: null },
   { step: 3, label: "Research", description: "Targeted deep research informed by your answers.", agent: "Explore + librarian" },
   { step: 4, label: "Gap Analysis", description: "Advisor catches hidden assumptions, missing context, and scope risks.", agent: "advisor" },
-  { step: 5, label: "Write Plan", description: "Structured plan with file:line refs, decisions, and risks.", agent: null },
-  { step: 6, label: "Critic Review", description: "Critic must approve before plan exits. Loops until the plan is solid.", agent: "critic" },
+  { step: 5, label: "Risk Pass", description: "Risk-assessor evaluates cross-stack change risk before plan approval.", agent: "risk-assessor" },
+  { step: 6, label: "Write Plan", description: "Structured plan with file:line refs, decisions, and risks.", agent: null },
+  { step: 7, label: "Critic Review", description: "Critic must approve before plan exits. Loops until the plan is solid.", agent: "critic" },
 ]
 export const planModeKeywords = [
   { keyword: "ultrawork", shortcut: "ulw", description: "Maximum execution intensity. Relentless task tracking and parallel delegation." },
@@ -114,14 +115,14 @@ export const planModeKeywords = [
 
 // ── Agent Grid (updated header) ─────────────────────────────────
 export const agentGridTitle = "Meet the swarm"
-export const agentGridSubtitle = "6 custom agents that extend Claude's built-in capabilities. Each does one thing well. None of them pollute your context window."
+export const agentGridSubtitle = "7 custom agents that extend Claude's built-in capabilities. Each does one thing well. None of them pollute your context window."
 
 // ── Agent Teams ─────────────────────────────────────────────────
 export const agentTeamsTitle = "One lead. Many teammates."
 export const agentTeamsSubtitle = "Claude Code's agent teams let you spawn parallel sessions that coordinate through shared task lists and messaging. oh-my-claude makes every session smarter."
 export const agentTeamsEnhancements = [
   { title: "Context protection everywhere", description: "Every teammate gets the same context discipline. Hooks enforce delegation to specialists and warn on context pressure — automatically." },
-  { title: "Specialist agents for every role", description: "Teammates spawn librarian for file reading, advisor for gap analysis, critic for plan review, and code-reviewer before merge. No teammate wastes context on raw file dumps." },
+  { title: "Specialist agents for every role", description: "Teammates spawn librarian for file reading, advisor for gap analysis, risk-assessor for change risk, and critic for plan review. No teammate wastes context on raw file dumps." },
   { title: "Standards enforced at scale", description: "Commit quality, TDD requirements, danger blocking, and safe permissions — all hooks fire in every session. Three teammates means three times the enforcement, not three times the risk." },
   { title: "Dual-mode intelligence", description: "Hooks detect whether they are running in a lead, teammate, or solo session and adapt behavior accordingly. Team leads get delegation reminders. Teammates get implementation focus." },
 ]

@@ -27,12 +27,18 @@ const pipeline = [
   },
   {
     step: 5,
+    label: "Risk Pass",
+    description: "Risk-assessor evaluates cross-stack change risk before plan approval.",
+    agent: "risk-assessor",
+  },
+  {
+    step: 6,
     label: "Write Plan",
     description: "Structured plan with file:line refs, decisions, and risks.",
     agent: null,
   },
   {
-    step: 6,
+    step: 7,
     label: "Critic Review",
     description: "Critic must approve before plan exits. Loops until the plan is solid.",
     agent: "critic",
@@ -64,7 +70,7 @@ const modes = [
       Plan mode, <span class="text-cyan">supercharged.</span>
     </h2>
     <p class="text-muted-foreground text-center mb-12 max-w-2xl mx-auto">
-      Enter plan mode and get a structured 6-step pipeline automatically. No magic words needed — just Shift+Tab.
+      Enter plan mode and get a structured 7-step pipeline automatically. No magic words needed — just Shift+Tab.
     </p>
 
     <!-- Pipeline steps -->
