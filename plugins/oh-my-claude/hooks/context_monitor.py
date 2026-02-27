@@ -128,7 +128,7 @@ def main() -> None:
         warning = (
             f"[CONTEXT CRITICAL: ~{usage_pct*100:.0f}% used]\n"
             f"Delegate large file reads and searches to preserve remaining context.\n"
-            f"Consider: (1) Delegate to subagents (2) Write to notepads (3) Summarize before continuing\n\n"
+            f"Consider: (1) Delegate to subagents (2) Use /memory for key context (3) Summarize before continuing\n\n"
             f"\"I'm almost done\" \u2192 70% full means context tax on every operation. Delegate now."
         )
         output_context("PostToolUse", warning)

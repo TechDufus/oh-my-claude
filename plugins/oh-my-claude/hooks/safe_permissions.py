@@ -308,7 +308,7 @@ def is_path_in_project(path: str) -> bool:
         return False
 
 
-CLAUDE_INTERNAL_DIRS = (".claude/plans", ".claude/plans/drafts", ".claude/notepads", ".claude/tasks")
+CLAUDE_INTERNAL_DIRS = (".claude/plans", ".claude/plans/drafts", ".claude/tasks")
 
 
 def is_claude_internal_path(path: str) -> bool:
@@ -327,7 +327,7 @@ def is_claude_internal_path(path: str) -> bool:
     except (OSError, ValueError):
         return False
     for allowed_dir in CLAUDE_INTERNAL_DIRS:
-        # Match /.claude/plans/ (or /notepads/, /tasks/) anywhere in resolved path
+        # Match /.claude/plans/ (or /tasks/) anywhere in resolved path
         marker = os.sep + allowed_dir + os.sep
         if marker in resolved or resolved.endswith(os.sep + allowed_dir):
             return True

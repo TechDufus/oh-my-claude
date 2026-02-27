@@ -169,7 +169,7 @@ Return `<github_analysis><none>No GitHub context available</none></github_analys
 1. `CLAUDE.md` - Look for "## Active Work" section
 2. `.claude/CLAUDE.md` - Project-specific instructions
 3. `TODO.md` or `TODO` - Tracked tasks
-4. `.claude/notepads/` - learnings.md, decisions.md, context.md
+4. Claude Code `/memory` - relevant persisted learnings, decisions, and context
 5. `git diff --name-only HEAD~5..HEAD 2>/dev/null | head -20`
 
 **Task-Focused Exploration** (if hint provided):
@@ -180,11 +180,11 @@ Return `<github_analysis><none>No GitHub context available</none></github_analys
 
 **Requirements**:
 - Active work description and phase from CLAUDE.md
-- Key learnings, decisions, context from notepads
+- Key learnings, decisions, and context from `/memory`
 - Primary directories and patterns from recent changes
 - Relevant files and conventions (if task hint provided)
 
-**XML Fields**: `active_work`, `notepad_context` (with learnings/decisions/context), `focus_areas`, `project_type`, `available_commands`, `task_exploration` (with relevant_files/implementation_summary/conventions)
+**XML Fields**: `active_work`, `memory_context` (with learnings/decisions/context), `focus_areas`, `project_type`, `available_commands`, `task_exploration` (with relevant_files/implementation_summary/conventions)
 
 ---
 

@@ -816,13 +816,8 @@ When TRULY done: `<promise>DONE</promise>`
 
 ## EXTERNAL MEMORY
 
-| Notepad | Purpose |
-|---------|---------|
-| `.claude/notepads/learnings.md` | Patterns, gotchas |
-| `.claude/notepads/decisions.md` | Design decisions |
-| `.claude/notepads/issues.md` | Blockers |
-
-Write BEFORE context fills. Read when resuming.
+Use Claude Code auto-memory via `/memory` to persist decisions, learnings, and blockers.
+Write before context fills. Review relevant memory when resuming.
 
 Execute relentlessly until complete."""
 
@@ -1140,13 +1135,8 @@ When TRULY done: `<promise>DONE</promise>`
 
 ## EXTERNAL MEMORY
 
-| Notepad | Purpose |
-|---------|---------|
-| `.claude/notepads/learnings.md` | Patterns, gotchas |
-| `.claude/notepads/decisions.md` | Design decisions |
-| `.claude/notepads/issues.md` | Blockers |
-
-Write BEFORE context fills. Read when resuming.
+Use Claude Code auto-memory via `/memory` to persist decisions, learnings, and blockers.
+Write before context fills. Review relevant memory when resuming.
 
 Execute relentlessly until complete."""
 

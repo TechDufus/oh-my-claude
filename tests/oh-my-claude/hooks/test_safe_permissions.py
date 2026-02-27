@@ -771,10 +771,8 @@ class TestWriteEditAutoApproval:
         [
             ".claude/plans/plan.md",
             ".claude/plans/drafts/plan.md",
-            ".claude/notepads/note.md",
             ".claude/tasks/team/task.json",
             "../../../../../.claude/plans/drafts/plan.md",
-            "../../.claude/notepads/note.md",
         ],
     )
     def test_claude_internal_paths_approved(self, path):
@@ -788,6 +786,8 @@ class TestWriteEditAutoApproval:
             ".env",
             "CLAUDE.md",
             ".claude/settings.json",
+            ".claude/notepads/note.md",
+            "../../.claude/notepads/note.md",
         ],
     )
     def test_non_internal_paths_not_approved(self, path):
