@@ -80,6 +80,9 @@ class StdinSizeError(Exception):
     pass
 
 
+_HAS_SIGALRM: bool = hasattr(signal, "SIGALRM")
+
+
 def _alarm_handler(
     _signum: int,  # pyright: ignore[reportUnusedParameter]
     _frame: Any,  # pyright: ignore[reportUnusedParameter]
@@ -88,26 +91,8 @@ def _alarm_handler(
     raise StdinTimeoutError("stdin read timed out via SIGALRM")
 
 
-def read_stdin_safe(
-    timeout: int = STDIN_TIMEOUT_SECONDS,
-    max_bytes: int = MAX_STDIN_BYTES,
-) -> str:
-    """
-    Safely read from stdin with timeout and size limits.
-
-    Uses select() for non-blocking check with SIGALRM as backup.
-    Returns empty string on timeout for graceful degradation.
-
-    Args:
-        timeout: Maximum seconds to wait for input.
-        max_bytes: Maximum bytes to read.
-
-    Returns:
-        Content read from stdin, or empty string on timeout.
-
-    Raises:
-        StdinSizeError: If input exceeds max_bytes.
-    """
+def _read_stdin_unix(timeout: int, max_bytes: int) -> str:
+    """Unix stdin reader using select() + SIGALRM backup."""
     # Check if stdin has data available using select
     try:
         readable, _, _ = select.select([sys.stdin], [], [], timeout)
@@ -117,7 +102,6 @@ def read_stdin_safe(
     except (ValueError, OSError) as e:
         # stdin might not be selectable (e.g., redirected file)
         log_debug(f"select() failed: {e}, falling back to SIGALRM")
-        readable = True  # Proceed with SIGALRM backup
 
     # Set up SIGALRM as backup timeout mechanism
     old_handler = signal.signal(signal.SIGALRM, _alarm_handler)
@@ -139,6 +123,69 @@ def read_stdin_safe(
     finally:
         signal.alarm(0)
         signal.signal(signal.SIGALRM, old_handler)
+
+
+def _read_stdin_windows(timeout: int, max_bytes: int) -> str:
+    """Windows stdin reader using threading timeout.
+
+    Windows lacks SIGALRM and select() on stdin, so we use a
+    thread-based approach with msvcrt for non-blocking reads.
+    """
+    import threading
+
+    result: list[str] = []
+    error: list[Exception] = []
+
+    def _reader() -> None:
+        try:
+            content = sys.stdin.read(max_bytes + 1)
+            if len(content) > max_bytes:
+                error.append(StdinSizeError(f"stdin exceeds {max_bytes} bytes"))
+            else:
+                result.append(content)
+        except Exception as e:
+            error.append(e)
+
+    reader_thread = threading.Thread(target=_reader, daemon=True)
+    reader_thread.start()
+    reader_thread.join(timeout=timeout)
+
+    if error:
+        raise error[0]
+
+    if not result:
+        log_debug("stdin read timed out via thread timeout (Windows)")
+        return ""
+
+    log_debug(f"read {len(result[0])} bytes from stdin")
+    return result[0]
+
+
+def read_stdin_safe(
+    timeout: int = STDIN_TIMEOUT_SECONDS,
+    max_bytes: int = MAX_STDIN_BYTES,
+) -> str:
+    """
+    Safely read from stdin with timeout and size limits.
+
+    On Unix: uses select() for non-blocking check with SIGALRM as backup.
+    On Windows: uses a daemon thread with join timeout.
+    Returns empty string on timeout for graceful degradation.
+
+    Args:
+        timeout: Maximum seconds to wait for input.
+        max_bytes: Maximum bytes to read.
+
+    Returns:
+        Content read from stdin, or empty string on timeout.
+
+    Raises:
+        StdinSizeError: If input exceeds max_bytes.
+    """
+    if _HAS_SIGALRM:
+        return _read_stdin_unix(timeout, max_bytes)
+    else:
+        return _read_stdin_windows(timeout, max_bytes)
 
 
 # =============================================================================
