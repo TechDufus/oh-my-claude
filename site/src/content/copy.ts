@@ -5,7 +5,6 @@
 // ── Hero ────────────────────────────────────────────────────────
 export const heroHeadline = "Stop Wasting Your Context Window"
 export const heroTagline = "A Claude Code plugin that adds orchestration guardrails, review gates, and ultrawork so your main session stays sharp."
-export const compatibilityNote = "On Claude Code <= 2.1.62, older builds may still use Task(...) instead of Agent(...)."
 
 // ── Stats Bar ───────────────────────────────────────────────────
 export const stats = [
