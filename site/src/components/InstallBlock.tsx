@@ -49,6 +49,9 @@ export default function InstallBlock() {
           </>
         )}
       </Button>
+      <p className="max-w-2xl text-center text-sm text-muted-foreground">
+        On Claude Code {"<="} 2.1.62, older builds may still use <code>Task(...)</code> instead of <code>Agent(...)</code>.
+      </p>
     </div>
   )
 }

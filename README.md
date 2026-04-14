@@ -97,6 +97,8 @@ git clone https://github.com/TechDufus/oh-my-claude /tmp/oh-my-claude
 
 `/reload-plugins` is enough on newer Claude Code builds. Restart still works everywhere.
 
+**Compatibility note:** If you're on Claude Code `<= 2.1.62`, this repo's examples use the newer `Agent(...)` name, but your build may still show `Task(...)`. Use `Task(...)` on older builds or update Claude Code.
+
 ### Update
 
 ```bash
