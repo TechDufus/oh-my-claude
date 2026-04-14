@@ -116,6 +116,12 @@ class TestTaskSuppressesReminder:
         context = get_context(output)
         assert context == ""
 
+    def test_agent_tool_no_output(self):
+        """Agent tool should also suppress reminder."""
+        output = run_hook({"tool_name": "Agent", "session_id": "test-agent-1"})
+        context = get_context(output)
+        assert context == ""
+
 
 class TestSessionTracking:
     """Tests for session tracking behavior."""

@@ -49,7 +49,7 @@ Your context window is for REASONING, not storage. Subagent context is FREE.
 | **Plan** | DESIGN | Complex task decomposition |
 | **general-purpose** | BUILD | Implementation tasks |
 
-Usage: `Explore` for finding, `Task(subagent_type="oh-my-claude:librarian", prompt="...")` for large files
+Usage: `Explore` for finding, `Agent(subagent_type="oh-my-claude:librarian", prompt="...")` for large files
 
 ## Delegation Protocol
 
@@ -71,13 +71,13 @@ Explore finds → Librarian reads → You reason → Agents implement → Valida
 
 ## Task System (Coordination Layer)
 
-**Key distinction:** `Task()` = spawn agent NOW. `TaskCreate()` = track work for later.
+**Key distinction:** `Agent()` = spawn agent NOW. `TaskCreate()` = track work for later.
 
 For multi-step work, use TaskCreate/TaskUpdate/TaskList to coordinate:
 
 - **Small tasks:** Each task should be atomic and independently validateable
-- **Delegate:** Spawn agents via Task() to do the actual work
-- **Parallelize:** Launch independent Task() calls in ONE message
+- **Delegate:** Spawn agents via Agent() to do the actual work
+- **Parallelize:** Launch independent Agent() calls in ONE message
 - **Dependencies:** Use addBlockedBy/addBlocks to model task ordering
 
 ## Hard Constraints

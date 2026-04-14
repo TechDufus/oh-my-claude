@@ -5,14 +5,14 @@
     "name": "TechDufus"
   },
   "metadata": {
-    "description": "Ultrawork mode for maximum parallel execution with intelligent subagent use",
+    "description": "Opinionated Claude Code plugin for ultrawork, orchestration guardrails, and review gates.",
     "version": "0.13.0"
   },
   "plugins": [
     {
       "name": "oh-my-claude",
       "source": "./plugins/oh-my-claude",
-      "description": "Add 'ultrawork' to any prompt for maximum parallel execution.",
+      "description": "Opinionated Claude Code plugin for ultrawork, orchestration guardrails, and review gates.",
       "version": "0.13.0",
       "author": {
         "name": "TechDufus"

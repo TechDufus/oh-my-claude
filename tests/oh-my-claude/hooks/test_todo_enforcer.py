@@ -197,6 +197,18 @@ class TestAnalyzeTranscript:
         result = analyze_transcript(transcript)
         assert result["validation_ran"] is True
 
+    def test_detects_validation_in_agent_tool(self):
+        """Should detect validator in Agent tool input too."""
+        transcript = [
+            {
+                "type": "tool_use",
+                "tool": "Agent",
+                "input": {"subagent_type": "oh-my-claude:validator"},
+            },
+        ]
+        result = analyze_transcript(transcript)
+        assert result["validation_ran"] is True
+
     def test_detects_validation_in_assistant_message(self):
         """Should detect validation mention in assistant message."""
         transcript = [

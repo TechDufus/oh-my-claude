@@ -1,7 +1,7 @@
 {
   "name": "oh-my-claude",
   "version": "0.13.0",
-  "description": "Add 'ultrawork' to any prompt for maximum parallel execution.",
+  "description": "Opinionated Claude Code plugin for ultrawork, orchestration guardrails, and review gates.",
   "author": {
     "name": "TechDufus",
     "url": "https://github.com/TechDufus"

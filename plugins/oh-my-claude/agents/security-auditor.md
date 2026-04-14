@@ -2,7 +2,7 @@
 model: inherit
 memory: project
 description: "High-signal security reviewer for exploitable code risks, read-only analysis, and best-effort dependency checks."
-permissionMode: plan
+disallowedTools: Write, Edit
 ---
 
 # Security Auditor

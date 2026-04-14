@@ -4,7 +4,7 @@
 
 // ── Hero ────────────────────────────────────────────────────────
 export const heroHeadline = "Stop Wasting Your Context Window"
-export const heroTagline = "A Claude Code plugin that delegates file reading, searching, and implementation to specialized agents — so your main session stays sharp."
+export const heroTagline = "A Claude Code plugin that adds orchestration guardrails, review gates, and ultrawork so your main session stays sharp."
 
 // ── Stats Bar ───────────────────────────────────────────────────
 export const stats = [
@@ -26,8 +26,8 @@ export const howItWorksSteps = [
   {
     step: 2,
     title: "Agents swarm",
-    description: "Built-in Explore finds files. Librarian reads them. Plan mode designs. Tasks implement. Your context window never sees the raw dump.",
-    snippet: "Explore → librarian → Plan → Task",
+    description: "Built-in Explore finds files. Librarian reads them. Plan mode designs. Agent calls implement. Your context window never sees the raw dump.",
+    snippet: "Explore → librarian → Plan → Agent",
   },
   {
     step: 3,
@@ -53,8 +53,8 @@ Plan mode → dependency graph built
     title: "Implementing a Feature",
     description: "Describe what you want. The agent swarm handles the rest while you review.",
     terminal: `Plan mode → 5-step plan created
-Task[1] → src/routes/auth.ts written
-Task[2] → src/middleware/jwt.ts written
+Agent[1] → src/routes/auth.ts written
+Agent[2] → src/middleware/jwt.ts written
 validator → all 12 tests passing`,
     accent: "coral",
   },
@@ -63,7 +63,7 @@ validator → all 12 tests passing`,
     description: "When you're stuck after two attempts, use ultradebug skill for deep reasoning you shouldn't burn context on.",
     terminal: `ultradebug → root cause: race condition
   in useEffect cleanup on unmount
-Task → fix applied to 2 files
+Agent → fix applied to 2 files
 validator → regression suite green`,
     accent: "cyan",
   },

@@ -5,7 +5,7 @@
 # ///
 """
 verification_reminder.py
-PostToolUse hook: Reminds Claude to verify agent claims after Task completion.
+PostToolUse hook: Reminds Claude to verify agent claims after Agent/Task completion.
 """
 
 from pathlib import Path
@@ -58,8 +58,8 @@ def main() -> None:
 
     log_debug(f"tool_name={tool_name}")
 
-    if tool_name == "Task":
-        log_debug("Task completed, injecting verification reminder")
+    if tool_name in {"Agent", "Task"}:
+        log_debug("Agent completed, injecting verification reminder")
         output_context("PostToolUse", VERIFICATION_MESSAGE)
     else:
         return output_empty()

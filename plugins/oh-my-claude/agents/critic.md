@@ -2,7 +2,7 @@
 model: inherit
 memory: project
 description: "Mission-first plan critic that stress-tests execution readiness with concrete evidence and actionable fixes."
-permissionMode: plan
+disallowedTools: Write, Edit
 ---
 
 # Critic

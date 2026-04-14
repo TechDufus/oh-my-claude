@@ -93,8 +93,8 @@ Understand the codebase context BEFORE asking questions. Launch Explore agents t
 the lay of the land so you can ask INFORMED questions (not generic ones).
 
 ```
-Task(subagent_type="Explore", prompt="Find files relevant to {request topic}", thoroughness="quick")
-Task(subagent_type="oh-my-claude:librarian", prompt="Summarize architecture/patterns in {area}")
+Agent(subagent_type="Explore", prompt="Find files relevant to {request topic}", thoroughness="quick")
+Agent(subagent_type="oh-my-claude:librarian", prompt="Summarize architecture/patterns in {area}")
 ```
 
 Goal: learn enough to ask smart questions. NOT enough to write a plan.
@@ -145,8 +145,8 @@ Effort Estimate: {Quick | Short | Medium | Large | XL}
 Now do thorough research informed by both recon AND interview answers:
 
 ```
-Task(subagent_type="Explore", prompt="Find ALL files, deps, call sites for {scope}", thoroughness="medium")
-Task(subagent_type="oh-my-claude:librarian", prompt="Read {specific files} for {specific details}")
+Agent(subagent_type="Explore", prompt="Find ALL files, deps, call sites for {scope}", thoroughness="medium")
+Agent(subagent_type="oh-my-claude:librarian", prompt="Read {specific files} for {specific details}")
 ```
 
 This round is targeted — you know what to look for from Steps 1-2.
@@ -156,7 +156,7 @@ This round is targeted — you know what to look for from Steps 1-2.
 After deep research, MUST run the advisor before writing any plan:
 
 ```
-Task(subagent_type="oh-my-claude:advisor", prompt=\"\"\"
+Agent(subagent_type="oh-my-claude:advisor", prompt=\"\"\"
 Analyze for hidden requirements, scope risks, AI-slop patterns.
 Interview notes: {summary from Step 2}
 Research findings: {key discoveries from Step 3}
@@ -200,13 +200,13 @@ Populate the Big Picture Intent section by pulling from your interview notes (Or
 
 | Tool | Purpose | When to Use |
 |------|---------|-------------|
-| `Task()` | Spawn subagent | Research (Explore, librarian), implementation (general-purpose), validation (validator) |
+| `Agent()` | Spawn subagent | Research (Explore, librarian), implementation (general-purpose), validation (validator) |
 | `TaskCreate()` | Create tracking item | Building the task list for multi-step work |
 | `TaskUpdate()` | Update task state | Status changes, dependencies, ownership |
 | `TaskList()` | View all tasks | Check progress, find unblocked work |
 | `TaskGet()` | Get task details | Before starting work on a specific task |
 
-**Key distinction:** `Task()` = spawn agent NOW. `TaskCreate()` = track work for later.
+**Key distinction:** `Agent()` = spawn agent NOW. `TaskCreate()` = track work for later.
 
 **Note:** If agent teams are available, consider whether independent tasks benefit from inter-agent discussion. See EXECUTION STRATEGY below.
 
@@ -258,7 +258,7 @@ Each implementation task SHOULD specify what to validate. The executor decides H
 MUST submit plan to critic before ExitPlanMode:
 
 ```
-Task(subagent_type="oh-my-claude:critic", prompt=\"\"\"
+Agent(subagent_type="oh-my-claude:critic", prompt=\"\"\"
 Review this plan for clarity, completeness, correctness, executability.
 Interview decisions: {from Step 2}
 Advisor findings: {from Step 4}
@@ -286,7 +286,7 @@ Choose the right execution approach based on task characteristics:
 
 ### Default: Subagents (Task tool)
 
-Most plans execute best with subagents. Each `Task()` call spawns a focused subagent
+Most plans execute best with subagents. Each `Agent()` call spawns a focused subagent
 that reports results back. Lower token cost, simpler coordination.
 
 ### Agent Teams
@@ -294,7 +294,7 @@ that reports results back. Lower token cost, simpler coordination.
 When available, create teams using explicit tool calls:
 1. `TeamCreate(team_name="descriptive-name")` — always first
 2. `TaskCreate(...)` for each work item
-3. `Task(subagent_type="general-purpose", team_name="descriptive-name", name="role")` per teammate
+3. `Agent(subagent_type="general-purpose", team_name="descriptive-name", name="role")` per teammate
 4. `TaskUpdate(taskId, owner="role")` to assign work
 
 Agent teams create full Claude Code sessions that communicate via shared task list
@@ -328,7 +328,7 @@ You have an approved plan. Before ANY implementation:
 2. Use TaskUpdate to set blockedBy dependencies
 3. Run TaskList to confirm tasks exist
 
-**Key distinction:** `Task()` = spawn agent NOW. `TaskCreate()` = track work for later.
+**Key distinction:** `Agent()` = spawn agent NOW. `TaskCreate()` = track work for later.
 
 DO NOT spawn subagents or start implementation until tasks are created.
 
@@ -444,7 +444,7 @@ This round is targeted - you know what to look for from Steps 1-2.
 After deep research, MUST run the advisor before writing any plan:
 
 ```
-Task(subagent_type="oh-my-claude:advisor", prompt=\"\"\"
+Agent(subagent_type="oh-my-claude:advisor", prompt=\"\"\"
 Analyze for hidden requirements, scope risks, AI-slop patterns.
 Interview notes: {summary from Step 2}
 Research findings: {key discoveries from Step 3}
@@ -537,7 +537,7 @@ Each implementation task SHOULD specify what to validate. The executor decides H
 MUST submit plan to critic before ExitPlanMode:
 
 ```
-Task(subagent_type="oh-my-claude:critic", prompt=\"\"\"
+Agent(subagent_type="oh-my-claude:critic", prompt=\"\"\"
 Review this plan for clarity, completeness, correctness, executability.
 Interview decisions: {from Step 2}
 Advisor findings: {from Step 4}
@@ -565,7 +565,7 @@ Do NOT skip critic. Do NOT ExitPlanMode without critic approval.
 1. `TeamCreate(team_name="feature-x")` — create the team
 2. `TaskCreate(...)` for each plan item — build the task list
 3. `TaskUpdate(taskId, addBlockedBy=[...])` — set dependencies
-4. `Task(subagent_type="general-purpose", team_name="feature-x", name="implementer")` — spawn each teammate
+4. `Agent(subagent_type="general-purpose", team_name="feature-x", name="implementer")` — spawn each teammate
 5. `TaskUpdate(taskId, owner="implementer")` — assign tasks to teammates
 
 ## EXECUTION STRATEGY
@@ -584,7 +584,7 @@ Default to teams for independent parallel work. Use subagents for sequential or 
 Create teams using explicit tool calls:
 1. `TeamCreate(team_name="descriptive-name")` — always first
 2. `TaskCreate(...)` for each work item
-3. `Task(subagent_type="general-purpose", team_name="descriptive-name", name="role")` per teammate
+3. `Agent(subagent_type="general-purpose", team_name="descriptive-name", name="role")` per teammate
 4. `TaskUpdate(taskId, owner="role")` to assign work
 
 Use **delegate mode** (Shift+Tab) to keep the lead coordination-only.
@@ -613,7 +613,7 @@ You have an approved plan. Before ANY implementation:
 1. `TeamCreate(team_name="plan-name")` — create the team first
 2. `TaskCreate(subject, description, activeForm)` for EACH plan item
 3. `TaskUpdate(taskId, addBlockedBy=[...])` to set dependencies between tasks
-4. `Task(subagent_type="general-purpose", team_name="plan-name", name="role")` to spawn each teammate
+4. `Agent(subagent_type="general-purpose", team_name="plan-name", name="role")` to spawn each teammate
 5. `TaskUpdate(taskId, owner="role")` to assign tasks to teammates
 6. `TaskList()` to confirm everything is wired up
 
@@ -694,7 +694,7 @@ Match your team to the work type:
 Create teams using explicit tool calls:
 1. `TeamCreate(team_name="descriptive-name")` — always first
 2. `TaskCreate(...)` for each work item
-3. `Task(subagent_type="general-purpose", team_name="descriptive-name", name="role")` per teammate
+3. `Agent(subagent_type="general-purpose", team_name="descriptive-name", name="role")` per teammate
 4. `TaskUpdate(taskId, owner="role")` to assign work
 
 ### Team Rules
@@ -770,7 +770,7 @@ When assigning work to teammates:
 
 ## EXECUTION RULES
 
-1. PARALLELIZE - `TeamCreate` first, then `Task(team_name, name)` to spawn teammates for independent work
+1. PARALLELIZE - `TeamCreate` first, then `Agent(team_name, name)` to spawn teammates for independent work
 2. TRACK - `TaskCreate` for each work item, `TaskUpdate` to assign owners and track status
 3. NEVER STOP - Stopping requires passing checklist
 4. NO QUESTIONS - Decide and document
@@ -1049,11 +1049,11 @@ NEVER downgrade models. Omit `model` param or use `model="inherit"`.
 
 **Parallel patterns:** Explore+librarian (research) -> Plan->critic->general-purpose (impl) -> validator (verify)
 
-**Agent teams:** Consider teams for tasks needing inter-agent discussion. Use `TeamCreate` + `Task(team_name, name)` to create teams. Subagents remain the default for focused work.
+**Agent teams:** Consider teams for tasks needing inter-agent discussion. Use `TeamCreate` + `Agent(team_name, name)` to create teams. Subagents remain the default for focused work.
 
 ## TASK TRACKING
 
-**Key distinction:** `Task()` = spawn agent NOW. `TaskCreate()` = track work for later.
+**Key distinction:** `Agent()` = spawn agent NOW. `TaskCreate()` = track work for later.
 
 ```
 TaskCreate(subject="Action verb: description", description="Full context")
@@ -1089,7 +1089,7 @@ Tasks should be **small and atomic**. If a task touches multiple concerns, split
 
 ## EXECUTION RULES
 
-1. PARALLELIZE - Multiple Task() calls in ONE message
+1. PARALLELIZE - Multiple Agent() calls in ONE message
 2. TRACK - Use TaskCreate for multi-step work, update status real-time
 3. NEVER STOP - Stopping requires passing checklist
 4. NO QUESTIONS - Decide and document
@@ -1308,7 +1308,7 @@ Recent changes statistically likely to contain bugs.
 ## Escalation (After 2+ Failed Attempts)
 
 ```
-Task(subagent_type="Explore", prompt="
+Agent(subagent_type="Explore", prompt="
 PROBLEM: {error + conditions}
 ATTEMPTED: 1. {tried} - {failed why}  2. {tried} - {failed why}
 HYPOTHESES: H1: {hyp} - {result}  H2: {hyp} - {result}

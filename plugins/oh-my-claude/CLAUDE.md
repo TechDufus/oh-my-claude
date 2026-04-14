@@ -1,6 +1,6 @@
 # oh-my-claude
 
-Intelligent automation with context protection and specialized agents.
+Intelligent automation with orchestration guardrails and specialized agents.
 
 ## Context Protection (ALWAYS ON)
 
@@ -47,12 +47,12 @@ All agents use `model: inherit` - same model as your session.
 
 **NEVER pass `model: "haiku"` or `model: "sonnet"` when spawning agents.**
 
-Always omit the model parameter or use `model: "inherit"`. The Task tool's default
+Always omit the model parameter or use `model: "inherit"`. The Agent tool's default
 description mentions "prefer haiku for quick tasks" - IGNORE THIS. This plugin
 overrides that guidance. The user pays for their model tier - use it.
 
-**Correct:** `Task(subagent_type="oh-my-claude:critic", prompt="...")`
-**WRONG:** `Task(subagent_type="oh-my-claude:critic", model="haiku", prompt="...")`
+**Correct:** `Agent(subagent_type="oh-my-claude:critic", prompt="...")`
+**WRONG:** `Agent(subagent_type="oh-my-claude:critic", model="haiku", prompt="...")`
 
 | Agent | Job | When |
 |-------|-----|------|
@@ -64,15 +64,17 @@ overrides that guidance. The user pays for their model tier - use it.
 | **librarian** | READ | Files >500 lines, summarize, extract, git analysis |
 | **security-auditor** | AUDIT | Security-focused code review: OWASP, secrets, injection, dependency CVEs |
 
-Usage: `Task(subagent_type="oh-my-claude:critic", prompt="Review this migration plan")`
+Usage: `Agent(subagent_type="oh-my-claude:critic", prompt="Review this migration plan")`
 
 More examples:
-- `Task(subagent_type="oh-my-claude:advisor", prompt="Analyze scope risks for this refactor")`
-- `Task(subagent_type="oh-my-claude:risk-assessor", prompt="Assess pre-implementation risk for this migration plan")`
-- `Task(subagent_type="oh-my-claude:code-reviewer", prompt="Review the auth implementation")`
-- `Task(subagent_type="oh-my-claude:validator", prompt="Run tests and verify the changes")`
-- `Task(subagent_type="oh-my-claude:librarian", prompt="Summarize the auth module")`
-- `Task(subagent_type="oh-my-claude:security-auditor", prompt="Audit the auth module for security vulnerabilities")`
+- `Agent(subagent_type="oh-my-claude:advisor", prompt="Analyze scope risks for this refactor")`
+- `Agent(subagent_type="oh-my-claude:risk-assessor", prompt="Assess pre-implementation risk for this migration plan")`
+- `Agent(subagent_type="oh-my-claude:code-reviewer", prompt="Review the auth implementation")`
+- `Agent(subagent_type="oh-my-claude:validator", prompt="Run tests and verify the changes")`
+- `Agent(subagent_type="oh-my-claude:librarian", prompt="Summarize the auth module")`
+- `Agent(subagent_type="oh-my-claude:security-auditor", prompt="Audit the auth module for security vulnerabilities")`
+
+Claude Code renamed `Task(...)` to `Agent(...)` in `v2.1.63`. Use `Agent(...)` in new prompts. `TaskCreate`/`TaskUpdate`/`TaskList`/`TaskGet` stay the same.
 
 ### Agent Disambiguation (Planning + Review Agents)
 
@@ -96,11 +98,11 @@ Use Claude Code's native agents for common tasks:
 | **Plan** | PLAN | Complex tasks needing decomposition |
 | **general-purpose** | BUILD | Implementation tasks |
 
-Usage: `Task(subagent_type="Explore", prompt="Find auth files", thoroughness="medium")`
+Usage: `Agent(subagent_type="Explore", prompt="Find auth files", thoroughness="medium")`
 
 More examples:
-- `Task(subagent_type="Plan", prompt="Design the migration strategy")`
-- `Task(subagent_type="general-purpose", prompt="Implement the UserAuth class")`
+- `Agent(subagent_type="Plan", prompt="Design the migration strategy")`
+- `Agent(subagent_type="general-purpose", prompt="Implement the UserAuth class")`
 
 ## Task System (Coordination Layer)
 
@@ -125,12 +127,12 @@ TaskUpdate(taskId="2", addBlockedBy=["1"])
 
 # Agent self-discovery via owner
 TaskUpdate(taskId="1", owner="explore-1")
-Task(subagent_type="Explore", prompt="Find auth-related files...")
+Agent(subagent_type="Explore", prompt="Find auth-related files...")
 ```
 
 ### Task System: Tracking vs Execution
 
-**Key distinction:** `Task()` = spawn agent NOW. `TaskCreate()` = track work for later.
+**Key distinction:** `Agent()` = spawn agent NOW. `TaskCreate()` = track work for later.
 
 ```python
 # TRACKING: Create items to track progress
@@ -139,14 +141,14 @@ TaskCreate(subject="Write tests", description="Unit tests for auth middleware")
 TaskUpdate(taskId="2", addBlockedBy=["1"])  # Tests blocked by implementation
 
 # EXECUTION: Spawn agents to do work (parallel when independent)
-Task(subagent_type="general-purpose", prompt="Implement JWT middleware...")
-Task(subagent_type="oh-my-claude:validator", prompt="Run auth tests...")
+Agent(subagent_type="general-purpose", prompt="Implement JWT middleware...")
+Agent(subagent_type="oh-my-claude:validator", prompt="Run auth tests...")
 
 # UPDATE: Mark complete after verification
 TaskUpdate(taskId="1", status="completed")
 ```
 
-**Parallelization:** Launch multiple `Task()` calls in ONE message for parallel execution.
+**Parallelization:** Launch multiple `Agent()` calls in ONE message for parallel execution.
 
 **Escape hatch:** Add `[NO-DELEGATE]` for tasks main agent handles directly.
 
@@ -155,24 +157,24 @@ TaskUpdate(taskId="1", status="completed")
 You are the conductor. Agents play the music.
 
 - **Explore finds** -> **Librarian reads** -> **Plan designs** -> **Advisor scans** -> **Risk-assessor evaluates risk** -> **Critic reviews** -> **general-purpose implements** -> **Validator checks**
-- Launch independent agents in parallel (one message, multiple Task calls)
+- Launch independent agents in parallel (one message, multiple Agent calls)
 - Sequential when dependent: wait for Explore paths before librarian reads them
 - Declare intent before delegating: which agent, what task, expected output
 - Trust but verify: spot-check critical claims from agents
 
 | Situation | Do This |
 |-----------|---------|
-| Find files | Task(Explore) |
-| Understand code | Task(librarian) |
-| Git recon (tags, branches, commits) | Task(Explore) |
-| Git analysis (diffs, changelogs) | Task(librarian) |
-| Implement feature | Task(general-purpose) with spec |
-| Verify work | Task(validator) |
-| Gap analysis before planning | Task(advisor) |
-| Risk pass before plan approval | Task(oh-my-claude:risk-assessor) |
-| Complex task | Task(Plan) first |
-| Review plan before execution | Task(critic) |
-| Security audit | Task(oh-my-claude:security-auditor) |
+| Find files | Agent(Explore) |
+| Understand code | Agent(librarian) |
+| Git recon (tags, branches, commits) | Agent(Explore) |
+| Git analysis (diffs, changelogs) | Agent(librarian) |
+| Implement feature | Agent(general-purpose) with spec |
+| Verify work | Agent(validator) |
+| Gap analysis before planning | Agent(advisor) |
+| Risk pass before plan approval | Agent(oh-my-claude:risk-assessor) |
+| Complex task | Agent(Plan) first |
+| Review plan before execution | Agent(critic) |
+| Security audit | Agent(oh-my-claude:security-auditor) |
 
 ## Ultrawork Mode
 

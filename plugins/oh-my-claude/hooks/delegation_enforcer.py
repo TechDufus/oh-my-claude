@@ -47,8 +47,8 @@ DELEGATION_REMINDER = """[DELEGATION REMINDER] You're editing directly in main c
 Delegation preserves your context for reasoning. Direct edits consume tokens that could fuel orchestration.
 
 Consider delegating to:
-- Task(subagent_type='oh-my-claude:general-purpose', prompt='...')
-- Task(subagent_type='general-purpose', prompt='...')
+- Agent(subagent_type='oh-my-claude:general-purpose', prompt='...')
+- Agent(subagent_type='general-purpose', prompt='...')
 
 "It's just a tiny edit" → Context accumulates. Tiny edits compound.
 "I can do this faster myself" → Speed in tokens, not keystrokes. Delegates run while you think.
@@ -59,8 +59,8 @@ TEAM_LEAD_REMINDER = """[DELEGATION REMINDER] You're editing directly in main co
 Delegation preserves your context for reasoning. Direct edits consume tokens that could fuel orchestration.
 
 Consider delegating via teammates or subagents:
-- Task(subagent_type='oh-my-claude:general-purpose', prompt='...')
-- Task(subagent_type='general-purpose', prompt='...')
+- Agent(subagent_type='oh-my-claude:general-purpose', prompt='...')
+- Agent(subagent_type='general-purpose', prompt='...')
 - Or delegate via teammates for parallel collaboration
 
 "It's just a tiny edit" → Context accumulates. Tiny edits compound.

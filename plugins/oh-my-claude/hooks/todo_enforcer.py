@@ -91,8 +91,8 @@ def analyze_transcript(transcript: list[dict[str, Any]], max_entries: int = 1000
 
         # Check for validation triggers
         if not result["validation_ran"]:
-            # Check Task tool with validator
-            if entry_type == "tool_use" and entry.get("tool") == "Task":
+            # Check Agent/Task tool with validator
+            if entry_type == "tool_use" and entry.get("tool") in {"Agent", "Task"}:
                 input_data = entry.get("input") or {}
                 input_str = str(input_data).lower()
                 if "validator" in input_str:
@@ -314,7 +314,7 @@ If you have open tasks, consider these approaches:
 **Parallel work:** Delegate to agents with owner assignment:
 ```
 TaskUpdate(taskId="1", owner="agent-a")
-Task(subagent_type="general-purpose", prompt="You are agent-a. Find your tasks via TaskList...")
+Agent(subagent_type="general-purpose", prompt="You are agent-a. Find your tasks via TaskList...")
 ```
 
 **Blocked tasks:** Check if blocking tasks are complete, then proceed with unblocked work.
