@@ -6,7 +6,7 @@ requires-python = ">=3.11"
 
 [project.optional-dependencies]
 test = [
-    "pytest>=8.0",
+    "pytest>=9.0.3",
     "pytest-cov>=4.0",
 ]
 
