@@ -56,6 +56,12 @@ class TestTaskTriggersReminder:
         context = get_context(output)
         assert "Agent context is isolated" in context
 
+    def test_agent_triggers_reminder(self):
+        """Agent tool should trigger the same reminder as Task."""
+        output = run_hook({"tool_name": "Agent"})
+        context = get_context(output)
+        assert "Verification Required" in context
+
 
 class TestNonTaskToolsNoOp:
     """Tests for non-Task tools returning empty."""
@@ -162,3 +168,13 @@ class TestAgentSessionSkip:
         })
         context = get_context(output)
         assert "Verification Required" in context
+
+    def test_agent_session_skips_agent_reminder(self):
+        """Agent sessions should also skip reminder for Agent tool."""
+        output = run_hook({
+            "tool_name": "Agent",
+            "agent_type": "oh-my-claude:critic",
+            "session_id": "agent-test",
+        })
+        context = get_context(output)
+        assert context == ""

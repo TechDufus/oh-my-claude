@@ -29,7 +29,7 @@ from hook_utils import (
 DIRECT_SEARCH_TOOLS = {"Grep", "Glob"}
 
 # Tools that indicate agent usage (no reminder needed for this invocation)
-AGENT_TOOLS = {"Task"}
+AGENT_TOOLS = {"Agent", "Task"}
 
 REMINDER_MESSAGE = """[Agent Usage Reminder]
 
@@ -38,7 +38,7 @@ You used a search tool directly. Direct search = context tax. Agent search = par
 | Instead of | Use |
 |------------|-----|
 | Grep/Glob directly | Explore (built-in agent for finding files/definitions) |
-| Reading large files (>500 lines) | Task(subagent_type="oh-my-claude:librarian") |
+| Reading large files (>500 lines) | Agent(subagent_type="oh-my-claude:librarian") |
 
 For large file reads, delegate to librarian — it reads the full file and returns only what matters.
 

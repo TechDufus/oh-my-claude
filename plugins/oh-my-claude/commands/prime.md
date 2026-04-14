@@ -82,7 +82,7 @@ If `--quick` flag provided, STOP HERE.
 All subagents receive this wrapper structure. Replace `{AGENT_NAME}`, `{WORD_LIMIT}`, `{COMMANDS}`, `{REQUIREMENTS}`, and `{XML_FIELDS}`:
 
 ```
-Task(
+Agent(
   subagent_type: "general-purpose",
   description: "{description}",
   prompt: """

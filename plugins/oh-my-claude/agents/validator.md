@@ -2,12 +2,7 @@
 model: inherit
 memory: project
 description: "Mission-first validator that runs relevant checks, reports evidence, and returns a binary pass/fail verdict with next steps."
-hooks:
-  Stop:
-    - matcher: "*"
-      hooks:
-        - type: prompt
-          prompt: "Your response MUST end with a verdict line. If missing, add: 'VERDICT: PASS' (all checks passed) or 'VERDICT: FAIL - <reason>' (any failures). Check your response now and add the verdict if missing."
+disallowedTools: Write, Edit
 ---
 
 # Validator

@@ -10,7 +10,7 @@
   <img src="site/public/favicon.svg" alt="oh-my-claude mascot" width="80" height="80">
 </p>
 
-<h3 align="center">Enhance Claude Code with context protection and specialized quality gates.</h3>
+<h3 align="center">Opinionated Claude Code plugin for ultrawork, orchestration guardrails, and review gates.</h3>
 
 ---
 
@@ -53,14 +53,14 @@ Claude will parallelize everything, delegate file reads to subagents, track prog
 
 ## Why This Exists
 
-Claude Code is already intelligent. oh-my-claude makes it even better by:
+Claude Code is already strong. oh-my-claude pushes it harder by:
 
-- **Protecting your context** — Delegates file reading to subagents so your main session stays sharp
+- **Coaching delegation** — Pushes heavy reading and side quests into subagents so your main session stays sharp
 - **Adding quality gates** — Specialized agents for gap analysis, plan review, and validation
 - **Working invisibly** — Hooks run in the background; you get a better experience just for having it installed
 - **Staying out of the way** — Enhances Claude's capabilities without conflicting with its built-in intelligence
 
-Install it and forget it. Your context is protected. Your plans get reviewed. Your work gets validated.
+Install it and forget it. Your plans get reviewed. Your work gets validated. Claude stays focused.
 
 ---
 
@@ -93,9 +93,9 @@ git clone https://github.com/TechDufus/oh-my-claude /tmp/oh-my-claude
 /plugin install oh-my-claude@oh-my-claude
 ```
 
-### Step 3: Restart Claude Code
+### Step 3: Reload plugins or restart Claude Code
 
-Required for hooks to activate.
+`/reload-plugins` is enough on newer Claude Code builds. Restart still works everywhere.
 
 ### Update
 
@@ -157,21 +157,23 @@ Claude Code provides these agents out of the box, which oh-my-claude leverages:
 |----------------|--------------|
 | **Explore** | Find files, search codebase, locate definitions |
 | **Plan** | Design implementation approaches, decompose complex tasks |
-| **Task** | General-purpose implementation tasks |
+| **general-purpose** | General-purpose implementation tasks |
 
 ### Usage
 
 ```
-Task(subagent_type="oh-my-claude:librarian", prompt="Summarize src/auth/service.ts")
-Task(subagent_type="oh-my-claude:risk-assessor", prompt="Assess risk for this migration plan")
-Task(subagent_type="oh-my-claude:critic", prompt="Review this implementation plan for flaws")
-Task(subagent_type="oh-my-claude:worker", prompt="Add password reset endpoint")
-Task(subagent_type="oh-my-claude:validator", prompt="Run all tests and report results")
+Agent(subagent_type="oh-my-claude:librarian", prompt="Summarize src/auth/service.ts")
+Agent(subagent_type="oh-my-claude:risk-assessor", prompt="Assess risk for this migration plan")
+Agent(subagent_type="oh-my-claude:critic", prompt="Review this implementation plan for flaws")
+Agent(subagent_type="oh-my-claude:worker", prompt="Add password reset endpoint")
+Agent(subagent_type="oh-my-claude:validator", prompt="Run all tests and report results")
 ```
 
 ### Why Subagents Matter
 
 Subagent context is **isolated** from your main context. When a librarian reads a 2000-line file, those lines don't consume your context window — you get a summary. This keeps your main Claude sharp for reasoning instead of drowning in file contents.
+
+Claude Code renamed the spawn tool from `Task(...)` to `Agent(...)` in `v2.1.63`. `Task(...)` still works as an alias on modern builds, but this repo now uses `Agent(...)` in examples and docs.
 
 ---
 
@@ -210,7 +212,7 @@ Cross-session continuity means "Accept and clear" carries the full execution con
 | **safe-permissions** | Permission request | Auto-approves safe commands (tests, linters, readonly) |
 | **todo-enforcer** | Stop | Prevents stopping with incomplete todos |
 | **context-monitor** | Post tool use | Warns at high context usage |
-| **subagent-quality-validator** | Subagent stop | Validates subagent outputs before completion |
+| **verification-reminder** | Post agent use | Reminds Claude to verify delegated work before claiming done |
 | **precompact-context** | Pre compact | Preserves session state before compaction |
 
 ### Commands

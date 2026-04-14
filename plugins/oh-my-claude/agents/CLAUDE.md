@@ -1,6 +1,6 @@
 # Agents
 
-Specialized subagent definitions for Task tool delegation.
+Specialized subagent definitions for Claude Code agent delegation.
 
 ## Structure
 
@@ -9,18 +9,9 @@ Each agent is a markdown file with YAML frontmatter:
 ```markdown
 ---
 model: inherit
-permissionMode: default           # Optional: default, plan, acceptEdits, dontAsk, bypassPermissions
-maxTokens: 4000                   # Optional: limit output length
 description: "Role phrase. Capability summary."
-tools:
-  - ToolName
-  - Bash(command:pattern)
-hooks:                            # Optional: inject prompts at execution points
-  Stop:
-    - matcher: "*"
-      hooks:
-        - type: prompt
-          prompt: "Final validation prompt"
+disallowedTools: Write, Edit      # Optional: enforce read-only behavior
+maxTurns: 10                      # Optional: cap long-running delegation
 ---
 
 # AgentName
@@ -83,7 +74,7 @@ You'll receive a specific implementation task. Examples:
 
 **NEVER pass `model: "haiku"` or `model: "sonnet"` when spawning agents.**
 
-The Task tool's default description suggests "prefer haiku for quick tasks" - IGNORE THIS.
+The Agent tool's default description suggests "prefer haiku for quick tasks" - IGNORE THIS.
 This plugin overrides that guidance. All oh-my-claude agents are defined with `model: inherit`
 in their frontmatter, and the parent session should NEVER override this with a downgrade.
 
@@ -95,135 +86,64 @@ in their frontmatter, and the parent session should NEVER override this with a d
 **When spawning agents:**
 ```yaml
 # CORRECT - inherits parent model
-Task(subagent_type="oh-my-claude:critic", prompt="...")
+Agent(subagent_type="oh-my-claude:critic", prompt="...")
 
 # CORRECT - explicit inherit
-Task(subagent_type="oh-my-claude:librarian", model="inherit", prompt="...")
+Agent(subagent_type="oh-my-claude:librarian", model="inherit", prompt="...")
 
 # WRONG - NEVER DO THIS
-Task(subagent_type="oh-my-claude:critic", model="haiku", prompt="...")
-Task(subagent_type="oh-my-claude:validator", model="sonnet", prompt="...")
+Agent(subagent_type="oh-my-claude:critic", model="haiku", prompt="...")
+Agent(subagent_type="oh-my-claude:validator", model="sonnet", prompt="...")
 ```
 
-## Permission Modes
+Claude Code renamed `Task(...)` to `Agent(...)` in `v2.1.63`. Use `Agent(...)` in new examples. `Task(...)` remains an alias on modern builds.
 
-Control how the agent handles permission prompts via the `permissionMode` frontmatter field.
+## Plugin Agent Limits
 
-| Mode | Behavior | Use Case |
-|------|----------|----------|
-| `default` | Standard permission checking | General-purpose agents, balanced safety |
-| `plan` | Read-only exploration mode | Read-only agents - information gathering only |
-| `acceptEdits` | Auto-accept file edits | Trusted implementation agents |
-| `dontAsk` | Auto-deny permission prompts | Strict read-only agents, reviewers |
-| `bypassPermissions` | Skip all permission checks | Dangerous - use only for fully trusted automation |
+Plugin-provided agents are not full project agents. Current Claude Code ignores some frontmatter fields when an agent comes from a plugin.
 
-**Guidelines:**
-- Read-only agents (librarian): use `plan` or `dontAsk`
-- Review agents (advisor, risk-assessor, critic): use `plan` to prevent accidental changes
-- Validation agents (validator): use `plan` for safety, full Bash for test execution
-- Never use `bypassPermissions` unless explicitly required by workflow
+Ignored on plugin agents:
+- `permissionMode`
+- agent-local `hooks`
+- agent-local `mcpServers`
+
+Use supported fields instead:
+- `tools` / `disallowedTools` to control capabilities
+- `model` to pin or inherit model choice
+- `memory`, `skills`, `maxTurns`, `color` when needed
+
+If you need `permissionMode` or agent-local hooks, copy the agent into `.claude/agents/` or `~/.claude/agents/`.
 
 ```yaml
 ---
 model: inherit
-permissionMode: plan
 description: "Read-only reconnaissance agent."
-tools:
-  - Read
-  - Glob
-  - Grep
+disallowedTools: Write, Edit
 ---
 ```
 
-## Hooks Patterns
+## Turn Limits
 
-Agents can define hooks to inject prompts or validation at specific execution points.
-
-### Hook Types
-
-| Hook | Trigger | Purpose |
-|------|---------|---------|
-| `PreToolUse` | Before tool execution | Validate inputs, inject guidance |
-| `PostToolUse` | After tool execution | Process results, extract data |
-| `Stop` | Agent completion | Enforce output format, final validation |
-
-### PreToolUse Example
-
-Inject verification before file modifications:
-
-```yaml
-hooks:
-  PreToolUse:
-    - matcher: "Edit|Write"
-      hooks:
-        - type: prompt
-          prompt: "Verify this change aligns with the task scope before proceeding."
-```
-
-### PostToolUse Example
-
-Process tool output for specific patterns:
-
-```yaml
-hooks:
-  PostToolUse:
-    - matcher: "Bash"
-      hooks:
-        - type: prompt
-          prompt: "Check for errors in command output. If errors found, document them."
-```
-
-### Stop Example
-
-Enforce structured output format:
-
-```yaml
-hooks:
-  Stop:
-    - matcher: "*"
-      hooks:
-        - type: prompt
-          prompt: |
-            Before completing, ensure your response includes:
-            1. A VERDICT line (PASS/FAIL/NEEDS_REVIEW)
-            2. Summary of findings
-            3. Specific file paths for any issues found
-```
-
-### Matcher Patterns
-
-| Pattern | Matches |
-|---------|---------|
-| `*` | All tools |
-| `Edit` | Edit tool only |
-| `Edit\|Write` | Edit OR Write tools |
-| `Bash` | Bash tool |
-
-## Output Constraints
-
-Control token limits via `maxTokens` in frontmatter for agents with specific output requirements.
+Control long-running delegation with `maxTurns` in frontmatter.
 
 | Agent Type | Recommended Limit | Rationale |
 |------------|-------------------|-----------|
-| Explore | 2000-4000 | Returns locations, not content |
-| Librarian | 4000-8000 | Summaries should be concise |
-| Critic | 4000-6000 | Focused feedback, not rewrites |
-| Validator | 4000-6000 | Results + brief explanation |
-| Advisor | 4000-6000 | Guidance should be concise |
+| Explore | 4-8 | Search, summarize, stop |
+| Librarian | 6-12 | Read several files, return concise summary |
+| Critic | 4-8 | Focused feedback, not rewrites |
+| Validator | 6-12 | Run checks, report verdict |
+| Advisor | 4-8 | Surface gaps without sprawling |
 
-**When to use output constraints:**
-- Agents that tend to over-explain or dump content
-- Read-only agents returning locations instead of content
-- Review agents that should give feedback, not implementations
+**When to use turn limits:**
+- Agents that can spiral on wide searches
+- Validators that might keep retrying failing commands
+- Review agents that should return findings, not over-investigate
 
 ```yaml
 ---
 model: inherit
-maxTokens: 4000
+maxTurns: 8
 description: "Concise reconnaissance agent."
-tools:
-  - Glob
-  - Grep
 ---
 ```
 
@@ -234,11 +154,8 @@ which is governed by Claude Code's built-in permission system (settings.json,
 permission modes, PermissionRequest hooks). This avoids a redundant restriction
 layer that causes unnecessary permission prompts.
 
-Use `permissionMode` to control agent behavior instead:
-- `plan` — read-only agents (critic, advisor, risk-assessor, librarian, code-reviewer, security-auditor)
-- `default` — standard agents
-
-Only add explicit `tools` if you need to restrict beyond what `permissionMode` provides.
+For plugin agents, prefer `disallowedTools: Write, Edit` for read-only roles.
+Only add explicit `tools` if you need to narrow capabilities further than that.
 
 ## Description Pattern
 
@@ -250,11 +167,11 @@ Examples:
 
 ## Agent Tiers
 
-| Tier | Agents | Permission Mode |
-|------|--------|-----------------|
-| Read-only | librarian | plan |
-| Review | critic, code-reviewer, advisor, risk-assessor, security-auditor | plan |
-| Execution | validator | default (inherits parent) |
+| Tier | Agents | Runtime guardrail |
+|------|--------|------------------|
+| Read-only | librarian | `disallowedTools: Write, Edit` |
+| Review | critic, code-reviewer, advisor, risk-assessor, security-auditor | `disallowedTools: Write, Edit` |
+| Execution | validator | `disallowedTools: Write, Edit` plus prompt-level "report only" rules |
 
 **Note:** Use Claude Code's built-in agents for common tasks:
 - **Explore** - File/definition discovery
@@ -329,7 +246,7 @@ Claude Code has built-in Task API documentation. Focus on small, validateable ta
 
 ## Anti-Patterns
 
-- Don't add explicit `tools` unless `permissionMode` is insufficient
+- Don't add unsupported plugin-only expectations like `permissionMode` or agent-local `hooks`
 - Don't omit "What Agent Does NOT Do" section
 - Don't use vague descriptions
-- Don't duplicate Claude Code's permission system with agent-level restrictions
+- Don't duplicate Claude Code's permission system with sprawling tool allowlists unless you need them

@@ -2,7 +2,7 @@
 model: inherit
 memory: project
 description: "Use this agent to review implemented code for requirement fit, quality, and risk before completion."
-permissionMode: plan
+disallowedTools: Write, Edit
 ---
 
 # Code Reviewer

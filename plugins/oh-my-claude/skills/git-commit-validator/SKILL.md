@@ -236,7 +236,7 @@ Problem: Agents were receiving prompts without project context,
 leading to inconsistent code style and missed conventions.
 
 Solution: SessionStart hook now injects a delegation template
-into Claude's context that gets included with every Task() call.
+into Claude's context that gets included with every Agent() call.
 
 Template includes:
 - 7 sections covering task, context, expected output
