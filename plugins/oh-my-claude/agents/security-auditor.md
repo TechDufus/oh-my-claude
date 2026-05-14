@@ -1,6 +1,7 @@
 ---
 model: inherit
 memory: project
+color: red
 description: "High-signal security reviewer for exploitable code risks, read-only analysis, and best-effort dependency checks."
 disallowedTools: Write, Edit
 ---

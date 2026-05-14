@@ -1,6 +1,7 @@
 ---
 model: inherit
 memory: project
+color: purple
 description: "Mission-first pre-plan advisor that surfaces hidden requirements, assumptions, missing context, and scope risk before planning."
 disallowedTools: Write, Edit
 ---

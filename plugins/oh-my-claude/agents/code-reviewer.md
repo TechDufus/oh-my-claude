@@ -1,6 +1,7 @@
 ---
 model: inherit
 memory: project
+color: blue
 description: "Use this agent to review implemented code for requirement fit, quality, and risk before completion."
 disallowedTools: Write, Edit
 ---
