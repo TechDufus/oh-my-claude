@@ -1,11 +1,13 @@
 """Tests for hook_utils.py."""
 
+import io
 import json
 import re
 from unittest.mock import patch
 
 import pytest
 
+import hook_utils
 from hook_utils import (
     RegexCache,
     WhichCache,
@@ -18,6 +20,92 @@ from hook_utils import (
     output_stop_block,
     parse_hook_input,
 )
+
+
+class TestReadStdinSafe:
+    """Tests for safe stdin reading behavior."""
+
+    def test_dispatches_to_unix_reader_when_sigalrm_available(self, monkeypatch):
+        """SIGALRM-capable platforms should use the Unix implementation."""
+        monkeypatch.setattr(hook_utils, "_HAS_SIGALRM", True)
+
+        with (
+            patch.object(hook_utils, "_read_stdin_unix", return_value="unix") as unix_reader,
+            patch.object(hook_utils, "_read_stdin_windows", return_value="windows") as windows_reader,
+        ):
+            result = hook_utils.read_stdin_safe(timeout=3, max_bytes=12)
+
+        assert result == "unix"
+        unix_reader.assert_called_once_with(3, 12)
+        windows_reader.assert_not_called()
+
+    def test_dispatches_to_windows_reader_without_sigalrm(self, monkeypatch):
+        """Platforms without SIGALRM should use the Windows-safe implementation."""
+        monkeypatch.setattr(hook_utils, "_HAS_SIGALRM", False)
+
+        with (
+            patch.object(hook_utils, "_read_stdin_unix", return_value="unix") as unix_reader,
+            patch.object(hook_utils, "_read_stdin_windows", return_value="windows") as windows_reader,
+        ):
+            result = hook_utils.read_stdin_safe(timeout=3, max_bytes=12)
+
+        assert result == "windows"
+        windows_reader.assert_called_once_with(3, 12)
+        unix_reader.assert_not_called()
+
+    def test_windows_reader_reads_stdin(self, monkeypatch):
+        """Windows reader should return stdin content read by the background thread."""
+        monkeypatch.setattr(hook_utils.sys, "stdin", io.StringIO("hook input"))
+
+        result = hook_utils._read_stdin_windows(timeout=1, max_bytes=100)
+
+        assert result == "hook input"
+
+    def test_windows_reader_docstring_matches_implementation(self):
+        """Windows reader docs should not claim an unused msvcrt implementation."""
+        docstring = hook_utils._read_stdin_windows.__doc__
+
+        assert docstring is not None
+        assert "background thread" in docstring
+        assert "msvcrt" not in docstring
+
+    def test_windows_reader_raises_for_oversized_stdin(self, monkeypatch):
+        """Windows reader should enforce max_bytes."""
+        monkeypatch.setattr(hook_utils.sys, "stdin", io.StringIO("too large"))
+
+        with pytest.raises(hook_utils.StdinSizeError, match="stdin exceeds 3 bytes"):
+            hook_utils._read_stdin_windows(timeout=1, max_bytes=3)
+
+    def test_windows_reader_returns_empty_on_timeout(self):
+        """Windows reader should degrade gracefully when the read thread times out."""
+        created_threads = []
+
+        class BlockingThread:
+            def __init__(self, target, daemon):
+                self.target = target
+                self.daemon = daemon
+                self.join_timeout = None
+                created_threads.append(self)
+
+            def start(self):
+                return None
+
+            def join(self, timeout=None):
+                self.join_timeout = timeout
+
+        with patch("threading.Thread", BlockingThread):
+            result = hook_utils._read_stdin_windows(timeout=2, max_bytes=100)
+
+        assert result == ""
+        assert created_threads[0].daemon is True
+        assert created_threads[0].join_timeout == 2
+
+    def test_unix_reader_returns_empty_when_select_times_out(self):
+        """Unix reader should return empty string when stdin is not readable in time."""
+        with patch.object(hook_utils.select, "select", return_value=([], [], [])):
+            result = hook_utils._read_stdin_unix(timeout=1, max_bytes=100)
+
+        assert result == ""
 
 
 class TestParseHookInput:
