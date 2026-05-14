@@ -3,7 +3,7 @@
 // This file exists so all copy can be reviewed in one place.
 
 // ── Hero ────────────────────────────────────────────────────────
-export const heroHeadline = "Stop Wasting Your Context Window"
+export const heroHeadline = "Stop Wasting Context Window"
 export const heroTagline = "A Claude Code plugin that adds orchestration guardrails, review gates, and ultrawork so your main session stays sharp."
 
 // ── Stats Bar ───────────────────────────────────────────────────

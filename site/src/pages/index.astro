@@ -48,7 +48,11 @@ import MagneticButton from '@/components/MagneticButton'
 
   <!-- Hero Section -->
   <header class="relative overflow-hidden">
-    <div class="absolute inset-0 bg-gradient-to-b from-cyan/5 to-transparent pointer-events-none"></div>
+    <div class="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(34,211,238,0.14),transparent_30%),radial-gradient(circle_at_top_right,rgba(255,77,77,0.12),transparent_26%),radial-gradient(circle_at_50%_35%,rgba(255,255,255,0.06),transparent_32%)]"></div>
+    <div class="hero-grid pointer-events-none absolute inset-0 opacity-50"></div>
+    <div class="pointer-events-none absolute left-[6%] top-24 h-64 w-64 rounded-full bg-cyan/10 blur-3xl animate-orb-drift"></div>
+    <div class="pointer-events-none absolute right-[8%] top-12 h-72 w-72 rounded-full bg-coral/10 blur-3xl animate-orb-drift" style="animation-delay: -5s;"></div>
+    <div class="pointer-events-none absolute inset-x-0 top-0 h-48 bg-gradient-to-b from-white/6 to-transparent"></div>
 
     <div class="container mx-auto px-4 pt-8 pb-4">
       <nav class="flex items-center justify-between mb-8">
@@ -61,24 +65,53 @@ import MagneticButton from '@/components/MagneticButton'
       </nav>
     </div>
 
-    <div class="container mx-auto px-4 py-12">
-      <div class="flex flex-col lg:flex-row items-center justify-center gap-8 lg:gap-12">
+    <div class="container mx-auto px-4 py-12 lg:pb-20">
+      <div class="grid items-center gap-12 lg:grid-cols-[minmax(0,0.82fr)_minmax(0,1.18fr)] lg:gap-14">
         <!-- Left side: Text content -->
-        <div class="flex-1 flex flex-col items-center justify-center text-center max-w-xl">
-          <h1 class="text-4xl md:text-5xl lg:text-6xl font-heading font-bold mb-6">
-            Stop Wasting Your<br>
+        <div class="relative z-10 min-w-0 flex flex-col items-center text-center lg:items-start lg:text-left">
+          <div class="mb-6 inline-flex max-w-full items-center gap-2 rounded-full border border-cyan/20 bg-cyan/10 px-4 py-1.5 font-mono text-[10px] uppercase tracking-[0.14em] text-cyan shadow-[0_12px_40px_rgba(34,211,238,0.12)] sm:text-[11px] sm:tracking-[0.24em]">
+            <span class="h-2 w-2 rounded-full bg-cyan animate-pulse"></span>
+            <span class="sm:hidden">Claude Code power users</span>
+            <span class="hidden sm:inline">Built for Claude Code power users</span>
+          </div>
+          <h1 class="mb-6 max-w-[16ch] text-4xl font-heading font-bold leading-[0.95] md:text-5xl lg:text-6xl">
+            Stop Wasting<br>
             <span class="text-cyan">Context Window</span>
           </h1>
-          <p class="text-lg md:text-xl text-muted-foreground mb-8">
+          <p class="mb-8 max-w-xl text-lg text-muted-foreground md:text-xl">
             A Claude Code plugin that adds orchestration guardrails, review gates, and ultrawork
-            so your main session stays sharp.
+            so the main thread stays sharp while plan mode, subagents, and validators do the heavy lifting.
           </p>
+          <div class="mb-8 flex flex-wrap items-center justify-center gap-3 lg:justify-start">
+            <span class="rounded-full border border-cyan/20 bg-cyan/10 px-4 py-2 font-mono text-xs uppercase tracking-[0.18em] text-cyan">ultrawork</span>
+            <span class="rounded-full border border-orange-400/20 bg-orange-400/10 px-4 py-2 font-mono text-xs uppercase tracking-[0.18em] text-orange-200">review gates</span>
+            <span class="rounded-full border border-white/10 bg-white/[0.04] px-4 py-2 font-mono text-xs uppercase tracking-[0.18em] text-zinc-300">parallel orchestration</span>
+          </div>
           <InstallBlock client:load />
+          <div class="mt-8 grid w-full max-w-2xl gap-3 sm:grid-cols-3">
+            <div class="rounded-2xl border border-white/10 bg-white/[0.04] p-4 backdrop-blur-sm">
+              <div class="font-mono text-[11px] uppercase tracking-[0.2em] text-cyan">Plan Harder</div>
+              <p class="mt-2 text-sm leading-relaxed text-zinc-300">Interrogate scope before code gets written.</p>
+            </div>
+            <div class="rounded-2xl border border-white/10 bg-white/[0.04] p-4 backdrop-blur-sm">
+              <div class="font-mono text-[11px] uppercase tracking-[0.2em] text-orange-200">Delegate Intentionally</div>
+              <p class="mt-2 text-sm leading-relaxed text-zinc-300">Push bounded work out without losing the plot.</p>
+            </div>
+            <div class="rounded-2xl border border-white/10 bg-white/[0.04] p-4 backdrop-blur-sm">
+              <div class="font-mono text-[11px] uppercase tracking-[0.2em] text-zinc-100">Ship Defensibly</div>
+              <p class="mt-2 text-sm leading-relaxed text-zinc-300">Force a review pass before the session says done.</p>
+            </div>
+          </div>
         </div>
 
         <!-- Right side: Terminal demo -->
-        <div class="flex-1">
+        <div class="relative z-10 min-w-0">
+          <div class="pointer-events-none absolute -inset-x-6 top-10 h-[82%] rounded-[2rem] border border-white/8 bg-white/[0.03] blur-2xl"></div>
           <TerminalHero client:load />
+          <div class="mt-5 flex flex-wrap items-center justify-between gap-3 px-2 font-mono text-[11px] uppercase tracking-[0.18em] text-muted-foreground/80">
+            <span>Live orchestration demo</span>
+            <span class="text-cyan/80">Plan → Fan Out → Validate</span>
+          </div>
         </div>
       </div>
     </div>

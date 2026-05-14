@@ -72,6 +72,48 @@
   animation: flicker 4s infinite;
 }
 
+@keyframes orb-drift {
+  0%, 100% {
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+  50% {
+    transform: translate3d(0, -18px, 0) scale(1.08);
+  }
+}
+
+@keyframes terminal-scan {
+  0% {
+    transform: translateY(-18%);
+    opacity: 0;
+  }
+  20% {
+    opacity: 0.55;
+  }
+  60% {
+    opacity: 0.2;
+  }
+  100% {
+    transform: translateY(230%);
+    opacity: 0;
+  }
+}
+
+.hero-grid {
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.04) 1px, transparent 1px);
+  background-size: 72px 72px;
+  mask-image: radial-gradient(circle at center, black 25%, transparent 78%);
+}
+
+.animate-orb-drift {
+  animation: orb-drift 12s ease-in-out infinite;
+}
+
+.animate-terminal-scan {
+  animation: terminal-scan 7s linear infinite;
+}
+
 /* Scroll reveal animations */
 [data-reveal] {
   opacity: 0;

@@ -24,6 +24,10 @@ __pycache__/
 # Logs
 *.log
 
+# Local browser review artifacts
+.playwright-mcp/
+/*.png
+
 # Demo GIFs (large files, regenerate locally with VHS)
 demo/*.gif
 

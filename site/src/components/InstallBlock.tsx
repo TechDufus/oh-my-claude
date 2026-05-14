@@ -22,8 +22,8 @@ export default function InstallBlock() {
   }
 
   return (
-    <div className="flex flex-col items-center justify-center gap-4">
-      <div className="w-full max-w-2xl overflow-x-auto px-4 py-3 bg-secondary/50 rounded-lg border border-border/50 font-mono text-sm">
+    <div className="flex w-full max-w-2xl flex-col items-stretch gap-4">
+      <div className="w-full overflow-x-auto rounded-2xl border border-white/10 bg-white/[0.04] px-4 py-4 font-mono text-sm shadow-[0_18px_50px_rgba(0,0,0,0.25)] backdrop-blur-sm">
         {COMMANDS.map((cmd, i) => (
           <div key={i} className="flex items-center gap-2 whitespace-nowrap">
             <span className="text-muted-foreground">$</span>
@@ -35,7 +35,7 @@ export default function InstallBlock() {
         variant="coral"
         size="lg"
         onClick={handleCopy}
-        className="gap-2 font-medium"
+        className="w-full gap-2 font-medium sm:w-fit"
       >
         {copied ? (
           <>

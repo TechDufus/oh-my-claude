@@ -1,23 +1,26 @@
-import { useState, useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 
-const SPINNER = ['\u273D', '\u273B', '\u2733', '\u2735']
+const SPINNER = ['✻', '✺', '✹', '✷']
+const DEMO_CLAUDE_MODEL = 'claude-opus-4-6'
+const DEMO_CLAUDE_CODE_VERSION = '2.1.107'
+const DEMO_DIR = 'oh-my-claude'
+const DEMO_BRANCH = 'main'
 
-// Types
 type ContentLineType =
-  | 'logo'
+  | 'submitted-prompt'
   | 'thinking'
   | 'task-header'
   | 'task-item'
   | 'agent-header'
   | 'agent-row'
   | 'success'
-  | 'submitted-prompt'
+
+type PhaseName = 'idle' | 'research' | 'implementation' | 'validation' | 'complete'
 
 interface ContentLine {
   id: string
   type: ContentLineType
   content: string
-  status?: 'pending' | 'running' | 'complete'
   indent?: number
 }
 
@@ -31,15 +34,12 @@ interface Agent {
   id: string
   name: string
   task: string
-  toolUses: number
-  tokens: number
   status: 'running' | 'complete'
   statusText: string
 }
 
-// Phase configuration for multi-phase animation
 interface PhaseConfig {
-  id: string
+  id: PhaseName
   name: string
   tasks: Task[]
   agents: Agent[]
@@ -48,290 +48,346 @@ interface PhaseConfig {
 const PHASES: PhaseConfig[] = [
   {
     id: 'research',
-    name: 'Phase 1: Research',
+    name: 'Research',
     tasks: [
-      { id: 't1', label: 'Explore codebase and find patterns', status: 'pending' }
+      { id: 't1', label: 'Survey auth surface', status: 'pending' }
     ],
     agents: [
-      { id: 'a1', name: 'Explore', task: 'Find files', toolUses: 12, tokens: 0, status: 'running', statusText: 'Searching...' },
-      { id: 'a2', name: 'Explore', task: 'Map deps', toolUses: 8, tokens: 0, status: 'running', statusText: 'Mapping...' },
-      { id: 'a3', name: 'oh-my-claude:librarian', task: 'Read patterns', toolUses: 6, tokens: 0, status: 'running', statusText: 'Reading...' },
+      { id: 'a1', name: 'Explore', task: 'Find files', status: 'running', statusText: 'Searching…' },
+      { id: 'a2', name: 'Explore', task: 'Map deps', status: 'running', statusText: 'Mapping…' },
+      { id: 'a3', name: 'librarian', task: 'Read patterns', status: 'running', statusText: 'Reading…' },
     ]
   },
   {
     id: 'implementation',
-    name: 'Phase 2: Implementation',
+    name: 'Implementation',
     tasks: [
-      { id: 't2', label: 'Implement auth middleware', status: 'pending' },
-      { id: 't3', label: 'Add validation logic', status: 'pending' },
-      { id: 't4', label: 'Update API routes', status: 'pending' },
-      { id: 't5', label: 'Wire up error handling', status: 'pending' },
+      { id: 't2', label: 'Add middleware', status: 'pending' },
+      { id: 't3', label: 'Add validation', status: 'pending' },
+      { id: 't4', label: 'Patch routes', status: 'pending' },
+      { id: 't5', label: 'Handle failures', status: 'pending' },
     ],
     agents: [
-      { id: 'a4', name: 'Task', task: 'Auth middleware', toolUses: 14, tokens: 0, status: 'running', statusText: 'Writing...' },
-      { id: 'a5', name: 'Task', task: 'Validation', toolUses: 10, tokens: 0, status: 'running', statusText: 'Writing...' },
-      { id: 'a6', name: 'Task', task: 'API routes', toolUses: 12, tokens: 0, status: 'running', statusText: 'Writing...' },
-      { id: 'a7', name: 'Task', task: 'Error handling', toolUses: 8, tokens: 0, status: 'running', statusText: 'Writing...' },
+      { id: 'a4', name: 'Task', task: 'Middleware', status: 'running', statusText: 'Writing…' },
+      { id: 'a5', name: 'Task', task: 'Validation', status: 'running', statusText: 'Writing…' },
+      { id: 'a6', name: 'Task', task: 'Routes', status: 'running', statusText: 'Writing…' },
+      { id: 'a7', name: 'Task', task: 'Errors', status: 'running', statusText: 'Writing…' },
     ]
   },
   {
     id: 'validation',
-    name: 'Phase 3: Validation',
+    name: 'Validation',
     tasks: [
-      { id: 't6', label: 'Run tests and linters', status: 'pending' },
-      { id: 't7', label: 'Commit changes', status: 'pending' },
+      { id: 't6', label: 'Run tests', status: 'pending' },
+      { id: 't7', label: 'Run lints', status: 'pending' },
     ],
     agents: [
-      { id: 'a8', name: 'oh-my-claude:validator', task: 'Run tests', toolUses: 4, tokens: 0, status: 'running', statusText: 'Testing...' },
-      { id: 'a9', name: 'oh-my-claude:validator', task: 'Run lints', toolUses: 2, tokens: 0, status: 'running', statusText: 'Linting...' },
-      { id: 'a10', name: 'Task', task: 'Git commit', toolUses: 3, tokens: 0, status: 'running', statusText: 'Committing...' },
+      { id: 'a8', name: 'validator', task: 'Tests', status: 'running', statusText: 'Testing…' },
+      { id: 'a9', name: 'validator', task: 'Lints', status: 'running', statusText: 'Linting…' },
+      { id: 'a10', name: 'Task', task: 'Commit check', status: 'running', statusText: 'Checking…' },
     ]
   }
 ]
 
-// Collect all tasks across phases for initial state
-const ALL_TASKS: Task[] = PHASES.flatMap(p => p.tasks)
+const ALL_TASKS: Task[] = PHASES.flatMap((phase) => phase.tasks)
+
+function getPhaseName(
+  phase: 'idle' | 'running' | 'complete',
+  tasks: Task[]
+): PhaseName {
+  if (phase === 'idle') return 'idle'
+  if (phase === 'complete') return 'complete'
+
+  if (tasks.some((task) => ['t6', 't7'].includes(task.id) && task.status === 'running')) {
+    return 'validation'
+  }
+
+  if (tasks.some((task) => ['t2', 't3', 't4', 't5'].includes(task.id) && task.status === 'running')) {
+    return 'implementation'
+  }
+
+  return 'research'
+}
+
+function formatElapsed(seconds: number) {
+  const mins = Math.floor(seconds / 60)
+  const secs = seconds % 60
+  return `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`
+}
+
+function ContextMeter({ percent }: { percent: number }) {
+  const totalBars = 10
+  const filledBars = Math.min(totalBars, Math.max(0, Math.round(percent / 10)))
+  const emptyBars = totalBars - filledBars
+
+  return (
+    <span className="inline-flex items-center gap-2">
+      <span>{percent}%</span>
+      <span className="tracking-[0.08em] text-zinc-400">
+        {'█'.repeat(filledBars)}
+        <span className="text-zinc-800">{'░'.repeat(emptyBars)}</span>
+      </span>
+    </span>
+  )
+}
+
+function ClaudePixelIcon() {
+  return (
+    <svg viewBox="0 0 32 32" className="h-12 w-12 sm:h-14 sm:w-14">
+      <g transform="translate(3, 2)">
+        <rect x="8" y="0" width="10" height="2" fill="#DA7756"/>
+        <rect x="6" y="2" width="14" height="2" fill="#DA7756"/>
+        <rect x="4" y="4" width="18" height="2" fill="#DA7756"/>
+        <rect x="2" y="6" width="22" height="2" fill="#DA7756"/>
+        <rect x="2" y="8" width="22" height="6" fill="#DA7756"/>
+        <rect x="3" y="8" width="8" height="5" fill="#111"/>
+        <rect x="4" y="9" width="6" height="3" fill="#1a3a4a"/>
+        <rect x="11" y="9" width="4" height="2" fill="#111"/>
+        <rect x="15" y="8" width="8" height="5" fill="#111"/>
+        <rect x="16" y="9" width="6" height="3" fill="#1a3a4a"/>
+        <rect x="5" y="9" width="2" height="1" fill="#3a6a7a"/>
+        <rect x="17" y="9" width="2" height="1" fill="#3a6a7a"/>
+        <rect x="0" y="9" width="3" height="2" fill="#111"/>
+        <rect x="23" y="9" width="3" height="2" fill="#111"/>
+        <rect x="2" y="14" width="22" height="2" fill="#DA7756"/>
+        <rect x="4" y="16" width="18" height="2" fill="#DA7756"/>
+        <rect x="6" y="18" width="14" height="2" fill="#DA7756"/>
+        <rect x="6" y="20" width="3" height="5" fill="#DA7756"/>
+        <rect x="11" y="20" width="4" height="6" fill="#DA7756"/>
+        <rect x="17" y="20" width="3" height="5" fill="#DA7756"/>
+      </g>
+    </svg>
+  )
+}
+
+function WelcomeScreen() {
+  return (
+    <div className="mb-3 rounded border border-orange-400/80 px-3 py-3 sm:px-4">
+      <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+        <div className="flex min-w-0 flex-1 items-center gap-4">
+          <div className="shrink-0 p-1">
+            <ClaudePixelIcon />
+          </div>
+          <div className="min-w-0 text-zinc-400 text-xs">
+            <div className="text-zinc-300">Claude Code v{DEMO_CLAUDE_CODE_VERSION}</div>
+            <div>{DEMO_DIR}</div>
+          </div>
+        </div>
+        <div className="hidden w-px self-stretch bg-orange-400/80 md:block"></div>
+        <div className="min-w-0 flex-1 text-xs text-zinc-400">
+          <div className="text-orange-400 font-medium">Tips for getting started</div>
+          <div>Use plan mode for complex tasks</div>
+          <div>Use ultrawork for maximum effort</div>
+          <div className="mt-2 text-orange-400 font-medium">Recent activity</div>
+          <div>No recent activity</div>
+        </div>
+      </div>
+    </div>
+  )
+}
 
 function TerminalHeader() {
   return (
-    <div className="flex items-center px-4 py-3 bg-zinc-900 border-b border-zinc-700">
+    <div className="flex items-center border-b border-white/10 bg-zinc-950/95 px-4 py-3">
       <div className="flex items-center gap-2">
-        <div className="w-3 h-3 rounded-full bg-red-500"></div>
-        <div className="w-3 h-3 rounded-full bg-yellow-500"></div>
-        <div className="w-3 h-3 rounded-full bg-green-500"></div>
+        <div className="h-3 w-3 rounded-full bg-red-500/90"></div>
+        <div className="h-3 w-3 rounded-full bg-amber-400/90"></div>
+        <div className="h-3 w-3 rounded-full bg-emerald-400/90"></div>
       </div>
-      <div className="flex-1 text-center">
-        <span className="text-zinc-500 text-sm font-['JetBrains_Mono',_ui-monospace,_monospace]">oh-my-claude</span>
+      <div className="flex-1 text-center font-['JetBrains_Mono',_ui-monospace,_monospace] text-sm text-zinc-300">
+        claude
       </div>
-      <div className="w-[52px]"></div> {/* Spacer to balance the dots */}
+      <div className="hidden w-20 text-right font-['JetBrains_Mono',_ui-monospace,_monospace] text-xs text-zinc-600 sm:block">
+        {DEMO_DIR}
+      </div>
+      <div className="w-0 sm:hidden"></div>
     </div>
   )
 }
 
 function PulsingLine({ active }: { active: boolean }) {
   return (
-    <div className="h-0.5 bg-zinc-800 overflow-hidden relative">
+    <div className="relative h-px overflow-hidden bg-white/5">
       {active && (
         <div
-          className="absolute h-full w-1/4 bg-gradient-to-r from-transparent via-orange-500 to-transparent"
-          style={{
-            animation: 'pulse-slide 2s ease-in-out infinite'
-          }}
+          className="absolute h-full w-1/3 bg-gradient-to-r from-transparent via-cyan to-transparent"
+          style={{ animation: 'pulse-slide 2.4s ease-in-out infinite' }}
         ></div>
       )}
     </div>
   )
 }
 
-interface StatusBarProps {
-  phase: 'idle' | 'running' | 'complete'
-  cost: string
-  tokens: string
-  agentCount: number
-}
-
-function StatusBar({ phase, cost, tokens, agentCount }: StatusBarProps) {
-  const status = phase === 'idle'
-    ? 'Ready'
-    : phase === 'complete'
-      ? 'Complete'
-      : `${agentCount} agents active`
-
-  return (
-    <div className="flex items-center gap-4 px-4 py-2 bg-zinc-900 border-t border-zinc-700 text-xs text-zinc-400">
-      <span>claude-opus-4-5</span>
-      <span className="text-zinc-600">|</span>
-      <span>{cost}</span>
-      <span className="text-zinc-600">|</span>
-      <span>{tokens}</span>
-      <span className="text-zinc-600">|</span>
-      <span className={phase === 'complete' ? 'text-emerald-400' : 'text-green-400'}>
-        {status}
-      </span>
-    </div>
-  )
-}
-
-interface PromptLineProps {
+function PromptLine({
+  content,
+  status,
+}: {
   content: string
   status: 'idle' | 'typing' | 'submitted'
-}
+}) {
+  const displayText =
+    status === 'idle'
+      ? ''
+      : status === 'typing'
+        ? content
+        : ''
 
-function PromptLine({ content, status }: PromptLineProps) {
   return (
-    <div className="px-4 py-2 border-t border-zinc-800 text-sm font-['JetBrains_Mono',_ui-monospace,_monospace]">
-      <span className="text-zinc-500">{'>'}</span>{' '}
-      {status !== 'submitted' && (
-        <>
-          <span className="text-cyan-400">{content}</span>
-          {status === 'typing' && <span className="animate-pulse text-cyan-400">|</span>}
-        </>
-      )}
+    <div className="border-t border-white/10 bg-black/20 px-4 py-3 font-['JetBrains_Mono',_ui-monospace,_monospace] text-sm text-zinc-300">
+      <div className="flex items-center gap-2 overflow-hidden">
+        <span className="text-zinc-500">{'>'}</span>
+        <span className="truncate">{displayText}</span>
+        {status === 'typing' && <span className="animate-pulse text-cyan">|</span>}
+      </div>
     </div>
   )
 }
 
-interface ContentLineRendererProps {
+function StatusLine({
+  phase,
+  contextPercent,
+  elapsedSeconds,
+  cost,
+}: {
+  phase: PhaseName
+  contextPercent: number
+  elapsedSeconds: number
+  cost: string
+}) {
+  const phaseLabel =
+    phase === 'idle'
+      ? 'ready'
+      : phase === 'complete'
+        ? 'complete'
+        : phase
+
+  return (
+    <div className="border-t border-white/10 bg-zinc-950/95 px-4 py-2 font-['JetBrains_Mono',_ui-monospace,_monospace] text-[10px] uppercase tracking-[0.12em] text-zinc-300 sm:text-[11px] sm:tracking-[0.16em]">
+      <div className="flex flex-wrap items-center gap-2">
+        <span className="text-zinc-100">[{DEMO_CLAUDE_MODEL}]</span>
+        <span className="text-zinc-700">|</span>
+        <span>{DEMO_DIR}</span>
+        <span className="text-zinc-700">|</span>
+        <span>{DEMO_BRANCH}</span>
+      </div>
+      <div className="mt-1 flex flex-wrap items-center gap-2 text-zinc-400">
+        <span className="inline-flex items-center gap-2">
+          <span>context</span>
+          <ContextMeter percent={contextPercent} />
+        </span>
+        <span className="text-zinc-700">|</span>
+        <span>{cost}</span>
+        <span className="text-zinc-700">|</span>
+        <span>{formatElapsed(elapsedSeconds)}</span>
+        <span className="text-zinc-700">|</span>
+        <span className={phase === 'complete' ? 'text-emerald-300' : 'text-zinc-200'}>
+          {phaseLabel}
+        </span>
+      </div>
+    </div>
+  )
+}
+
+function ContentLineRenderer({
+  line,
+  spinnerIndex,
+  agents,
+  tasks,
+  completedTaskIds,
+}: {
   line: ContentLine
   spinnerIndex: number
   agents: Agent[]
   tasks: Task[]
   completedTaskIds: string[]
-}
-
-function ContentLineRenderer({ line, spinnerIndex, agents, tasks, completedTaskIds }: ContentLineRendererProps) {
-  const indent = line.indent ? `pl-${line.indent * 2}` : ''
+}) {
+  const indentStyle = line.indent ? { paddingLeft: `${line.indent * 0.75}rem` } : undefined
 
   switch (line.type) {
-    case 'logo':
+    case 'submitted-prompt':
       return (
-        <div className="px-1 py-3 mx-0 mb-2 border border-orange-500 rounded">
-          <div className="flex justify-between">
-            {/* Left side - logo and version */}
-            <div className="flex items-center gap-6 flex-1">
-              <div className="p-1">
-                <svg viewBox="0 0 32 32" className="w-20 h-20">
-                  <g transform="translate(3, 2)">
-                    {/* Head top */}
-                    <rect x="8" y="0" width="10" height="2" fill="#DA7756"/>
-                    <rect x="6" y="2" width="14" height="2" fill="#DA7756"/>
-                    <rect x="4" y="4" width="18" height="2" fill="#DA7756"/>
-                    <rect x="2" y="6" width="22" height="2" fill="#DA7756"/>
-                    {/* Face row */}
-                    <rect x="2" y="8" width="22" height="6" fill="#DA7756"/>
-                    {/* Sunglasses */}
-                    <rect x="3" y="8" width="8" height="5" fill="#111"/>
-                    <rect x="4" y="9" width="6" height="3" fill="#1a3a4a"/>
-                    <rect x="11" y="9" width="4" height="2" fill="#111"/>
-                    <rect x="15" y="8" width="8" height="5" fill="#111"/>
-                    <rect x="16" y="9" width="6" height="3" fill="#1a3a4a"/>
-                    <rect x="5" y="9" width="2" height="1" fill="#3a6a7a"/>
-                    <rect x="17" y="9" width="2" height="1" fill="#3a6a7a"/>
-                    <rect x="0" y="9" width="3" height="2" fill="#111"/>
-                    <rect x="23" y="9" width="3" height="2" fill="#111"/>
-                    {/* Lower face */}
-                    <rect x="2" y="14" width="22" height="2" fill="#DA7756"/>
-                    <rect x="4" y="16" width="18" height="2" fill="#DA7756"/>
-                    <rect x="6" y="18" width="14" height="2" fill="#DA7756"/>
-                    {/* Tentacles */}
-                    <rect x="6" y="20" width="3" height="5" fill="#DA7756"/>
-                    <rect x="11" y="20" width="4" height="6" fill="#DA7756"/>
-                    <rect x="17" y="20" width="3" height="5" fill="#DA7756"/>
-                  </g>
-                </svg>
-              </div>
-              <div className="text-zinc-400 text-xs">
-                <div className="text-zinc-300">Claude Code v2.1.19</div>
-                <div>oh-my-claude</div>
-              </div>
-            </div>
-            {/* Orange divider */}
-            <div className="w-0.5 bg-orange-500 mx-4 self-stretch"></div>
-            {/* Right side - tips */}
-            <div className="text-xs text-zinc-400 flex-1">
-              <div className="text-orange-400 font-medium">Tips for getting started</div>
-              <div>Use plan mode for complex tasks</div>
-              <div>Use ultrawork for maximum effort</div>
-              <div className="text-orange-400 font-medium mt-2">Recent activity</div>
-              <div>No recent activity</div>
-            </div>
-          </div>
+        <div className="mb-2 text-cyan" style={indentStyle}>
+          {'>'} {line.content}
         </div>
       )
 
     case 'thinking':
       return (
-        <div className={`text-zinc-400 ${indent}`}>
-          <span className="text-yellow-400">{SPINNER[spinnerIndex]}</span> {line.content}
+        <div className="text-zinc-400" style={indentStyle}>
+          <span className="text-yellow-300">{SPINNER[spinnerIndex]}</span> {line.content}
         </div>
       )
 
     case 'task-header':
       return (
-        <div className={`text-zinc-300 mt-2 ${indent}`}>
+        <div className="mt-3 text-zinc-200" style={indentStyle}>
           {line.content}
         </div>
       )
 
     case 'task-item': {
-      const task = tasks.find(t => t.id === line.id)
+      const task = tasks.find((item) => item.id === line.id)
       const isComplete = task?.status === 'complete'
       const isRunning = task?.status === 'running'
       const isFromPreviousPhase = completedTaskIds.includes(line.id)
 
       return (
-        <div className={`text-zinc-400 ${indent}`}>
-          <span className={isComplete || isFromPreviousPhase ? 'text-green-400' : isRunning ? 'text-yellow-400' : 'text-zinc-500'}>
+        <div className="text-zinc-400" style={indentStyle}>
+          <span className={isComplete || isFromPreviousPhase ? 'text-emerald-300' : isRunning ? 'text-yellow-300' : 'text-zinc-600'}>
             {isComplete || isFromPreviousPhase ? '[✓]' : isRunning ? `[${SPINNER[spinnerIndex]}]` : '[ ]'}
           </span>{' '}
           <span className={
             isFromPreviousPhase
-              ? 'line-through text-zinc-600'
-              : isComplete
+              ? 'text-zinc-600 line-through'
+              : isComplete || isRunning
                 ? 'text-zinc-300'
-                : isRunning
-                  ? 'text-zinc-300'
-                  : ''
+                : ''
           }>
             {line.content}
           </span>
-          {isComplete && !isFromPreviousPhase && <span className="text-green-400 ml-1">ok</span>}
         </div>
       )
     }
 
     case 'agent-header': {
-      const allComplete = agents.every(a => a.status === 'complete')
+      const runningAgents = agents.filter((agent) => agent.status === 'running').length
+      const allComplete = agents.length > 0 && agents.every((agent) => agent.status === 'complete')
+      const label = allComplete
+        ? `${agents.length} agents complete`
+        : runningAgents > 0
+          ? `${runningAgents} agents active`
+          : line.content
+
       return (
-        <div className="flex items-center gap-2 text-zinc-300 mt-3">
-          <span className={allComplete ? 'text-green-400' : 'text-green-400'}>*</span>
-          <span>{line.content}</span>
-          <span className="text-zinc-600">(ctrl+o to expand)</span>
+        <div className="mt-3 text-zinc-300" style={indentStyle}>
+          * {label}
         </div>
       )
     }
 
     case 'agent-row': {
-      const agent = agents.find(a => a.id === line.id)
+      const agent = agents.find((item) => item.id === line.id)
       if (!agent) return null
+
       return (
-        <div className="pl-2 text-zinc-400">
-          <div className="flex items-center gap-1">
-            <span className="text-zinc-600">⎿</span>
-            <span className="text-cyan-400">{agent.name}</span>
-            <span className="text-zinc-500">({agent.task})</span>
-            <span className="text-zinc-600">*</span>
-            <span>{agent.toolUses} uses</span>
-            <span className="text-zinc-600">*</span>
-            <span>{Math.round(agent.tokens / 1000)}k</span>
-          </div>
-          <div className="flex items-center gap-1 text-zinc-500">
-            <span className="text-zinc-600">  ⎿</span>
-            {agent.status === 'running' ? (
-              <>
-                <span className="text-yellow-400">{SPINNER[spinnerIndex]}</span>
-                <span>{agent.statusText}</span>
-              </>
-            ) : (
-              <span className="text-green-400">Done</span>
-            )}
-          </div>
+        <div className="text-zinc-400" style={indentStyle}>
+          <span className="text-zinc-600">⎿</span>{' '}
+          <span className="text-cyan">{agent.name}</span>
+          <span className="text-zinc-500"> · {agent.task}</span>
+          <span className="text-zinc-600"> · </span>
+          {agent.status === 'running' ? (
+            <span className="text-yellow-300">{agent.statusText}</span>
+          ) : (
+            <span className="text-emerald-300">Done</span>
+          )}
         </div>
       )
     }
 
     case 'success':
       return (
-        <div className="text-green-400 mt-3 font-medium">
+        <div className="mt-3 text-emerald-300" style={indentStyle}>
           {line.content}
-        </div>
-      )
-
-    case 'submitted-prompt':
-      return (
-        <div className="mb-2">
-          <span className="text-zinc-500">{'>'}</span>{' '}
-          <span className="text-cyan-400">{line.content}</span>
         </div>
       )
 
@@ -345,67 +401,56 @@ export default function TerminalHero() {
   const [spinnerIndex, setSpinnerIndex] = useState(0)
   const [contentLines, setContentLines] = useState<ContentLine[]>([])
   const [agents, setAgents] = useState<Agent[]>([])
-  const [tasks, setTasks] = useState<Task[]>(ALL_TASKS.map(t => ({ ...t, status: 'pending' })))
+  const [tasks, setTasks] = useState<Task[]>(ALL_TASKS.map((task) => ({ ...task, status: 'pending' })))
   const [typedPrompt, setTypedPrompt] = useState('')
   const [cycle, setCycle] = useState(0)
   const [parentTokens, setParentTokens] = useState(0)
   const [completedTaskIds, setCompletedTaskIds] = useState<string[]>([])
   const [promptStatus, setPromptStatus] = useState<'idle' | 'typing' | 'submitted'>('idle')
+  const [elapsedSeconds, setElapsedSeconds] = useState(0)
+  const contentRef = useRef<HTMLDivElement>(null)
 
-  const fullPrompt = 'Implement user authentication system ultrawork'
+  const fullPrompt = 'Implement auth system ultrawork'
 
-  // Main animation timeline - 15s total (3-phase execution)
   useEffect(() => {
     const timeouts: ReturnType<typeof setTimeout>[] = []
     const intervals: ReturnType<typeof setInterval>[] = []
     let typeInterval: ReturnType<typeof setInterval> | null = null
 
-    // Reset state at start
-    setContentLines([{ id: 'logo', type: 'logo', content: '' }])
+    setContentLines([])
     setAgents([])
-    setTasks(ALL_TASKS.map(t => ({ ...t, status: 'pending' })))
+    setTasks(ALL_TASKS.map((task) => ({ ...task, status: 'pending' })))
     setTypedPrompt('')
     setPhase('idle')
     setParentTokens(0)
     setCompletedTaskIds([])
     setPromptStatus('idle')
+    setElapsedSeconds(0)
 
-    // Helper to add a line
     const addLine = (line: ContentLine) => {
-      setContentLines(prev => [...prev, line])
+      setContentLines((previous) => [...previous, line])
     }
 
-    // Helper to remove lines by id prefix
     const removeLinesByPrefix = (prefix: string) => {
-      setContentLines(prev => prev.filter(l => !l.id.startsWith(prefix)))
+      setContentLines((previous) => previous.filter((line) => !line.id.startsWith(prefix)))
     }
 
-    // Start token growth interval (runs throughout)
-    let tokenGrowthInterval: ReturnType<typeof setInterval> | null = null
-    let parentTokenInterval: ReturnType<typeof setInterval> | null = null
-
-    const startTokenGrowth = () => {
-      tokenGrowthInterval = setInterval(() => {
-        setAgents(prev => prev.map(a =>
-          a.status === 'running'
-            ? { ...a, tokens: a.tokens + Math.floor(Math.random() * 800) + 200 }
-            : a
-        ))
-      }, 250)
-      intervals.push(tokenGrowthInterval)
-
-      parentTokenInterval = setInterval(() => {
-        setParentTokens(prev => prev + Math.floor(Math.random() * 150) + 50)
+    const startRuntime = () => {
+      const tokenInterval = setInterval(() => {
+        setParentTokens((previous) => previous + Math.floor(Math.random() * 120) + 80)
       }, 500)
-      intervals.push(parentTokenInterval)
+      intervals.push(tokenInterval)
+
+      const elapsedInterval = setInterval(() => {
+        setElapsedSeconds((previous) => previous + 1)
+      }, 1000)
+      intervals.push(elapsedInterval)
     }
 
-    // 0ms - Logo is already visible (fixed header)
-
-    // 500ms - Start typing prompt
     timeouts.push(setTimeout(() => {
       setPhase('running')
       setPromptStatus('typing')
+      startRuntime()
 
       let charIndex = 0
       typeInterval = setInterval(() => {
@@ -414,223 +459,191 @@ export default function TerminalHero() {
           setTypedPrompt(fullPrompt.slice(0, charIndex))
         } else {
           if (typeInterval) clearInterval(typeInterval)
-          // Add prompt to content lines as submitted
-          setContentLines(prev => [...prev, { id: 'submitted-prompt', type: 'submitted-prompt', content: fullPrompt }])
+          setContentLines((previous) => [
+            ...previous,
+            { id: 'submitted-prompt', type: 'submitted-prompt', content: fullPrompt }
+          ])
           setTypedPrompt('')
           setPromptStatus('submitted')
         }
       }, 40)
-    }, 500))
+    }, 700))
 
-    // 2500ms - Thinking appears (after prompt submission at ~2300ms)
     timeouts.push(setTimeout(() => {
-      addLine({ id: 'thinking', type: 'thinking', content: 'Thinking...' })
-    }, 2500))
+      addLine({ id: 'thinking', type: 'thinking', content: 'Thinking…' })
+    }, 2400))
 
-    // ========== PHASE 1: RESEARCH ==========
-
-    // 2800ms - Phase 1 task header
     timeouts.push(setTimeout(() => {
       addLine({ id: 'task-header-1', type: 'task-header', content: PHASES[0].name })
-    }, 2800))
+    }, 2900))
 
-    // 3000ms - Phase 1 task list (1 task)
     timeouts.push(setTimeout(() => {
-      PHASES[0].tasks.forEach(task => {
+      PHASES[0].tasks.forEach((task) => {
         addLine({ id: task.id, type: 'task-item', content: task.label, indent: 1 })
       })
-    }, 3000))
+    }, 3150))
 
-    // 3300ms - Phase 1 agent header
     timeouts.push(setTimeout(() => {
-      addLine({ id: 'agent-header', type: 'agent-header', content: `${PHASES[0].agents.length} agents running` })
-    }, 3300))
+      addLine({ id: 'agent-header', type: 'agent-header', content: `${PHASES[0].agents.length} agents active`, indent: 1 })
+    }, 3400))
 
-    // 3500ms - Phase 1 agents appear, task starts running
     timeouts.push(setTimeout(() => {
-      // Initialize phase 1 agents with random starting tokens
-      const phase1Agents = PHASES[0].agents.map(a => ({
-        ...a,
-        tokens: Math.floor(Math.random() * 3000) + 5000
-      }))
-      setAgents(phase1Agents)
-
-      // Add agent rows
-      phase1Agents.forEach(agent => {
-        addLine({ id: agent.id, type: 'agent-row', content: '' })
+      const phaseAgents = PHASES[0].agents
+      setAgents(phaseAgents)
+      phaseAgents.forEach((agent) => {
+        addLine({ id: agent.id, type: 'agent-row', content: '', indent: 2 })
       })
+      setTasks((previous) => previous.map((task) =>
+        task.id === 't1' ? { ...task, status: 'running' } : task
+      ))
+    }, 3600))
 
-      // Task t1 starts running
-      setTasks(prev => prev.map(t => t.id === 't1' ? { ...t, status: 'running' } : t))
-
-      // Start token growth
-      startTokenGrowth()
-    }, 3500))
-
-    // 4500ms - Explore 1 complete
     timeouts.push(setTimeout(() => {
-      setAgents(prev => prev.map(a => a.id === 'a1' ? { ...a, status: 'complete' } : a))
-    }, 4500))
+      setAgents((previous) => previous.map((agent) =>
+        agent.id === 'a1' ? { ...agent, status: 'complete' } : agent
+      ))
+    }, 4600))
 
-    // 5000ms - Explore 2 complete
     timeouts.push(setTimeout(() => {
-      setAgents(prev => prev.map(a => a.id === 'a2' ? { ...a, status: 'complete' } : a))
-    }, 5000))
+      setAgents((previous) => previous.map((agent) =>
+        agent.id === 'a2' ? { ...agent, status: 'complete' } : agent
+      ))
+    }, 5100))
 
-    // 5500ms - Librarian complete, task t1 complete
     timeouts.push(setTimeout(() => {
-      setAgents(prev => prev.map(a => a.id === 'a3' ? { ...a, status: 'complete' } : a))
-      setTasks(prev => prev.map(t => t.id === 't1' ? { ...t, status: 'complete' } : t))
-    }, 5500))
+      setAgents((previous) => previous.map((agent) =>
+        agent.id === 'a3' ? { ...agent, status: 'complete' } : agent
+      ))
+      setTasks((previous) => previous.map((task) =>
+        task.id === 't1' ? { ...task, status: 'complete' } : task
+      ))
+    }, 5600))
 
-    // ========== PHASE 2: IMPLEMENTATION ==========
-
-    // 6000ms - Clear agents, show phase 2 header
     timeouts.push(setTimeout(() => {
-      // Remove old agent lines
       removeLinesByPrefix('a')
       removeLinesByPrefix('agent-header')
-
-      // Add t1 to completed task IDs (for strikethrough)
       setCompletedTaskIds(['t1'])
-
-      // Add phase 2 header
       addLine({ id: 'task-header-2', type: 'task-header', content: PHASES[1].name })
-    }, 6000))
-
-    // 6200ms - Phase 2 task list (4 tasks, t1 struck through)
-    timeouts.push(setTimeout(() => {
-      PHASES[1].tasks.forEach(task => {
-        addLine({ id: task.id, type: 'task-item', content: task.label, indent: 1 })
-      })
     }, 6200))
 
-    // 6500ms - Phase 2 agent header
     timeouts.push(setTimeout(() => {
-      addLine({ id: 'agent-header', type: 'agent-header', content: `${PHASES[1].agents.length} agents running` })
-    }, 6500))
-
-    // 6700ms - Phase 2 agents appear, tasks start running
-    timeouts.push(setTimeout(() => {
-      // Initialize phase 2 agents with random starting tokens
-      const phase2Agents = PHASES[1].agents.map(a => ({
-        ...a,
-        tokens: Math.floor(Math.random() * 3000) + 5000
-      }))
-      setAgents(phase2Agents)
-
-      // Add agent rows
-      phase2Agents.forEach(agent => {
-        addLine({ id: agent.id, type: 'agent-row', content: '' })
-      })
-
-      // Tasks t2-t5 start running
-      setTasks(prev => prev.map(t =>
-        ['t2', 't3', 't4', 't5'].includes(t.id) ? { ...t, status: 'running' } : t
-      ))
-    }, 6700))
-
-    // 8000ms - Task 1 complete (auth middleware), t2 complete
-    timeouts.push(setTimeout(() => {
-      setAgents(prev => prev.map(a => a.id === 'a4' ? { ...a, status: 'complete' } : a))
-      setTasks(prev => prev.map(t => t.id === 't2' ? { ...t, status: 'complete' } : t))
-    }, 8000))
-
-    // 8500ms - Task 3 complete (API routes), t4 complete
-    timeouts.push(setTimeout(() => {
-      setAgents(prev => prev.map(a => a.id === 'a6' ? { ...a, status: 'complete' } : a))
-      setTasks(prev => prev.map(t => t.id === 't4' ? { ...t, status: 'complete' } : t))
-    }, 8500))
-
-    // 9000ms - Task 2 complete (validation), t3 complete
-    timeouts.push(setTimeout(() => {
-      setAgents(prev => prev.map(a => a.id === 'a5' ? { ...a, status: 'complete' } : a))
-      setTasks(prev => prev.map(t => t.id === 't3' ? { ...t, status: 'complete' } : t))
-    }, 9000))
-
-    // 9500ms - Task 4 complete (error handling), t5 complete
-    timeouts.push(setTimeout(() => {
-      setAgents(prev => prev.map(a => a.id === 'a7' ? { ...a, status: 'complete' } : a))
-      setTasks(prev => prev.map(t => t.id === 't5' ? { ...t, status: 'complete' } : t))
-    }, 9500))
-
-    // ========== PHASE 3: VALIDATION ==========
-
-    // 10000ms - Clear agents, show phase 3 header
-    timeouts.push(setTimeout(() => {
-      // Remove old agent lines
-      removeLinesByPrefix('a')
-      removeLinesByPrefix('agent-header')
-
-      // Add t1-t5 to completed task IDs
-      setCompletedTaskIds(['t1', 't2', 't3', 't4', 't5'])
-
-      // Add phase 3 header
-      addLine({ id: 'task-header-3', type: 'task-header', content: PHASES[2].name })
-    }, 10000))
-
-    // 10200ms - Phase 3 task list (2 tasks)
-    timeouts.push(setTimeout(() => {
-      PHASES[2].tasks.forEach(task => {
+      PHASES[1].tasks.forEach((task) => {
         addLine({ id: task.id, type: 'task-item', content: task.label, indent: 1 })
       })
-    }, 10200))
+    }, 6450))
 
-    // 10500ms - Phase 3 agent header
     timeouts.push(setTimeout(() => {
-      addLine({ id: 'agent-header', type: 'agent-header', content: `${PHASES[2].agents.length} agents running` })
-    }, 10500))
+      addLine({ id: 'agent-header', type: 'agent-header', content: `${PHASES[1].agents.length} agents active`, indent: 1 })
+    }, 6700))
 
-    // 10700ms - Phase 3 agents appear, tasks start running
     timeouts.push(setTimeout(() => {
-      // Initialize phase 3 agents with random starting tokens
-      const phase3Agents = PHASES[2].agents.map(a => ({
-        ...a,
-        tokens: Math.floor(Math.random() * 3000) + 5000
-      }))
-      setAgents(phase3Agents)
-
-      // Add agent rows
-      phase3Agents.forEach(agent => {
-        addLine({ id: agent.id, type: 'agent-row', content: '' })
+      const phaseAgents = PHASES[1].agents
+      setAgents(phaseAgents)
+      phaseAgents.forEach((agent) => {
+        addLine({ id: agent.id, type: 'agent-row', content: '', indent: 2 })
       })
-
-      // Tasks t6-t7 start running
-      setTasks(prev => prev.map(t =>
-        ['t6', 't7'].includes(t.id) ? { ...t, status: 'running' } : t
+      setTasks((previous) => previous.map((task) =>
+        ['t2', 't3', 't4', 't5'].includes(task.id) ? { ...task, status: 'running' } : task
       ))
-    }, 10700))
+    }, 6900))
 
-    // 11500ms - Validator 1 complete (tests)
     timeouts.push(setTimeout(() => {
-      setAgents(prev => prev.map(a => a.id === 'a8' ? { ...a, status: 'complete' } : a))
-    }, 11500))
+      setAgents((previous) => previous.map((agent) =>
+        agent.id === 'a4' ? { ...agent, status: 'complete' } : agent
+      ))
+      setTasks((previous) => previous.map((task) =>
+        task.id === 't2' ? { ...task, status: 'complete' } : task
+      ))
+    }, 7900))
 
-    // 12000ms - Validator 2 complete (lints), t6 complete
     timeouts.push(setTimeout(() => {
-      setAgents(prev => prev.map(a => a.id === 'a9' ? { ...a, status: 'complete' } : a))
-      setTasks(prev => prev.map(t => t.id === 't6' ? { ...t, status: 'complete' } : t))
-    }, 12000))
+      setAgents((previous) => previous.map((agent) =>
+        agent.id === 'a6' ? { ...agent, status: 'complete' } : agent
+      ))
+      setTasks((previous) => previous.map((task) =>
+        task.id === 't4' ? { ...task, status: 'complete' } : task
+      ))
+    }, 8450))
 
-    // 12500ms - Task (git commit) complete, t7 complete
     timeouts.push(setTimeout(() => {
-      setAgents(prev => prev.map(a => a.id === 'a10' ? { ...a, status: 'complete' } : a))
-      setTasks(prev => prev.map(t => t.id === 't7' ? { ...t, status: 'complete' } : t))
-    }, 12500))
+      setAgents((previous) => previous.map((agent) =>
+        agent.id === 'a5' ? { ...agent, status: 'complete' } : agent
+      ))
+      setTasks((previous) => previous.map((task) =>
+        task.id === 't3' ? { ...task, status: 'complete' } : task
+      ))
+    }, 9000))
 
-    // ========== COMPLETION ==========
-
-    // 13000ms - Success message
     timeouts.push(setTimeout(() => {
-      setContentLines(prev => prev.filter(l => l.id !== 'thinking'))
+      setAgents((previous) => previous.map((agent) =>
+        agent.id === 'a7' ? { ...agent, status: 'complete' } : agent
+      ))
+      setTasks((previous) => previous.map((task) =>
+        task.id === 't5' ? { ...task, status: 'complete' } : task
+      ))
+    }, 9550))
+
+    timeouts.push(setTimeout(() => {
+      removeLinesByPrefix('a')
+      removeLinesByPrefix('agent-header')
+      setCompletedTaskIds(['t1', 't2', 't3', 't4', 't5'])
+      addLine({ id: 'task-header-3', type: 'task-header', content: PHASES[2].name })
+    }, 10100))
+
+    timeouts.push(setTimeout(() => {
+      PHASES[2].tasks.forEach((task) => {
+        addLine({ id: task.id, type: 'task-item', content: task.label, indent: 1 })
+      })
+    }, 10350))
+
+    timeouts.push(setTimeout(() => {
+      addLine({ id: 'agent-header', type: 'agent-header', content: `${PHASES[2].agents.length} agents active`, indent: 1 })
+    }, 10600))
+
+    timeouts.push(setTimeout(() => {
+      const phaseAgents = PHASES[2].agents
+      setAgents(phaseAgents)
+      phaseAgents.forEach((agent) => {
+        addLine({ id: agent.id, type: 'agent-row', content: '', indent: 2 })
+      })
+      setTasks((previous) => previous.map((task) =>
+        ['t6', 't7'].includes(task.id) ? { ...task, status: 'running' } : task
+      ))
+    }, 10850))
+
+    timeouts.push(setTimeout(() => {
+      setAgents((previous) => previous.map((agent) =>
+        agent.id === 'a8' ? { ...agent, status: 'complete' } : agent
+      ))
+      setTasks((previous) => previous.map((task) =>
+        task.id === 't6' ? { ...task, status: 'complete' } : task
+      ))
+    }, 11800))
+
+    timeouts.push(setTimeout(() => {
+      setAgents((previous) => previous.map((agent) =>
+        agent.id === 'a9' ? { ...agent, status: 'complete' } : agent
+      ))
+      setTasks((previous) => previous.map((task) =>
+        task.id === 't7' ? { ...task, status: 'complete' } : task
+      ))
+    }, 12350))
+
+    timeouts.push(setTimeout(() => {
+      setAgents((previous) => previous.map((agent) =>
+        agent.id === 'a10' ? { ...agent, status: 'complete' } : agent
+      ))
+    }, 12700))
+
+    timeouts.push(setTimeout(() => {
+      setContentLines((previous) => previous.filter((line) => line.id !== 'thinking'))
       addLine({ id: 'success', type: 'success', content: '✓ All tasks complete' })
       setPhase('complete')
-    }, 13000))
+    }, 13200))
 
-    // 15000ms - Reset and loop (2s after success message)
     timeouts.push(setTimeout(() => {
-      setCycle(c => c + 1)
-    }, 15000))
+      setCycle((value) => value + 1)
+    }, 15400))
 
     return () => {
       timeouts.forEach(clearTimeout)
@@ -639,62 +652,66 @@ export default function TerminalHero() {
     }
   }, [cycle, fullPrompt])
 
-  // Spinner animation
   useEffect(() => {
     const interval = setInterval(() => {
-      setSpinnerIndex(i => (i + 1) % SPINNER.length)
-    }, 100)
+      setSpinnerIndex((index) => (index + 1) % SPINNER.length)
+    }, 140)
+
     return () => clearInterval(interval)
   }, [])
 
-  // Calculate cost and tokens for parent context (status bar)
-  const displayTokens = Math.round(parentTokens / 1000)
-  const cost = phase === 'idle' ? '$0.00' : `$${(parentTokens * 0.00001).toFixed(2)}`
-  const tokens = phase === 'idle' ? '0K' : `${displayTokens}k`
-
-  // Ref for auto-scrolling
-  const contentRef = useRef<HTMLDivElement>(null)
-
-  // Auto-scroll to bottom when content changes
   useEffect(() => {
     if (contentRef.current) {
       contentRef.current.scrollTop = contentRef.current.scrollHeight
     }
   }, [contentLines, agents, tasks])
 
+  const phaseName = getPhaseName(phase, tasks)
+  const contextPercent = phase === 'idle' ? 0 : Math.min(18, Math.max(1, Math.round(parentTokens / 180)))
+  const cost = phase === 'idle' ? '$0.00' : `$${(parentTokens * 0.00001).toFixed(2)}`
+
   return (
-    <div className="w-full max-w-2xl mx-auto px-4">
-      <div className="rounded-lg border border-zinc-700 bg-zinc-950 overflow-hidden shadow-2xl flex flex-col h-[560px]">
-        <TerminalHeader />
-        <PulsingLine active={promptStatus === 'submitted' && phase !== 'complete'} />
+    <div className="relative mx-auto w-full max-w-[46rem] px-0 sm:px-4">
+      <div className="pointer-events-none absolute -inset-8 rounded-[2rem] bg-[radial-gradient(circle_at_20%_20%,rgba(34,211,238,0.16),transparent_36%),radial-gradient(circle_at_80%_22%,rgba(251,146,60,0.12),transparent_32%),radial-gradient(circle_at_50%_100%,rgba(255,255,255,0.06),transparent_40%)] blur-3xl"></div>
 
-        {/* Scrollable output area */}
-        <div
-          ref={contentRef}
-          className="flex-1 overflow-hidden px-4 py-3 font-['JetBrains_Mono',_ui-monospace,_monospace] text-sm"
-        >
-          {contentLines.map(line => (
-            <ContentLineRenderer
-              key={line.id}
-              line={line}
-              spinnerIndex={spinnerIndex}
-              agents={agents}
-              tasks={tasks}
-              completedTaskIds={completedTaskIds}
-            />
-          ))}
+      <div
+        data-terminal-shell
+        className="relative overflow-hidden rounded-[1.75rem] border border-cyan/15 bg-zinc-950/95 shadow-[0_0_0_1px_rgba(34,211,238,0.08),0_28px_80px_rgba(8,145,178,0.18)] backdrop-blur-xl"
+      >
+        <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.03)_1px,transparent_1px)] bg-[size:24px_24px] opacity-30"></div>
+        <div className="pointer-events-none absolute -left-24 top-24 h-40 w-40 rounded-full bg-cyan/10 blur-3xl"></div>
+        <div className="pointer-events-none absolute -right-16 top-8 h-36 w-36 rounded-full bg-orange-400/8 blur-3xl"></div>
+        <div className="pointer-events-none absolute inset-x-0 top-0 h-36 animate-terminal-scan bg-gradient-to-b from-white/8 via-cyan/5 to-transparent"></div>
+
+        <div className="relative flex h-[600px] flex-col sm:h-[640px]">
+          <TerminalHeader />
+          <PulsingLine active={promptStatus === 'submitted' && phase !== 'complete'} />
+
+          <div
+            ref={contentRef}
+            className="pointer-events-none flex-1 overflow-hidden px-4 py-4 font-['JetBrains_Mono',_ui-monospace,_monospace] text-[13px] leading-6 select-none sm:text-sm sm:leading-6"
+          >
+            <WelcomeScreen />
+            {contentLines.map((line) => (
+              <ContentLineRenderer
+                key={line.id}
+                line={line}
+                spinnerIndex={spinnerIndex}
+                agents={agents}
+                tasks={tasks}
+                completedTaskIds={completedTaskIds}
+              />
+            ))}
+          </div>
+
+          <PromptLine content={typedPrompt} status={promptStatus} />
+          <StatusLine
+            phase={phaseName}
+            contextPercent={contextPercent}
+            elapsedSeconds={elapsedSeconds}
+            cost={cost}
+          />
         </div>
-
-        {/* Fixed prompt line */}
-        <PromptLine content={typedPrompt} status={promptStatus} />
-
-        {/* Fixed status bar */}
-        <StatusBar
-          phase={phase}
-          cost={cost}
-          tokens={tokens}
-          agentCount={agents.filter(a => a.status === 'running').length}
-        />
       </div>
     </div>
   )
