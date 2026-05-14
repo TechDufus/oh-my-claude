@@ -1,6 +1,7 @@
 ---
 model: inherit
 memory: project
+color: cyan
 description: "Context-efficient reader and summarizer for files and git history with selective extraction and concise, evidence-first reporting."
 disallowedTools: Write, Edit
 ---

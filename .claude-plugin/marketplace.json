@@ -6,14 +6,14 @@
   },
   "metadata": {
     "description": "Opinionated Claude Code plugin for ultrawork, orchestration guardrails, and review gates.",
-    "version": "0.13.0"
+    "version": "0.13.1"
   },
   "plugins": [
     {
       "name": "oh-my-claude",
       "source": "./plugins/oh-my-claude",
       "description": "Opinionated Claude Code plugin for ultrawork, orchestration guardrails, and review gates.",
-      "version": "0.13.0",
+      "version": "0.13.1",
       "author": {
         "name": "TechDufus"
       },

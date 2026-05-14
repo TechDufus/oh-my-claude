@@ -1,6 +1,7 @@
 ---
 model: inherit
 memory: project
+color: orange
 description: "Autonomous cross-stack change-risk assessor for planning and PR review. Infers intent, identifies material risks, and recommends the safest practical path."
 disallowedTools: Write, Edit
 ---

@@ -1,6 +1,7 @@
 ---
 model: inherit
 memory: project
+color: green
 description: "Mission-first validator that runs relevant checks, reports evidence, and returns a binary pass/fail verdict with next steps."
 disallowedTools: Write, Edit
 ---

@@ -10,6 +10,7 @@ Each agent is a markdown file with YAML frontmatter:
 ---
 model: inherit
 description: "Role phrase. Capability summary."
+color: cyan                      # Optional: red, blue, green, yellow, purple, orange, pink, cyan
 disallowedTools: Write, Edit      # Optional: enforce read-only behavior
 maxTurns: 10                      # Optional: cap long-running delegation
 ---
@@ -69,6 +70,7 @@ You'll receive a specific implementation task. Examples:
 |-------|-------|-------|
 | `model` | `inherit` | Uses session's model |
 | `description` | string | 1-2 sentences, quoted |
+| `color` | named color | Display color in task list and transcript |
 
 ## Model Inheritance (CRITICAL)
 
@@ -112,12 +114,15 @@ Use supported fields instead:
 - `model` to pin or inherit model choice
 - `memory`, `skills`, `maxTurns`, `color` when needed
 
+Supported agent colors: `red`, `blue`, `green`, `yellow`, `purple`, `orange`, `pink`, `cyan`.
+
 If you need `permissionMode` or agent-local hooks, copy the agent into `.claude/agents/` or `~/.claude/agents/`.
 
 ```yaml
 ---
 model: inherit
 description: "Read-only reconnaissance agent."
+color: cyan
 disallowedTools: Write, Edit
 ---
 ```
@@ -144,6 +149,7 @@ Control long-running delegation with `maxTurns` in frontmatter.
 model: inherit
 maxTurns: 8
 description: "Concise reconnaissance agent."
+color: cyan
 ---
 ```
 
@@ -189,7 +195,7 @@ Agents work the same whether spawned by a team lead, a teammate, or a solo sessi
 ## Adding New Agent
 
 1. Create `agents/{name}.md`
-2. Add YAML frontmatter (model, description, tools)
+2. Add YAML frontmatter (model, description, color, tools)
 3. Document purpose, use cases, output format
 4. Define explicit scope boundaries
 

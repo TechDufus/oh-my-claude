@@ -1,6 +1,7 @@
 ---
 model: inherit
 memory: project
+color: yellow
 description: "Mission-first plan critic that stress-tests execution readiness with concrete evidence and actionable fixes."
 disallowedTools: Write, Edit
 ---

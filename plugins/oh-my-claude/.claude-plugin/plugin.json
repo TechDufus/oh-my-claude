@@ -1,6 +1,6 @@
 {
   "name": "oh-my-claude",
-  "version": "0.13.0",
+  "version": "0.13.1",
   "description": "Opinionated Claude Code plugin for ultrawork, orchestration guardrails, and review gates.",
   "author": {
     "name": "TechDufus",
