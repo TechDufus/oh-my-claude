@@ -126,10 +126,11 @@ def _read_stdin_unix(timeout: int, max_bytes: int) -> str:
 
 
 def _read_stdin_windows(timeout: int, max_bytes: int) -> str:
-    """Windows stdin reader using threading timeout.
+    """Windows stdin reader using a background thread and timeout.
 
     Windows lacks SIGALRM and select() on stdin, so we use a
-    thread-based approach with msvcrt for non-blocking reads.
+    thread-based approach that wraps a blocking sys.stdin.read()
+    call and enforces a timeout and maximum size.
     """
     import threading
 
