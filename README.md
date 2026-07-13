@@ -66,7 +66,7 @@ Install it and forget it. Your plans get reviewed. Your work gets validated. Cla
 
 ## Install
 
-Supported on macOS and Linux. Windows support is planned.
+Supported on macOS, Linux, and Windows when `uv` is available on PATH.
 
 ### Step 1: Install uv (required)
 
@@ -149,7 +149,8 @@ Specialized subagents complement Claude Code's built-in agents:
 | **critic** | Plan review — finds flaws and edge cases BEFORE execution |
 | **librarian** | Smart reading — summarizes large files, git diffs and changelogs |
 | **validator** | QA — runs tests, linters, type checks, reports pass/fail |
-| **worker** | Focused implementation — executes ONE specific task completely |
+| **code-reviewer** | Implementation review after code is written |
+| **security-auditor** | Security-focused review for exploitable code and dependency risks |
 
 ### Claude Code Built-in Agents
 
@@ -167,7 +168,7 @@ Claude Code provides these agents out of the box, which oh-my-claude leverages:
 Agent(subagent_type="oh-my-claude:librarian", prompt="Summarize src/auth/service.ts")
 Agent(subagent_type="oh-my-claude:risk-assessor", prompt="Assess risk for this migration plan")
 Agent(subagent_type="oh-my-claude:critic", prompt="Review this implementation plan for flaws")
-Agent(subagent_type="oh-my-claude:worker", prompt="Add password reset endpoint")
+Agent(subagent_type="general-purpose", prompt="Add password reset endpoint")
 Agent(subagent_type="oh-my-claude:validator", prompt="Run all tests and report results")
 ```
 
@@ -234,6 +235,11 @@ Cross-session continuity means "Accept and clear" carries the full execution con
 | **ralph-plan** | `/ralph-plan <topic>` — Structured PRD generation with interview and research |
 | **ralph-loop-init** | `/ralph-loop-init` — Transform approved plans into ralph loop infrastructure |
 | **debugger** | `/debugger` — Systematic debugging methodology guidance |
+| **tdd** | Test-first implementation methodology |
+| **verification** | Evidence-based completion checks |
+| **receiving-code-review** | Technical handling of review feedback |
+| **writing-skills** | Skill authoring methodology |
+| **oh-my-claude-runtime** | Runtime workflow guidance for ultrawork, orchestration, and plugin configuration |
 
 ---
 
@@ -285,7 +291,7 @@ After restart, use **ultrawork** in any prompt to activate parallel execution mo
 - Claude Code is already smart — add quality gates, not overrides
 - Your context is for reasoning — delegate storage to subagents
 - Hooks work invisibly — better experience without extra commands
-- Specialized agents fill gaps — advisor, risk-assessor, critic, validator, worker
+- Specialized agents fill gaps — advisor, risk-assessor, critic, validator, code-reviewer, security-auditor
 - Stay out of the way — let Claude do what it does well
 
 ---

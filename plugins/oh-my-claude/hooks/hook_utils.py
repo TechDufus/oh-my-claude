@@ -318,12 +318,19 @@ def output_permission(decision: str, reason: str | None = None) -> None:
     Output permission decision for PermissionRequest hooks.
 
     Args:
-        decision: One of "allow", "deny", or "ask".
-        reason: Optional reason explaining the decision.
+        decision: One of "allow" or "deny".
+        reason: Optional denial reason shown to Claude when denying.
     """
-    response: dict[str, Any] = {"permissionDecision": decision}
-    if reason:
-        response["reason"] = reason
+    response: dict[str, Any] = {
+        "hookSpecificOutput": {
+            "hookEventName": "PermissionRequest",
+            "decision": {
+                "behavior": decision,
+            },
+        }
+    }
+    if decision == "deny" and reason:
+        response["hookSpecificOutput"]["decision"]["message"] = reason
     print(json.dumps(response))
 
 

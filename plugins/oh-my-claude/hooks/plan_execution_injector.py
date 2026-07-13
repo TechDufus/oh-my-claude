@@ -51,11 +51,11 @@ parallel tasks that benefit from inter-agent discussion.
 
 ### How to Use
 
-1. `TeamCreate(team_name="descriptive-name")` — create the team
+1. Ask Claude to spawn named teammates in natural language, with clear roles
 2. `TaskCreate(subject, description, activeForm)` — create tasks for each work item
-3. `Agent(subagent_type="general-purpose", team_name="descriptive-name", name="role")` — spawn teammates
-4. `TaskUpdate(taskId, owner="role")` — assign tasks to teammates
-5. Monitor via `TaskList()` and communicate via `SendMessage(recipient="role")`
+3. `TaskUpdate(taskId, owner="role")` — assign tasks to teammate names/roles
+4. Monitor via the agent panel, incoming teammate messages, and `TaskList()`
+5. Message teammates directly by name when they need redirecting or more context
 
 ### Key Properties
 
@@ -63,6 +63,7 @@ parallel tasks that benefit from inter-agent discussion.
 - Teammates communicate via shared task list and mailbox messaging
 - The lead coordinates; teammates self-claim unblocked tasks
 - Teammates load project CLAUDE.md but NOT the lead's conversation history
+- Team coordination tools are managed by Claude Code; use natural-language teammate requests instead of invented team-management tool calls
 - Token cost scales with teammate count - use only when parallel value justifies it
 
 ### Rules
@@ -70,7 +71,7 @@ parallel tasks that benefit from inter-agent discussion.
 - Avoid assigning the same file to multiple teammates (causes overwrites)
 - Include task-specific context in spawn prompts (teammates don't inherit history)
 - Monitor progress and redirect approaches that aren't working
-- Use subagents (Task tool) for focused work that only needs results back
+- Use subagents (`Agent(...)`) for focused work that only needs results back
 """
 
 
@@ -87,12 +88,11 @@ Your plan has been approved. When you return to execute:
 
 ## EXECUTION PROTOCOL
 
-1. **Create team** - `TeamCreate(team_name="...")` with a descriptive name
+1. **Spawn teammates by request** - Ask Claude to create named teammates for independent work
 2. **Create tasks** - `TaskCreate(...)` for EACH plan item with descriptions
-3. **Spawn teammates** - `Agent(subagent_type="general-purpose", team_name="...", name="role")` per role
-4. **Assign work** - `TaskUpdate(taskId, owner="role")` to assign tasks to teammates
-5. **Monitor + verify** - `TaskList()` to track progress, run validation after changes
-6. **Do NOT deviate** - The plan was researched and approved""")
+3. **Assign work** - `TaskUpdate(taskId, owner="role")` to map tasks to teammates
+4. **Monitor + verify** - Watch teammate messages/agent panel, use `TaskList()`, run validation after changes
+5. **Do NOT deviate** - The plan was researched and approved""")
 
         sections.append(AGENT_TEAMS_SECTION)
     else:

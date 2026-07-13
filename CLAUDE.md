@@ -13,15 +13,16 @@ Claude Code plugin providing ultrawork mode, context protection, and specialized
 └── plugins/oh-my-claude/             # The actual plugin
     ├── .claude-plugin/plugin.json    # Plugin metadata (version x1)
     ├── agents/                       # 7 specialized agents
-    │   └── CLAUDE.md                 # Agent authoring guide
+    ├── docs/                         # Authoring guides and compatibility notes
     ├── hooks/                        # Python hooks (PEP 723)
     │   └── CLAUDE.md                 # Hook development patterns
     ├── commands/                     # /prime (auto-discovered)
     ├── skills/                       # Skills (in plugin.json)
-    └── CLAUDE.md                     # Plugin runtime instructions
+    │   └── oh-my-claude-runtime/     # Runtime workflow guidance skill
+    └── .mcp.json                     # Plugin MCP servers
 ```
 
-Nested CLAUDE.md files load automatically when working in those directories.
+Plugin-root `CLAUDE.md` is not loaded as runtime context by current Claude Code. Ship runtime behavior through hooks, skills, agents, commands, MCP, and plugin settings instead.
 
 ## Development Workflow
 
@@ -47,7 +48,7 @@ uv run --with pytest pytest . -v
 
 ### CI/CD
 
-GitHub Actions validates: JSON syntax, version sync across files, no `../` paths, hook scripts exist and executable, shellcheck, ruff linting, pytest, skill directories exist.
+GitHub Actions validates: JSON syntax, version sync across files, no `../` paths, shellcheck, ruff linting, pytest, and skill directories. Pytest covers structured hook args and hook script existence.
 
 ## Hook Development
 
@@ -89,9 +90,10 @@ Official sources for researching Claude Code features and release notes.
 ### Documentation
 | Doc | URL |
 |-----|-----|
-| Claude Code Docs | https://docs.anthropic.com/en/docs/claude-code/overview |
-| Hooks Reference | https://docs.anthropic.com/en/docs/claude-code/hooks |
-| Agent SDK | https://docs.anthropic.com/en/docs/claude-code/sdk |
+| Claude Code Docs | https://code.claude.com/docs/en/overview |
+| Hooks Reference | https://code.claude.com/docs/en/hooks |
+| Plugins Reference | https://code.claude.com/docs/en/plugins-reference |
+| Agent Teams | https://code.claude.com/docs/en/agent-teams |
 
 ### Announcements
 | Source | URL |

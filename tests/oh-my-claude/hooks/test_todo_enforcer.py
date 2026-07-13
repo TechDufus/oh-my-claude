@@ -626,6 +626,5 @@ class TestWorkerReferencesRemoved:
                 violations.append(f"Line {i}: {stripped}")
 
         assert violations == [], (
-            f"Found 'worker' references that should be replaced:\n"
-            + "\n".join(violations)
+            "Found 'worker' references that should be replaced:\n" + "\n".join(violations)
         )

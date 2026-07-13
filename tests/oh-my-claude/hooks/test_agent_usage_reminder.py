@@ -245,7 +245,7 @@ class TestAgentSessionSkip:
         """Agent sessions using Grep should produce empty output."""
         output = run_hook({
             "tool_name": "Grep",
-            "agent_type": "oh-my-claude:worker",
+            "agent_type": "oh-my-claude:librarian",
             "session_id": "agent-test-grep",
         })
         context = get_context(output)
@@ -255,7 +255,7 @@ class TestAgentSessionSkip:
         """Agent sessions using Glob should produce empty output."""
         output = run_hook({
             "tool_name": "Glob",
-            "agent_type": "oh-my-claude:worker",
+            "agent_type": "oh-my-claude:librarian",
             "session_id": "agent-test-glob",
         })
         context = get_context(output)

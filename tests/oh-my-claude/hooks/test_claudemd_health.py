@@ -276,7 +276,7 @@ class TestMainIntegration:
 
     def test_skips_for_subagents(self):
         """Should skip health check for subagents."""
-        output = run_hook({"agent_type": "worker"})
+        output = run_hook({"agent_type": "oh-my-claude:librarian"})
         assert output == {}
 
     def test_skips_when_claudemd_missing(self, tmp_path):

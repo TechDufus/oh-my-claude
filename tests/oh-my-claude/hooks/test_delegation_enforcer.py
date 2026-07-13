@@ -11,7 +11,6 @@ import pytest
 
 from delegation_enforcer import (
     DELEGATION_REMINDER,
-    DIRECT_MARKER,
     EXECUTION_MARKERS,
     SHORT_CHANGE_THRESHOLD,
     TEAM_LEAD_REMINDER,

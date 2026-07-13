@@ -9,7 +9,7 @@ export const heroTagline = "A Claude Code plugin that adds orchestration guardra
 // ── Stats Bar ───────────────────────────────────────────────────
 export const stats = [
   { value: "7", label: "Custom Agents" },
-  { value: "11", label: "Built-in Skills" },
+  { value: "12", label: "Built-in Skills" },
   { value: "17", label: "Lifecycle Hooks" },
   { value: "1", label: "Plugin Install" },
 ]

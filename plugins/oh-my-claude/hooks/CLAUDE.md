@@ -90,7 +90,7 @@ if permission_mode == "plan":
 | `output_empty()` | Pass through | No modification |
 | `output_context(event, ctx)` | Add context | Injects into conversation |
 | `output_block(event, reason)` | Block action | Prevents tool execution |
-| `output_permission(decision)` | Permission hooks | `allow`, `deny`, or `ask` |
+| `output_permission(decision)` | PermissionRequest hooks | `allow` or `deny` using `hookSpecificOutput.decision.behavior` |
 
 ## Configuration
 

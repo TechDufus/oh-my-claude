@@ -1,8 +1,5 @@
 """Tests for safe_permissions.py PermissionRequest hook."""
 
-import os
-import re
-
 import pytest
 
 from safe_permissions import (
