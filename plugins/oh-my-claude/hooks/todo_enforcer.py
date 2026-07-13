@@ -371,7 +371,7 @@ Do NOT ask - just finish the work."""
 All {completed_todos} todo(s) are marked completed. Before stopping, you MUST run validation.
 
 ## Required Action
-Use Task with subagent_type="oh-my-claude:validator" to verify the work:
+Use Agent with subagent_type="oh-my-claude:validator" to verify the work:
 - Run relevant tests
 - Check for linting errors
 - Verify the implementation matches requirements

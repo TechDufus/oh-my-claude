@@ -4,6 +4,7 @@ import json
 import subprocess
 import sys
 from pathlib import Path
+
 import pytest
 
 HOOK_PATH = Path(__file__).parent.parent.parent.parent / "plugins/oh-my-claude/hooks/precompact_context.py"
@@ -11,7 +12,7 @@ HOOK_PATH = Path(__file__).parent.parent.parent.parent / "plugins/oh-my-claude/h
 # Add hooks directory to path for direct imports
 sys.path.insert(0, str(HOOK_PATH.parent))
 
-from precompact_context import detect_mode, format_context, get_git_state
+from precompact_context import detect_mode, format_context, get_git_state  # noqa: E402
 
 
 def run_hook(input_data: dict) -> dict:

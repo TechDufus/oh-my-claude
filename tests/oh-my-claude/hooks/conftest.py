@@ -4,7 +4,6 @@ import json
 import subprocess
 import sys
 from pathlib import Path
-from typing import Any
 
 import pytest
 
@@ -146,7 +145,7 @@ def no_teams_env(monkeypatch):
 @pytest.fixture
 def agent_session_input():
     """Hook input data representing an agent session (subagent or teammate)."""
-    return {"agent_type": "oh-my-claude:worker", "session_id": "agent-123"}
+    return {"agent_type": "oh-my-claude:librarian", "session_id": "agent-123"}
 
 
 @pytest.fixture

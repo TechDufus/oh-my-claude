@@ -1,6 +1,6 @@
 {
   "name": "oh-my-claude",
-  "version": "0.13.1",
+  "version": "0.14.0",
   "description": "Opinionated Claude Code plugin for ultrawork, orchestration guardrails, and review gates.",
   "author": {
     "name": "TechDufus",
@@ -26,6 +26,7 @@
     "./skills/tdd",
     "./skills/verification",
     "./skills/receiving-code-review",
-    "./skills/writing-skills"
+    "./skills/writing-skills",
+    "./skills/oh-my-claude-runtime"
   ]
 }

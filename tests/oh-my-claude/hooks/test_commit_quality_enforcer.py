@@ -6,7 +6,6 @@ from unittest.mock import MagicMock, patch
 import pytest
 
 from commit_quality_enforcer import (
-    FORBIDDEN_PATTERNS,
     count_message_body_lines,
     evaluate_message_quality,
     extract_commit_message,

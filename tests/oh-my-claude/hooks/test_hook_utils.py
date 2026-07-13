@@ -17,6 +17,7 @@ from hook_utils import (
     is_teams_enabled,
     output_block,
     output_context,
+    output_permission,
     output_stop_block,
     parse_hook_input,
 )
@@ -414,6 +415,41 @@ class TestOutputStopBlock:
         assert "continue" not in result
 
 
+class TestOutputPermission:
+    """Tests for PermissionRequest output format."""
+
+    def test_allow_format(self, capsys):
+        """PermissionRequest allow uses current hookSpecificOutput schema."""
+        output_permission("allow", "Auto-approved: pytest")
+        captured = capsys.readouterr()
+        result = json.loads(captured.out)
+
+        assert result == {
+            "hookSpecificOutput": {
+                "hookEventName": "PermissionRequest",
+                "decision": {
+                    "behavior": "allow",
+                },
+            }
+        }
+
+    def test_deny_format(self, capsys):
+        """PermissionRequest deny includes message for Claude."""
+        output_permission("deny", "Blocked: root delete")
+        captured = capsys.readouterr()
+        result = json.loads(captured.out)
+
+        assert result == {
+            "hookSpecificOutput": {
+                "hookEventName": "PermissionRequest",
+                "decision": {
+                    "behavior": "deny",
+                    "message": "Blocked: root delete",
+                },
+            }
+        }
+
+
 class TestIsTeamsEnabled:
     """Tests for is_teams_enabled function."""
 
@@ -448,7 +484,7 @@ class TestIsAgentSession:
 
     def test_true_with_agent_type(self):
         """Should return True when agent_type is present and truthy."""
-        assert is_agent_session({"agent_type": "oh-my-claude:worker"}) is True
+        assert is_agent_session({"agent_type": "oh-my-claude:librarian"}) is True
         assert is_agent_session({"agent_type": "librarian"}) is True
 
     def test_false_without_agent_type(self):
@@ -476,7 +512,7 @@ class TestGetSessionContext:
     def test_agent_session(self, monkeypatch):
         """Agent sessions should return 'agent' regardless of teams env."""
         monkeypatch.delenv("CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS", raising=False)
-        assert get_session_context({"agent_type": "worker"}) == "agent"
+        assert get_session_context({"agent_type": "oh-my-claude:librarian"}) == "agent"
 
     def test_agent_session_with_teams(self, monkeypatch):
         """Agent sessions should return 'agent' even when teams enabled."""

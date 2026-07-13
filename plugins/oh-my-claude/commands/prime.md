@@ -4,7 +4,7 @@ argument-hint: "[task hint] [--quick] [--verbose]"
 allowed-tools:
   - Bash(git:*)
   - Bash(gh:*)
-  - Task
+  - Agent
   - Read
   - Grep
   - Glob

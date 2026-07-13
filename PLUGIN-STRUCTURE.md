@@ -17,7 +17,7 @@ your-marketplace-repo/
 │       ├── agents/
 │       ├── commands/
 │       ├── skills/
-│       └── CLAUDE.md
+│       └── docs/
 └── README.md
 ```
 
@@ -120,9 +120,9 @@ If you reference it explicitly, you get: `Duplicate hooks file detected`
 }
 ```
 
-### 6. Use ${CLAUDE_PLUGIN_ROOT} in hooks.json
+### 6. Use `${CLAUDE_PLUGIN_ROOT}` in hook args
 
-For hook script paths, use the environment variable:
+For hook script paths, pass `${CLAUDE_PLUGIN_ROOT}` as a structured argument instead of a shell-expanded command string. This keeps plugin installs working when paths contain spaces.
 
 ```json
 {
@@ -131,7 +131,8 @@ For hook script paths, use the environment variable:
       "matcher": ".*",
       "hooks": [{
         "type": "command",
-        "command": "${CLAUDE_PLUGIN_ROOT}/hooks/my-hook.sh"
+        "command": "uv",
+        "args": ["run", "--script", "${CLAUDE_PLUGIN_ROOT}/hooks/my-hook.py"]
       }]
     }]
   }
@@ -147,7 +148,7 @@ For hook script paths, use the environment variable:
 | `commands/*.md` | Yes | Slash commands |
 | `skills/*/SKILL.md` | No | Must list skill DIRECTORY (not file) in plugin.json |
 | `.mcp.json` | Yes | MCP server config |
-| `CLAUDE.md` | Yes | Instructions for Claude |
+| Plugin-root `CLAUDE.md` | No | Current Claude Code warns that plugin-root context is not loaded; ship runtime guidance as a skill |
 
 ## Debugging Tips
 

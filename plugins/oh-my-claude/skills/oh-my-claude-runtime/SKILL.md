@@ -1,3 +1,8 @@
+---
+name: oh-my-claude-runtime
+description: "Use when applying oh-my-claude workflow guidance, ultrawork modes, agent orchestration, plan execution, or plugin configuration."
+---
+
 # oh-my-claude
 
 Intelligent automation with orchestration guardrails and specialized agents.
@@ -291,6 +296,7 @@ See [official docs](https://code.claude.com/docs/en/agent-teams) for full refere
 | `verification` | Evidence-based verification before claiming work is complete | "verify", "verification", "is it done", "complete", "ready to merge" |
 | `receiving-code-review` | How to handle code review feedback with technical rigor | "review feedback", "address review", "fix review comments" |
 | `writing-skills` | Methodology for creating effective skills using TDD principles | "create skill", "write skill", "new skill", "skill authoring" |
+| `oh-my-claude-runtime` | Runtime workflow guidance for ultrawork modes, orchestration, and plugin configuration | oh-my-claude behavior, ultrawork, plan execution |
 
 ## Hooks (Automatic)
 

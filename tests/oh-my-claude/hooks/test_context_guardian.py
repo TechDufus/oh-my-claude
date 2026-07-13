@@ -95,7 +95,7 @@ class TestSubagentBehavior:
 
     def test_worker_agent_skips_sop(self):
         """Worker agent should skip SOP."""
-        output = run_hook({"agent_type": "worker"})
+        output = run_hook({"agent_type": "oh-my-claude:librarian"})
         context = get_context(output)
         assert "Context Protection ACTIVE" not in context
 
