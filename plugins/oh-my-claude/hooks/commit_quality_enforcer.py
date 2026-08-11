@@ -17,6 +17,7 @@ from __future__ import annotations
 
 import json
 import re
+import shlex
 import subprocess
 import sys
 from pathlib import Path
@@ -108,32 +109,58 @@ def extract_commit_message(command: str) -> str | None:
     """
     Extract commit message from a git commit command.
 
+    Uses shlex (Python's POSIX shell lexer) to parse the command's actual
+    quoting instead of a naive quote-terminated regex. The prior regex
+    matched EITHER quote character as both the opener and the closer --
+    so a message quoted with " that contained an apostrophe (e.g.
+    "fix: don't break on quotes") closed on the apostrophe instead of the
+    real closing ", silently truncating everything after it. The hook
+    then validated a truncated message while the real commit (already
+    executed by the time this was noticed) had the full one. shlex.split()
+    respects the actual shell quoting rules -- a ' inside a "..." string,
+    or a " inside a '...' string, is just a literal character, not a
+    delimiter.
+
     Handles:
-    - git commit -m "message"
-    - git commit -m 'message'
-    - git commit -m "$(cat <<'EOF'\nmessage\nEOF\n)"
+    - git commit -m "message" / -m 'message', including apostrophes,
+      embedded quotes of the other kind, and multi-line bodies
+    - git commit --message "message" / --message=message
+    - git commit -m "$(cat <<'EOF'\nmessage\nEOF\n)" -- shlex resolves
+      the outer quoting and hands back the $(...) substitution as a
+      single literal token (it does not evaluate command substitution,
+      same as it wouldn't evaluate any other $(...)); that token is
+      then unwrapped to pull out the heredoc body.
     """
-    # HEREDOC patterns first (more specific, must match before simple pattern)
+    try:
+        tokens = shlex.split(command, posix=True)
+    except ValueError:
+        # Unbalanced quotes shlex can't resolve -- fall back to "could
+        # not extract", same as the prior no-match behavior.
+        return None
 
-    # Pattern for HEREDOC: -m "$(cat <<'EOF' ... EOF )"
-    heredoc_pattern = r'-m\s+"\$\(cat\s+<<[\'"]?EOF[\'"]?\s*\n(.+?)\nEOF\s*\)"'
-    match = re.search(heredoc_pattern, command, re.DOTALL)
-    if match:
-        return match.group(1)
+    raw_value = None
+    for i, tok in enumerate(tokens):
+        if tok in ("-m", "--message") and i + 1 < len(tokens):
+            raw_value = tokens[i + 1]
+            break
+        if tok.startswith("--message="):
+            raw_value = tok[len("--message="):]
+            break
 
-    # Alternative HEREDOC without quotes
-    heredoc_pattern2 = r"-m\s+'\$\(cat\s+<<['\"]?EOF['\"]?\s*\n(.+?)\nEOF\s*\)'"
-    match = re.search(heredoc_pattern2, command, re.DOTALL)
-    if match:
-        return match.group(1)
+    if raw_value is None:
+        return None
 
-    # Simple pattern for -m "message" or -m 'message' (AFTER heredoc)
-    simple_pattern = r'-m\s+["\'](.+?)["\']'
-    match = re.search(simple_pattern, command, re.DOTALL)
-    if match:
-        return match.group(1)
+    # Heredoc form: unwrap $(cat <<'EOF' ... EOF) / $(cat <<EOF ... EOF)
+    # to the message body inside it.
+    heredoc_match = re.match(
+        r'^\$\(cat\s+<<[\'"]?EOF[\'"]?\s*\n(.*)\nEOF\s*\)$',
+        raw_value,
+        re.DOTALL,
+    )
+    if heredoc_match:
+        return heredoc_match.group(1)
 
-    return None
+    return raw_value
 
 
 def validate_message_format(message: str) -> tuple[bool, list[str]]:
